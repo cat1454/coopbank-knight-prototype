@@ -10,6 +10,8 @@ import { LegitimateResolutionScreen } from "../components/LegitimateResolutionSc
 import { RecoveryOfferScreen } from "../components/RecoveryOfferScreen";
 import { TimeoutEscalationScreen } from "../components/TimeoutEscalationScreen";
 import { VirtualCardScreen } from "../components/VirtualCardScreen";
+import { BankLoginScreen } from "../components/BankLoginScreen";
+import { BankDashboard } from "../components/BankDashboard";
 import {
   createInitialKnightState,
   getVisibleScreen,
@@ -43,8 +45,46 @@ const timeoutEvents: KnightEventType[] = [
   "KEEP_CARD_SUSPENDED",
 ];
 
+export interface BankTransaction {
+  id: string;
+  merchantName: string;
+  amountVnd: number;
+  time: string;
+  status: "success" | "pending";
+  type: "transfer" | "receive";
+}
+
 export function App() {
   const [state, setState] = useState(() => createInitialKnightState());
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [selectedQtdnd, setSelectedQtdnd] = useState("QTDND Đà Nẵng");
+  const [bankBalance, setBankBalance] = useState(36360430);
+  const [normalTransactions, setNormalTransactions] = useState<BankTransaction[]>([
+    {
+      id: "TXN-002",
+      merchantName: "Circle K Thái Hà",
+      amountVnd: 85000,
+      time: "Hôm qua - 19:42",
+      status: "success",
+      type: "transfer",
+    },
+    {
+      id: "TXN-003",
+      merchantName: "Highlands Coffee",
+      amountVnd: 55000,
+      time: "Hôm qua - 14:15",
+      status: "success",
+      type: "transfer",
+    },
+    {
+      id: "TXN-004",
+      merchantName: "Chuyển khoản từ Nguyễn Văn B",
+      amountVnd: 1200000,
+      time: "09/06/2026 - 10:30",
+      status: "success",
+      type: "receive",
+    },
+  ]);
   const visibleScreen = getVisibleScreen(state);
 
   const applyEvents = useCallback((events: KnightEventType[]) => {
@@ -53,6 +93,34 @@ export function App() {
 
   const reset = useCallback(() => {
     setState(createInitialKnightState());
+    setIsLoggedIn(false);
+    setBankBalance(36360430);
+    setNormalTransactions([
+      {
+        id: "TXN-002",
+        merchantName: "Circle K Thái Hà",
+        amountVnd: 85000,
+        time: "Hôm qua - 19:42",
+        status: "success",
+        type: "transfer",
+      },
+      {
+        id: "TXN-003",
+        merchantName: "Highlands Coffee",
+        amountVnd: 55000,
+        time: "Hôm qua - 14:15",
+        status: "success",
+        type: "transfer",
+      },
+      {
+        id: "TXN-004",
+        merchantName: "Chuyển khoản từ Nguyễn Văn B",
+        amountVnd: 1200000,
+        time: "09/06/2026 - 10:30",
+        status: "success",
+        type: "receive",
+      },
+    ]);
   }, []);
 
   const startScenario = useCallback(() => {
@@ -121,7 +189,25 @@ export function App() {
   const screen = useMemo(() => {
     switch (visibleScreen) {
       case "guard":
-        return <GuardScreen state={state} onStart={startScenario} />;
+        return !isLoggedIn ? (
+          <BankLoginScreen
+            onLogin={() => setIsLoggedIn(true)}
+            onStartDemo={startScenario}
+            selectedQtdnd={selectedQtdnd}
+            setSelectedQtdnd={setSelectedQtdnd}
+          />
+        ) : (
+          <BankDashboard
+            state={state}
+            selectedQtdnd={selectedQtdnd}
+            onStartDemo={startScenario}
+            onLogout={() => setIsLoggedIn(false)}
+            balance={bankBalance}
+            setBalance={setBankBalance}
+            transactions={normalTransactions}
+            setTransactions={setNormalTransactions}
+          />
+        );
       case "critical-alert":
         return <CriticalAlertSurface state={state} onOpenApp={openFraudReview} />;
       case "fraud-review":
@@ -155,9 +241,13 @@ export function App() {
     }
   }, [
     applyEvents,
+    bankBalance,
+    isLoggedIn,
+    normalTransactions,
     openFraudReview,
     requestBiometric,
     reset,
+    selectedQtdnd,
     showTimeline,
     startScenario,
     state,

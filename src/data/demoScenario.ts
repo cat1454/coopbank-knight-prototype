@@ -9,7 +9,7 @@ import type {
 
 export const demoCustomer: CustomerProfile = {
   id: "CID-001",
-  name: "Nguyễn Minh An",
+  name: "Huỳnh Phước Phú",
   personalizationConsent: true,
 };
 
