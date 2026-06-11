@@ -5,6 +5,7 @@ coverage/
 playwright-report/
 test-results/
 server/push-subscriptions.json
+server/vapid-keys.local.json
 .env
 .env.*
 !.env.example

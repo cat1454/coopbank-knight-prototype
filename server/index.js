@@ -21,6 +21,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.j
   .filter(Boolean);
 const sendPushSecret = process.env.SEND_PUSH_SECRET || "";
 const subscriptionsFile = process.env.PUSH_SUBSCRIPTIONS_FILE || path.join(__dirname, "push-subscriptions.json");
+const vapidKeysFile = process.env.VAPID_KEYS_FILE || path.join(__dirname, "vapid-keys.local.json");
 
 let clients = [];
 let lastAuditCount = 0;
@@ -41,12 +42,46 @@ const COLORS = {
   bgBlue: "\x1b[44m",
 };
 
-const configuredPublicKey = process.env.VAPID_PUBLIC_KEY;
-const configuredPrivateKey = process.env.VAPID_PRIVATE_KEY;
-const hasConfiguredVapidKeys = Boolean(configuredPublicKey && configuredPrivateKey);
-const generatedVapidKeys = hasConfiguredVapidKeys ? null : webPush.generateVAPIDKeys();
-const vapidPublicKey = hasConfiguredVapidKeys ? configuredPublicKey : generatedVapidKeys.publicKey;
-const vapidPrivateKey = hasConfiguredVapidKeys ? configuredPrivateKey : generatedVapidKeys.privateKey;
+function loadVapidKeys() {
+  const configuredPublicKey = process.env.VAPID_PUBLIC_KEY;
+  const configuredPrivateKey = process.env.VAPID_PRIVATE_KEY;
+
+  if (configuredPublicKey && configuredPrivateKey) {
+    return {
+      source: "environment",
+      publicKey: configuredPublicKey,
+      privateKey: configuredPrivateKey,
+    };
+  }
+
+  if (fs.existsSync(vapidKeysFile)) {
+    try {
+      const keys = JSON.parse(fs.readFileSync(vapidKeysFile, "utf8"));
+      if (keys.publicKey && keys.privateKey) {
+        return {
+          source: "local file",
+          publicKey: keys.publicKey,
+          privateKey: keys.privateKey,
+        };
+      }
+    } catch (error) {
+      logSystem(`Could not read local VAPID keys: ${error.message}`);
+    }
+  }
+
+  const keys = webPush.generateVAPIDKeys();
+  fs.writeFileSync(vapidKeysFile, JSON.stringify(keys, null, 2), "utf8");
+
+  return {
+    source: "generated local file",
+    publicKey: keys.publicKey,
+    privateKey: keys.privateKey,
+  };
+}
+
+const vapidKeys = loadVapidKeys();
+const vapidPublicKey = vapidKeys.publicKey;
+const vapidPrivateKey = vapidKeys.privateKey;
 const vapidSubject = process.env.VAPID_SUBJECT || "mailto:knight-demo@example.com";
 
 webPush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
@@ -240,7 +275,9 @@ async function sendPushToAll(alert = {}) {
         subscriptions.delete(endpoint);
         removed += 1;
       } else {
-        logSystem(`Push send failed: ${error.message || error}`);
+        logSystem(
+          `Push send failed: status=${statusCode || "unknown"} message=${error.message || error} body=${error.body || ""}`,
+        );
       }
     }
   }
@@ -471,9 +508,7 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`${COLORS.bold}Server:${COLORS.reset} http://localhost:${PORT}`);
   console.log(`${COLORS.bold}LAN:${COLORS.reset}    http://${getLanIp()}:${PORT}`);
   console.log(`${COLORS.bold}Push:${COLORS.reset}   ${subscriptions.size} subscription(s) loaded`);
-  if (generatedVapidKeys) {
-    logSystem("VAPID keys were generated for this run. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY to keep iPhone subscriptions after restart.");
-  }
+  logSystem(`VAPID keys loaded from ${vapidKeys.source}. Public key: ${vapidPublicKey}`);
   if (!sendPushSecret) {
     logSystem("SEND_PUSH_SECRET is not set. /api/push/send is disabled, but terminal hotkeys still work.");
   }

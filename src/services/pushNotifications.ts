@@ -1,11 +1,28 @@
 import { buildBackendUrl } from "./backend";
 
+const SERVICE_WORKER_URL = "/knight-sw.js?v=20260611-2";
+
 function base64UrlToUint8Array(base64Url: string) {
   const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
   const base64 = `${base64Url}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
   const binary = window.atob(base64);
 
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function uint8ArrayToBase64Url(value: ArrayBuffer | null) {
+  if (!value) {
+    return "";
+  }
+
+  const bytes = new Uint8Array(value);
+  let binary = "";
+
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return window.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function isStandalonePwa() {
@@ -50,7 +67,7 @@ export async function enablePushNotifications() {
     throw new Error("Chua cau hinh VITE_BACKEND_URL cho backend laptop.");
   }
 
-  const registration = await navigator.serviceWorker.register("/sw.js");
+  const registration = await navigator.serviceWorker.register(SERVICE_WORKER_URL);
   const readyRegistration = await navigator.serviceWorker.ready;
   const activeRegistration = readyRegistration || registration;
 
@@ -71,6 +88,12 @@ export async function enablePushNotifications() {
   }
 
   let subscription = await activeRegistration.pushManager.getSubscription();
+  const currentApplicationServerKey = uint8ArrayToBase64Url(subscription?.options.applicationServerKey ?? null);
+
+  if (subscription && currentApplicationServerKey !== publicKey) {
+    await subscription.unsubscribe();
+    subscription = null;
+  }
 
   if (!subscription) {
     subscription = await activeRegistration.pushManager.subscribe({
@@ -97,7 +120,7 @@ export async function disablePushNotifications() {
     return;
   }
 
-  const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+  const registration = await navigator.serviceWorker.getRegistration(SERVICE_WORKER_URL);
   const activeRegistration = registration || (await navigator.serviceWorker.ready);
   const subscription = await activeRegistration.pushManager.getSubscription();
 
