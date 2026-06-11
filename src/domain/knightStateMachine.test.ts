@@ -7,6 +7,7 @@ import {
   runScenarioEvents,
   type KnightEventType,
 } from "./knightStateMachine";
+import type { KnightScenarioState } from "./types";
 
 function run(events: KnightEventType[]) {
   return runScenarioEvents(createInitialKnightState(), events);
@@ -114,5 +115,50 @@ describe("KNIGHT state machine", () => {
     expect(state.card.status).toBe("suspended");
     expect(deriveAllowedActions(state)).not.toContain("card.terminate");
     expect(state.auditEvents.at(-1)?.result).toBe("failed");
+  });
+
+  it("derives allowed actions for case creation, recovery offer, and timeout escalation", () => {
+    const newCardIssued = run([
+      "RISK_EVENT_RECEIVED",
+      "AUTO_SUSPEND_ALLOWED",
+      "PUSH_SENT",
+      "CUSTOMER_TAPS_FRAUD",
+      "REQUEST_BIOMETRIC",
+      "BIOMETRIC_SUCCESS_FRAUD",
+      "TERMINATE_CARD_SUCCESS",
+      "ISSUE_CARD_SUCCESS",
+    ]);
+    expect(deriveAllowedActions(newCardIssued)).toContain("case.createFraudCase");
+
+    const fraudCaseCreated = dispatchScenarioEvent(newCardIssued, "CREATE_CASE_SUCCESS");
+    expect(deriveAllowedActions(fraudCaseCreated)).toContain("personalization.generateRecoveryOffer");
+
+    const timedOut = run(["RISK_EVENT_RECEIVED", "AUTO_SUSPEND_ALLOWED", "PUSH_SENT", "CUSTOMER_RESPONSE_TIMEOUT"]);
+    expect(deriveAllowedActions(timedOut)).toContain("notification.smsFallback");
+
+    const smsSent = dispatchScenarioEvent(timedOut, "SMS_SENT");
+    expect(deriveAllowedActions(smsSent)).toContain("fraudOps.escalate");
+  });
+
+  it("keeps invalid transitions as no-ops and returns guard for malformed state", () => {
+    const initial = createInitialKnightState();
+    const auditNoop = dispatchScenarioEvent(initial, "AUDIT_COMPLETE");
+    expect(auditNoop).toBe(initial);
+
+    const unknownEventNoop = dispatchScenarioEvent(initial, "UNKNOWN_EVENT" as KnightEventType);
+    expect(unknownEventNoop).toBe(initial);
+
+    const resetState = dispatchScenarioEvent(
+      run(["RISK_EVENT_RECEIVED", "AUTO_SUSPEND_ALLOWED"]),
+      "RESET_SCENARIO",
+    );
+    expect(resetState.currentState).toBe("idle_monitoring");
+    expect(resetState.auditEvents).toHaveLength(0);
+
+    const malformedState: KnightScenarioState = {
+      ...initial,
+      currentState: "malformed_state" as KnightScenarioState["currentState"],
+    };
+    expect(getVisibleScreen(malformedState)).toBe("guard");
   });
 });

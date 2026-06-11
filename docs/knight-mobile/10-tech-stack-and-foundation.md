@@ -65,9 +65,15 @@ The current markdown set is sufficient as a foundation. Implementation should st
 - Implementation stack: React + TypeScript + Vite for productized Phase 2; no coding until docs foundation is accepted.
 - Language: Vietnamese-first. English-only technical identifiers are allowed in code later; no bilingual UI unless requested.
 
+## Implementation Status
+
+Ready-to-code gate was accepted on 2026-06-11. The mobile/PWA implementation now exists under `src/` with React + TypeScript + Vite, typed mock services, and Playwright viewport checks.
+
+Keep `knight_ai_agent_animated.html` unchanged as the approved staged presentation/demo artifact. Continue Phase 2 work in the React/Vite app unless a later decision explicitly changes direction.
+
 ## Operational Defaults Before Coding
 
-- Current phase is **docs-only foundation/handoff**. Do not scaffold Vite or write app code until the user explicitly asks for implementation.
+- The original docs-only gate has been opened by explicit user request. Further code changes should stay inside the React + TypeScript + Vite mobile/PWA path.
 - Branding should stay conservative: use text brand "Co-opBank" and a simple shield/icon mark. Do not invent or scrape an official bank logo.
 - Screenshot QA is not required for the docs-only handoff. Once UI implementation starts, capture viewport evidence for 390x844, 393x852, 430x932, and 360x780.
 
@@ -80,3 +86,5 @@ Do not start code until these are true:
 - `09-implementation-backlog.md` names React + TypeScript + Vite as the chosen Phase 2 path.
 - The operational defaults above are still accepted or have been explicitly overridden.
 - The user explicitly asks to implement the mobile/PWA app, not just the foundation.
+
+Status on 2026-06-11: satisfied; implementation has started.

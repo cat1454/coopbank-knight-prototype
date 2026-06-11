@@ -152,4 +152,4 @@ This option is only a fallback for a very short throwaway demo. The chosen Phase
 
 ## Recommended Next Action
 
-Keep `knight_ai_agent_animated.html` as the current Đề 02 presentation/demo artifact. Do not start code until the docs foundation is accepted. When the user asks for implementation, scaffold the React + TypeScript + Vite mobile/PWA path described in [10-tech-stack-and-foundation.md](10-tech-stack-and-foundation.md).
+Keep `knight_ai_agent_animated.html` as the current Đề 02 presentation/demo artifact. The docs foundation was accepted on 2026-06-11, and the React + TypeScript + Vite mobile/PWA implementation has started under `src/`. Continue future slices against this app and verify with [08-test-and-verification-plan.md](08-test-and-verification-plan.md).

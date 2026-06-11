@@ -1,0 +1,17 @@
+{
+  "name": "Co-opBank KNIGHT Mobile",
+  "short_name": "KNIGHT",
+  "description": "iPhone-first fraud rescue prototype with mock services only.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#175CD3",
+  "icons": [
+    {
+      "src": "/knight-shield.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
