@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { ShieldCheck } from "lucide-react";
 import { AuditTimeline } from "../components/AuditTimeline";
 import { BiometricStepUp } from "../components/BiometricStepUp";
@@ -12,10 +12,12 @@ import { TimeoutEscalationScreen } from "../components/TimeoutEscalationScreen";
 import { VirtualCardScreen } from "../components/VirtualCardScreen";
 import { BankLoginScreen } from "../components/BankLoginScreen";
 import { BankDashboard } from "../components/BankDashboard";
+import { KnightAgentVisual } from "../components/KnightAgentVisual";
 import {
   createInitialKnightState,
   getVisibleScreen,
   runScenarioEvents,
+  dispatchScenarioEvent,
 } from "../domain/knightStateMachine";
 import type { CustomerIntent, KnightEventType } from "../domain/types";
 
@@ -87,11 +89,43 @@ export function App() {
   ]);
   const visibleScreen = getVisibleScreen(state);
 
+  const [isProcessing, setIsProcessing] = useState(false);
+  const activeSequenceId = useRef(0);
+
+  const cancelActiveSequence = useCallback(() => {
+    activeSequenceId.current++;
+    setIsProcessing(false);
+  }, []);
+
   const applyEvents = useCallback((events: KnightEventType[]) => {
     setState((currentState) => runScenarioEvents(currentState, events));
   }, []);
 
+  const applyEventsSequentially = useCallback(async (events: KnightEventType[], delayMs = 1500) => {
+    cancelActiveSequence();
+    const seqId = ++activeSequenceId.current;
+    
+    // Check if we are in testing environment
+    const isTest = import.meta.env.MODE === "test";
+    const actualDelay = isTest ? 0 : delayMs;
+    
+    setIsProcessing(true);
+    
+    for (const event of events) {
+      if (seqId !== activeSequenceId.current) break;
+      setState((currentState) => dispatchScenarioEvent(currentState, event));
+      if (actualDelay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, actualDelay));
+      }
+    }
+    
+    if (seqId === activeSequenceId.current) {
+      setIsProcessing(false);
+    }
+  }, [cancelActiveSequence]);
+
   const reset = useCallback(() => {
+    cancelActiveSequence();
     setState(createInitialKnightState());
     setIsLoggedIn(false);
     setBankBalance(36360430);
@@ -121,37 +155,38 @@ export function App() {
         type: "receive",
       },
     ]);
-  }, []);
+  }, [cancelActiveSequence]);
 
   const startScenario = useCallback(() => {
+    cancelActiveSequence();
     setState((currentState) => {
       const baseState = currentState.currentState === "idle_monitoring" ? currentState : createInitialKnightState();
       return runScenarioEvents(baseState, startEvents);
     });
-  }, []);
+  }, [cancelActiveSequence]);
 
   const openFraudReview = useCallback(() => {
-    applyEvents(reviewEvents);
-  }, [applyEvents]);
+    applyEventsSequentially(reviewEvents);
+  }, [applyEventsSequentially]);
 
   const requestBiometric = useCallback(
     (intent: "fraud" | "legitimate") => {
-      applyEvents([intent === "fraud" ? "CUSTOMER_TAPS_FRAUD" : "CUSTOMER_TAPS_LEGIT", "REQUEST_BIOMETRIC"]);
+      applyEventsSequentially([intent === "fraud" ? "CUSTOMER_TAPS_FRAUD" : "CUSTOMER_TAPS_LEGIT", "REQUEST_BIOMETRIC"]);
     },
-    [applyEvents],
+    [applyEventsSequentially],
   );
 
   const verifyBiometric = useCallback(
     (intent: CustomerIntent) => {
       if (intent === "fraud") {
-        applyEvents(fraudResolutionEvents);
+        applyEventsSequentially(fraudResolutionEvents);
       }
 
       if (intent === "legitimate") {
-        applyEvents(legitimateResolutionEvents);
+        applyEventsSequentially(legitimateResolutionEvents);
       }
     },
-    [applyEvents],
+    [applyEventsSequentially],
   );
 
   const showTimeline = useCallback(() => {
@@ -159,32 +194,78 @@ export function App() {
   }, [applyEvents]);
 
   const jumpFraud = useCallback(() => {
-    setState(
-      runScenarioEvents(createInitialKnightState(), [
-        ...startEvents,
-        ...reviewEvents,
-        "CUSTOMER_TAPS_FRAUD",
-        "REQUEST_BIOMETRIC",
-        ...fraudResolutionEvents,
-      ]),
-    );
-  }, []);
+    cancelActiveSequence();
+    setState(createInitialKnightState());
+    applyEventsSequentially([
+      ...startEvents,
+      ...reviewEvents,
+      "CUSTOMER_TAPS_FRAUD",
+      "REQUEST_BIOMETRIC",
+      ...fraudResolutionEvents,
+    ]);
+  }, [cancelActiveSequence, applyEventsSequentially]);
 
   const jumpLegitimate = useCallback(() => {
-    setState(
-      runScenarioEvents(createInitialKnightState(), [
-        ...startEvents,
-        ...reviewEvents,
-        "CUSTOMER_TAPS_LEGIT",
-        "REQUEST_BIOMETRIC",
-        ...legitimateResolutionEvents,
-      ]),
-    );
-  }, []);
+    cancelActiveSequence();
+    setState(createInitialKnightState());
+    applyEventsSequentially([
+      ...startEvents,
+      ...reviewEvents,
+      "CUSTOMER_TAPS_LEGIT",
+      "REQUEST_BIOMETRIC",
+      ...legitimateResolutionEvents,
+    ]);
+  }, [cancelActiveSequence, applyEventsSequentially]);
 
   const jumpTimeout = useCallback(() => {
-    setState(runScenarioEvents(createInitialKnightState(), timeoutEvents));
-  }, []);
+    cancelActiveSequence();
+    setState(createInitialKnightState());
+    applyEventsSequentially(timeoutEvents);
+  }, [cancelActiveSequence, applyEventsSequentially]);
+
+  // Connect to backend server SSE stream
+  useEffect(() => {
+    const eventSource = new EventSource("http://localhost:5000/events");
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "trigger" && data.events) {
+          if (data.events.includes("RISK_EVENT_RECEIVED")) {
+            startScenario();
+          } else if (data.events.includes("RESET_SCENARIO")) {
+            reset();
+          }
+        }
+      } catch (err) {
+        console.error("Error parsing backend event:", err);
+      }
+    };
+
+    eventSource.onerror = () => {
+      console.log("Disconnected from backend. Reconnecting...");
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [startScenario, reset]);
+
+
+
+  // Synchronize state updates to backend for real-time terminal logs
+  useEffect(() => {
+    fetch("http://localhost:5000/api/report-state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentState: state.currentState,
+        auditEvents: state.auditEvents,
+      }),
+    }).catch(() => {
+      // Ignore errors when server is not running
+    });
+  }, [state.currentState, state.auditEvents]);
 
   const screen = useMemo(() => {
     switch (visibleScreen) {
@@ -192,7 +273,6 @@ export function App() {
         return !isLoggedIn ? (
           <BankLoginScreen
             onLogin={() => setIsLoggedIn(true)}
-            onStartDemo={startScenario}
             selectedQtdnd={selectedQtdnd}
             setSelectedQtdnd={setSelectedQtdnd}
           />
@@ -224,18 +304,32 @@ export function App() {
             state={state}
             onFail={() => applyEvents(["BIOMETRIC_FAILED"])}
             onVerify={verifyBiometric}
+            isProcessing={isProcessing}
           />
         );
       case "virtual-card":
-        return <VirtualCardScreen state={state} onShowOffer={() => applyEvents(["GENERATE_OFFER_SUCCESS"])} />;
+        return (
+          <VirtualCardScreen
+            state={state}
+            onShowOffer={() => applyEvents(["GENERATE_OFFER_SUCCESS"])}
+            isProcessing={isProcessing}
+          />
+        );
       case "recovery-offer":
         return <RecoveryOfferScreen state={state} onShowTimeline={showTimeline} />;
       case "audit-timeline":
         return <AuditTimeline state={state} onReset={reset} />;
       case "legitimate-resolution":
-        return <LegitimateResolutionScreen state={state} onReset={reset} onShowTimeline={showTimeline} />;
+        return (
+          <LegitimateResolutionScreen
+            state={state}
+            onReset={reset}
+            onShowTimeline={showTimeline}
+            isProcessing={isProcessing}
+          />
+        );
       case "timeout-escalation":
-        return <TimeoutEscalationScreen state={state} onReset={reset} />;
+        return <TimeoutEscalationScreen state={state} onReset={reset} isProcessing={isProcessing} />;
       default:
         return <GuardScreen state={state} onStart={startScenario} />;
     }
@@ -253,33 +347,49 @@ export function App() {
     state,
     verifyBiometric,
     visibleScreen,
+    isProcessing,
   ]);
 
+  const renderDemoContent = () => {
+    return (
+      <div className="demo-content-grid">
+        <div className="phone-panel-wrapper">
+          <section className="phone-frame" aria-label="Co-opBank KNIGHT mobile prototype">
+            <header className="app-header">
+              <div className="app-brand">
+                <img src="/knight-shield.svg" alt="" className="app-brand__mark" />
+                <div>
+                  <span>Co-opBank</span>
+                  <strong>KNIGHT</strong>
+                </div>
+              </div>
+              <div className="header-status" aria-label={`Card ${state.card.status}`}>
+                <ShieldCheck size={16} aria-hidden="true" />
+                <span>{state.card.status}</span>
+              </div>
+            </header>
+            <div className="screen-host">{screen}</div>
+            <DemoControls
+              onJumpFraud={jumpFraud}
+              onJumpLegitimate={jumpLegitimate}
+              onJumpTimeout={jumpTimeout}
+              onReset={reset}
+              onStart={startScenario}
+            />
+          </section>
+        </div>
+        <div className="agent-panel-wrapper">
+          <KnightAgentVisual state={state} />
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <main className="app-shell">
-      <section className="phone-frame" aria-label="Co-opBank KNIGHT mobile prototype">
-        <header className="app-header">
-          <div className="app-brand">
-            <img src="/knight-shield.svg" alt="" className="app-brand__mark" />
-            <div>
-              <span>Co-opBank</span>
-              <strong>KNIGHT</strong>
-            </div>
-          </div>
-          <div className="header-status" aria-label={`Card ${state.card.status}`}>
-            <ShieldCheck size={16} aria-hidden="true" />
-            <span>{state.card.status}</span>
-          </div>
-        </header>
-        <div className="screen-host">{screen}</div>
-        <DemoControls
-          onJumpFraud={jumpFraud}
-          onJumpLegitimate={jumpLegitimate}
-          onJumpTimeout={jumpTimeout}
-          onReset={reset}
-          onStart={startScenario}
-        />
-      </section>
+    <main className="platform-container">
+      <div className="platform-content">
+        <div className="workspace-layout">{renderDemoContent()}</div>
+      </div>
     </main>
   );
 }

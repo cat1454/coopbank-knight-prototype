@@ -4,13 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite --host",
+    "server": "node server/index.js",
     "build": "tsc -b && vite build",
     "lint": "eslint --no-config-lookup --config eslint.config.js \"src/**/*.{ts,tsx}\" \"tests/e2e/**/*.ts\" vite.config.ts vitest.config.ts playwright.config.ts eslint.config.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host"
   },
   "dependencies": {
     "lucide-react": "^1.17.0",

@@ -1,17 +1,15 @@
 import { useState } from "react";
-import { Lock, Fingerprint, QrCode, ShieldAlert } from "lucide-react";
+import { Lock, Fingerprint, QrCode } from "lucide-react";
 import { PrimaryButton } from "./PrimaryButton";
 
 interface BankLoginScreenProps {
   onLogin: () => void;
-  onStartDemo: () => void;
   selectedQtdnd: string;
   setSelectedQtdnd: (val: string) => void;
 }
 
 export function BankLoginScreen({
   onLogin,
-  onStartDemo,
   selectedQtdnd,
   setSelectedQtdnd,
 }: BankLoginScreenProps) {
@@ -95,19 +93,6 @@ export function BankLoginScreen({
           <QrCode size={18} />
           <span>QR của tôi</span>
         </button>
-      </div>
-
-      <div className="demo-trigger-card">
-        <div className="demo-trigger-card__title">
-          <ShieldAlert size={14} className="demo-shield-icon" />
-          <span>Mô phỏng Sự cố AI</span>
-        </div>
-        <p className="demo-trigger-card__desc">
-          Bắt đầu demo bảo vệ giao dịch rủi ro lúc 02:00 sáng khi khách đang ngủ.
-        </p>
-        <PrimaryButton icon={<ShieldAlert size={16} />} onClick={onStartDemo} variant="danger">
-          Bắt đầu
-        </PrimaryButton>
       </div>
     </section>
   );

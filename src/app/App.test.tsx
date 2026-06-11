@@ -8,7 +8,7 @@ describe("KNIGHT mobile app", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /bắt đầu/i }));
+    await user.click(screen.getByRole("button", { name: /^start$/i }));
     expect(screen.getByRole("heading", { name: /giao dịch bất thường vừa bị chặn/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /mở co-opbank/i }));
@@ -34,13 +34,13 @@ describe("KNIGHT mobile app", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /bắt đầu/i }));
+    await user.click(screen.getByRole("button", { name: /^start$/i }));
     await user.click(screen.getByRole("button", { name: /mở co-opbank/i }));
     await user.click(screen.getByRole("button", { name: /đây là giao dịch của tôi/i }));
     await user.click(screen.getByRole("button", { name: /xác thực/i }));
 
     expect(screen.getByText(/Thẻ đã được mở lại/i)).toBeInTheDocument();
-    expect(screen.getByText(/giám sát tăng cường trong 30 phút/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/giám sát tăng cường trong 30 phút/i)[0]).toBeInTheDocument();
     expect(screen.queryByText(/FR-20250601-001/i)).not.toBeInTheDocument();
   });
 
@@ -48,7 +48,7 @@ describe("KNIGHT mobile app", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /bắt đầu/i }));
+    await user.click(screen.getByRole("button", { name: /^start$/i }));
     await user.click(screen.getByRole("button", { name: /mở co-opbank/i }));
     await user.click(screen.getByRole("button", { name: /không phải tôi/i }));
     await user.click(screen.getByRole("button", { name: /mô phỏng thất bại/i }));

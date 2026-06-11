@@ -24,6 +24,7 @@ import type { KnightScenarioState } from "../domain/types";
 import { formatVnd } from "../domain/format";
 import { PrimaryButton } from "./PrimaryButton";
 import type { BankTransaction } from "../app/App";
+import { KnightAgentVisual } from "./KnightAgentVisual";
 
 interface BankDashboardProps {
   state: KnightScenarioState;
@@ -46,7 +47,7 @@ export function BankDashboard({
   transactions,
   setTransactions,
 }: BankDashboardProps) {
-  const [activeTab, setActiveTab] = useState<"home" | "transfer" | "history" | "settings">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "transfer" | "knight" | "history" | "settings">("home");
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   // Transfer Step States
@@ -61,6 +62,8 @@ export function BankDashboard({
   const [voiceOtt, setVoiceOtt] = useState(true);
   const [biometricAuth, setBiometricAuth] = useState(true);
   const [consentBasis, setConsentBasis] = useState(state.customer.personalizationConsent);
+  const [protectionLevel, setProtectionLevel] = useState<"monitor" | "standard" | "maximum">("standard");
+  const [pushAlerts, setPushAlerts] = useState(true);
 
   // Suggested Beneficiaries
   const handleSelectSuggestion = (type: "safe" | "fraud") => {
@@ -251,19 +254,6 @@ export function BankDashboard({
           </div>
         </div>
 
-        {/* Demo Sandbox Controller */}
-        <div className="demo-trigger-card" style={{ marginTop: "16px" }}>
-          <div className="demo-trigger-card__title">
-            <ShieldAlert size={14} className="demo-shield-icon" />
-            <span>Mô phỏng Giao dịch lạ 2AM</span>
-          </div>
-          <p className="demo-trigger-card__desc">
-            Bấm nút dưới để giả lập một giao dịch lạ trị giá {formatVnd(state.transaction.amountVnd)} xảy ra trên thẻ của khách hàng lúc đang ngủ.
-          </p>
-          <PrimaryButton icon={<ShieldAlert size={16} />} onClick={onStartDemo} variant="danger">
-            Bắt đầu
-          </PrimaryButton>
-        </div>
       </div>
     );
   };
@@ -547,11 +537,115 @@ export function BankDashboard({
     );
   };
 
+  const renderKnightTab = () => {
+    return (
+      <div className="tab-content dashboard-knight">
+        {/* Visual Animated Agent in compact/mobile mode */}
+        <div className="mobile-agent-container">
+          <KnightAgentVisual state={state} variant="mobile" />
+        </div>
+
+        {/* Info & Description */}
+        <div className="knight-info-card">
+          <div className="knight-info-card__title">
+            <ShieldCheck size={18} className="knight-shield-icon" />
+            <span>Hiệp Sĩ Số Co-opBank KNIGHT AI</span>
+          </div>
+          <p className="knight-info-card__desc">
+            Tác nhân bảo mật tự động bảo vệ tài khoản 24/7. Tự động kiểm tra IP VPN, thiết bị lạ, tần suất giao dịch và thực thi các biện pháp ngăn chặn tức thời để bảo vệ tiền của bạn.
+          </p>
+        </div>
+
+        {/* Protection Levels */}
+        <div className="settings-section">
+          <span className="settings-section-title">Mức độ bảo mật</span>
+          <div className="protection-level-selector">
+            <button
+              type="button"
+              className={`level-btn ${protectionLevel === "monitor" ? "active" : ""}`}
+              onClick={() => setProtectionLevel("monitor")}
+            >
+              <strong>Giám sát</strong>
+              <span>Chỉ gửi cảnh báo</span>
+            </button>
+            <button
+              type="button"
+              className={`level-btn ${protectionLevel === "standard" ? "active" : ""}`}
+              onClick={() => setProtectionLevel("standard")}
+            >
+              <strong>Tiêu chuẩn</strong>
+              <span>Khóa thẻ (L2)</span>
+            </button>
+            <button
+              type="button"
+              className={`level-btn ${protectionLevel === "maximum" ? "active" : ""}`}
+              onClick={() => setProtectionLevel("maximum")}
+            >
+              <strong>Tối đa</strong>
+              <span>Face ID mọi GD</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Notification Settings */}
+        <div className="settings-section">
+          <span className="settings-section-title">Thông báo bảo mật</span>
+          <div className="ios-settings-list">
+            <div className="ios-settings-row">
+              <span>Cảnh báo Push thông minh</span>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={pushAlerts}
+                  onChange={(e) => setPushAlerts(e.target.checked)}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+            <div className="ios-settings-row">
+              <span>Giọng nói biến động số dư</span>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={voiceOtt}
+                  onChange={(e) => setVoiceOtt(e.target.checked)}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Consent Settings */}
+        <div className="settings-section">
+          <span className="settings-section-title">Quyền và Đồng ý</span>
+          <div className="ios-settings-list">
+            <div className="ios-settings-row">
+              <span>Cá nhân hóa ưu đãi an tâm</span>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={consentBasis}
+                  onChange={(e) => setConsentBasis(e.target.checked)}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+          </div>
+          <p className="settings-footnote">
+            Tính năng cá nhân hóa đề xuất ưu đãi dựa trên thói quen chi tiêu an toàn của bạn. Bạn có thể thay đổi bất kỳ lúc nào.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="dashboard-layout">
       <div className="dashboard-body">
         {activeTab === "home" && renderHome()}
         {activeTab === "transfer" && renderTransfer()}
+        {activeTab === "knight" && renderKnightTab()}
         {activeTab === "history" && renderHistory()}
         {activeTab === "settings" && renderSettings()}
       </div>
@@ -573,6 +667,14 @@ export function BankDashboard({
         >
           <ArrowRightLeft size={20} />
           <span>Chuyển tiền</span>
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === "knight" ? "active" : ""}`}
+          onClick={() => setActiveTab("knight")}
+        >
+          <ShieldCheck size={20} />
+          <span>Hộ vệ AI</span>
         </button>
         <button
           type="button"
