@@ -14,7 +14,6 @@ import {
   Wifi,
   Ticket,
   ShieldCheck,
-  ShieldAlert,
   User,
   CreditCard,
   CheckCircle2,
@@ -25,6 +24,7 @@ import { formatVnd } from "../domain/format";
 import { PrimaryButton } from "./PrimaryButton";
 import type { BankTransaction } from "../app/App";
 import { KnightAgentVisual } from "./KnightAgentVisual";
+import { disablePushNotifications, enablePushNotifications } from "../services/pushNotifications";
 
 interface BankDashboardProps {
   state: KnightScenarioState;
@@ -63,7 +63,9 @@ export function BankDashboard({
   const [biometricAuth, setBiometricAuth] = useState(true);
   const [consentBasis, setConsentBasis] = useState(state.customer.personalizationConsent);
   const [protectionLevel, setProtectionLevel] = useState<"monitor" | "standard" | "maximum">("standard");
-  const [pushAlerts, setPushAlerts] = useState(true);
+  const [pushAlerts, setPushAlerts] = useState(false);
+  const [pushStatus, setPushStatus] = useState<"idle" | "saving" | "enabled" | "error">("idle");
+  const [pushMessage, setPushMessage] = useState("Them vao Home Screen, mo tu icon KNIGHT, roi bat Push.");
 
   // Suggested Beneficiaries
   const handleSelectSuggestion = (type: "safe" | "fraud") => {
@@ -124,6 +126,32 @@ export function BankDashboard({
     setTransferAmount("");
     setTransferContent("");
     setActiveTab("home");
+  };
+
+  const handlePushAlertsChange = async (checked: boolean) => {
+    if (!checked) {
+      setPushStatus("saving");
+      setPushMessage("Dang tat subscription tren thiet bi nay...");
+      await disablePushNotifications();
+      setPushAlerts(false);
+      setPushStatus("idle");
+      setPushMessage("Thong bao Push da tat tren prototype nay.");
+      return;
+    }
+
+    setPushAlerts(true);
+    setPushStatus("saving");
+    setPushMessage("Dang dang ky thiet bi voi backend laptop...");
+
+    try {
+      await enablePushNotifications();
+      setPushStatus("enabled");
+      setPushMessage("Da bat Push. Khoa man hinh iPhone roi bam Space o terminal backend de thu.");
+    } catch (error) {
+      setPushAlerts(false);
+      setPushStatus("error");
+      setPushMessage(error instanceof Error ? error.message : "Khong the bat Push tren thiet bi nay.");
+    }
   };
 
   const renderHome = () => {
@@ -597,11 +625,15 @@ export function BankDashboard({
                 <input
                   type="checkbox"
                   checked={pushAlerts}
-                  onChange={(e) => setPushAlerts(e.target.checked)}
+                  disabled={pushStatus === "saving"}
+                  onChange={(e) => void handlePushAlertsChange(e.target.checked)}
                 />
                 <span className="slider"></span>
               </label>
             </div>
+            <p className={`settings-footnote push-status push-status--${pushStatus}`} role="status">
+              {pushMessage}
+            </p>
             <div className="ios-settings-row">
               <span>Giọng nói biến động số dư</span>
               <label className="toggle-switch">

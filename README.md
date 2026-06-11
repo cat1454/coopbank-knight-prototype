@@ -28,6 +28,8 @@ Dự án mẫu (Prototype) cho **Đề 02: Ngân hàng Co-opBank - "Hiệp sĩ s
 
 Chạy các lệnh dưới đây từ thư mục gốc của dự án (`h:/Knight/coopbank-knight-prototype`):
 
+> Deploy frontend public tại `https://knight.danangtoiiu.live/` nhưng dùng backend laptop qua Cloudflare Tunnel: xem [`docs/deploy-frontend-local-backend.md`](docs/deploy-frontend-local-backend.md).
+
 ### Bước 1: Cài đặt thư viện phụ thuộc
 ```bash
 npm install

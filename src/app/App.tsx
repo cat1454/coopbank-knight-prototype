@@ -14,6 +14,7 @@ import { BankLoginScreen } from "../components/BankLoginScreen";
 import { BankDashboard } from "../components/BankDashboard";
 import { KnightAgentVisual } from "../components/KnightAgentVisual";
 import { useAlarmAudio } from "../hooks/useAlarmAudio";
+import { buildBackendUrl } from "../services/backend";
 import {
   createInitialKnightState,
   getVisibleScreen,
@@ -130,7 +131,7 @@ export function App() {
     if (seqId === activeSequenceId.current) {
       setIsProcessing(false);
     }
-  }, [cancelActiveSequence]);
+  }, [cancelActiveSequence, isTestMode]);
 
   const reset = useCallback(() => {
     cancelActiveSequence();
@@ -241,8 +242,14 @@ export function App() {
       return;
     }
 
-    const backendHost = window.location.hostname || "localhost";
-    const eventSource = new EventSource(`http://${backendHost}:5000/events`);
+    const eventsUrl = buildBackendUrl("/events");
+
+    if (!eventsUrl) {
+      console.log("Backend URL is not configured for this HTTPS origin.");
+      return;
+    }
+
+    const eventSource = new EventSource(eventsUrl);
 
     eventSource.onmessage = (event) => {
       try {
@@ -266,14 +273,39 @@ export function App() {
     return () => {
       eventSource.close();
     };
-  }, [startScenario, reset]);
+  }, [isTestMode, startScenario, reset]);
 
+
+  useEffect(() => {
+    if (isTestMode) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.get("alert") !== "1") {
+      return;
+    }
+
+    url.searchParams.delete("alert");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    const timeoutId = window.setTimeout(() => {
+      startScenario();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isTestMode, startScenario]);
 
 
   // Synchronize state updates to backend for real-time terminal logs
   useEffect(() => {
-    const backendHost = window.location.hostname || "localhost";
-    fetch(`http://${backendHost}:5000/api/report-state`, {
+    const reportStateUrl = buildBackendUrl("/api/report-state");
+
+    if (!reportStateUrl) {
+      return;
+    }
+
+    fetch(reportStateUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -370,6 +402,8 @@ export function App() {
     verifyBiometric,
     visibleScreen,
     isProcessing,
+    alarmAudio,
+    isTestMode,
   ]);
 
   const renderDemoContent = () => {

@@ -162,7 +162,7 @@ export function CriticalAlertSurface({ state, onOpenApp, alarmAudio }: CriticalA
 
           {/* Title */}
           <h2 id="critical-alert-title" className="ca-title">
-            Giao dịch bất thường<br />vừa bị chặn
+            Giao dịch bất thường<br /> vừa bị chặn
           </h2>
 
           <div className="ca-risk-badge">
