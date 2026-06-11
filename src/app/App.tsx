@@ -13,6 +13,7 @@ import { VirtualCardScreen } from "../components/VirtualCardScreen";
 import { BankLoginScreen } from "../components/BankLoginScreen";
 import { BankDashboard } from "../components/BankDashboard";
 import { KnightAgentVisual } from "../components/KnightAgentVisual";
+import { useAlarmAudio } from "../hooks/useAlarmAudio";
 import {
   createInitialKnightState,
   getVisibleScreen,
@@ -57,6 +58,14 @@ export interface BankTransaction {
 }
 
 export function App() {
+  const isTestMode = useMemo(() => {
+    return import.meta.env.MODE === "test" || 
+           (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("env") === "test");
+  }, []);
+
+  // Pre-create and unlock alarm audio during normal usage so it auto-plays on iOS
+  const alarmAudio = useAlarmAudio();
+
   const [state, setState] = useState(() => createInitialKnightState());
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedQtdnd, setSelectedQtdnd] = useState("QTDND Đà Nẵng");
@@ -106,8 +115,7 @@ export function App() {
     const seqId = ++activeSequenceId.current;
     
     // Check if we are in testing environment
-    const isTest = import.meta.env.MODE === "test";
-    const actualDelay = isTest ? 0 : delayMs;
+    const actualDelay = isTestMode ? 0 : delayMs;
     
     setIsProcessing(true);
     
@@ -225,7 +233,16 @@ export function App() {
 
   // Connect to backend server SSE stream
   useEffect(() => {
-    const eventSource = new EventSource("http://localhost:5000/events");
+    const isTestMode = import.meta.env.MODE === "test" || 
+                       new URLSearchParams(window.location.search).get("env") === "test";
+
+    if (isTestMode) {
+      console.log("Test mode: bypassing backend SSE server connection");
+      return;
+    }
+
+    const backendHost = window.location.hostname || "localhost";
+    const eventSource = new EventSource(`http://${backendHost}:5000/events`);
 
     eventSource.onmessage = (event) => {
       try {
@@ -255,7 +272,8 @@ export function App() {
 
   // Synchronize state updates to backend for real-time terminal logs
   useEffect(() => {
-    fetch("http://localhost:5000/api/report-state", {
+    const backendHost = window.location.hostname || "localhost";
+    fetch(`http://${backendHost}:5000/api/report-state`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -271,11 +289,15 @@ export function App() {
     switch (visibleScreen) {
       case "guard":
         return !isLoggedIn ? (
-          <BankLoginScreen
-            onLogin={() => setIsLoggedIn(true)}
-            selectedQtdnd={selectedQtdnd}
-            setSelectedQtdnd={setSelectedQtdnd}
-          />
+          isTestMode ? (
+            <GuardScreen state={state} onStart={startScenario} />
+          ) : (
+            <BankLoginScreen
+              onLogin={() => setIsLoggedIn(true)}
+              selectedQtdnd={selectedQtdnd}
+              setSelectedQtdnd={setSelectedQtdnd}
+            />
+          )
         ) : (
           <BankDashboard
             state={state}
@@ -289,7 +311,7 @@ export function App() {
           />
         );
       case "critical-alert":
-        return <CriticalAlertSurface state={state} onOpenApp={openFraudReview} />;
+        return <CriticalAlertSurface state={state} onOpenApp={openFraudReview} alarmAudio={alarmAudio} />;
       case "fraud-review":
         return (
           <FraudReviewScreen
@@ -386,7 +408,7 @@ export function App() {
   };
 
   return (
-    <main className="platform-container">
+    <main className={`platform-container ${isTestMode ? "is-test-mode" : ""}`}>
       <div className="platform-content">
         <div className="workspace-layout">{renderDemoContent()}</div>
       </div>

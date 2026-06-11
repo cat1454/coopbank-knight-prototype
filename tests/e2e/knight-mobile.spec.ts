@@ -13,7 +13,7 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page)
 
 test.describe("KNIGHT mobile/PWA prototype", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?env=test");
   });
 
   test("runs the fraud recovery flow with audit evidence", async ({ page }, testInfo) => {
@@ -46,7 +46,7 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
     await page.getByRole("button", { name: /đây là giao dịch của tôi/i }).click();
     await page.getByRole("button", { name: /xác thực/i }).click();
     await expect(page.getByRole("heading", { name: /thẻ đã được mở lại/i })).toBeVisible();
-    await expect(page.getByText(/giám sát tăng cường trong 30 phút/i)).toBeVisible();
+    await expect(page.locator(".screen").getByText(/giám sát tăng cường trong 30 phút/i)).toBeVisible();
     await expect(page.getByText("FR-20250601-001")).toHaveCount(0);
 
     await page.getByRole("button", { name: /timeout/i }).click();
