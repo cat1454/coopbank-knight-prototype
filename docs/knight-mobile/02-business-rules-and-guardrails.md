@@ -14,7 +14,7 @@ KNIGHT phải giảm thiệt hại gian lận thẻ số trong lúc khách hàng
 | BR-004 | Khách phải xác thực Face ID trước khi khóa vĩnh viễn thẻ | Có |
 | BR-005 | Khách phải xác nhận "tôi không thực hiện giao dịch" trước khi phát hành thẻ mới | Có |
 | BR-006 | Nếu khách xác nhận giao dịch hợp lệ, thẻ được mở lại và session được giám sát tăng cường 30 phút | Có |
-| BR-007 | Nếu khách không phản hồi sau 5 phút, giữ trạng thái tạm khóa và escalate Fraud Ops | Có |
+| BR-007 | Nếu khách không phản hồi Web Push sau 3-5 giây, gọi điện tự động; nếu không bắt máy mới gửi SMS, giữ thẻ tạm khóa và escalate Fraud Ops | Có |
 | BR-008 | Chargeback hoặc hoàn tiền chỉ được Fraud Ops/Compliance xử lý | Có |
 | BR-009 | Recovery offer chỉ hiển thị nếu có consent dùng dữ liệu chi tiêu cho personalization | Có |
 | BR-010 | Mỗi action nhạy cảm phải ghi audit event | Có |
@@ -25,6 +25,8 @@ KNIGHT phải giảm thiệt hại gian lận thẻ số trong lúc khách hàng
 |---|---|---:|---|---|
 | L0 | Monitor, ghi log, tăng sampling | Có | Luôn bật | Không cần |
 | L1 | Gửi warning/push | Có | Risk score vượt ngưỡng | Không cần |
+| L1 | Gọi điện tự động | Có | Web Push khẩn cấp chưa được phản hồi sau 3-5 giây | Không cần |
+| L1 | Gửi SMS fallback | Có | Cuộc gọi tự động không bắt máy/bận/thất bại/hủy | Không cần |
 | L1 | Yêu cầu xác minh | Có | Risk score > 700 | Không cần |
 | L2 | Tạm khóa thẻ | Có | Risk score > 800, action reversible | Không cần |
 | L2 | Chặn merchant/session tạm thời | Có | Theo policy | Không cần |

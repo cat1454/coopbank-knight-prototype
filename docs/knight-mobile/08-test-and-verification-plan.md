@@ -53,15 +53,15 @@ Then:
 Given:
 
 - Card is suspended.
-- Customer does not respond for 5 minutes.
+- Customer does not respond to Web Push within the urgent 3-5 second window.
 
 When:
 
-- Timeout event fires.
+- Timeout event fires, automated call is placed, and the call is not answered.
 
 Then:
 
-- SMS fallback is marked sent.
+- SMS fallback is marked sent only after the call no-answer event.
 - Fraud Ops escalation is created.
 - Card remains suspended.
 - Card is not terminated.

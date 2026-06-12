@@ -5,7 +5,14 @@ import os from "os";
 import path from "path";
 import readline from "readline";
 import { fileURLToPath } from "url";
+import twilio from "twilio";
 import webPush from "web-push";
+import {
+  createTelephonyConfig,
+  createTelephonyService,
+  createVoiceAlertTwiml,
+  validateTwilioWebhook,
+} from "./telephony.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +36,9 @@ let lastState = "";
 let autoTriggerTimer = null;
 let alertTriggered = false;
 let subscriptions = new Map();
+let currentIncident = null;
+let incidentSequence = 0;
+let mockVoiceStatusTimer = null;
 
 const COLORS = {
   reset: "\x1b[0m",
@@ -85,6 +95,23 @@ const vapidPrivateKey = vapidKeys.privateKey;
 const vapidSubject = process.env.VAPID_SUBJECT || "mailto:knight-demo@example.com";
 
 webPush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+
+let telephonyConfig;
+let telephonyService;
+
+try {
+  telephonyConfig = createTelephonyConfig(process.env);
+  const twilioClient =
+    telephonyConfig.mode === "live" ? twilio(telephonyConfig.accountSid, telephonyConfig.authToken) : null;
+  telephonyService = createTelephonyService(telephonyConfig, { client: twilioClient, log: logSystem });
+} catch (error) {
+  logSystem(`Live telephony disabled: ${error.message}`);
+  telephonyConfig = createTelephonyConfig({
+    TELEPHONY_MODE: "mock",
+    HIGH_RISK_CALL_DELAY_MS: process.env.HIGH_RISK_CALL_DELAY_MS,
+  });
+  telephonyService = createTelephonyService(telephonyConfig, { log: logSystem });
+}
 
 function logSystem(msg) {
   console.log(`${COLORS.gray}[SYSTEM] ${msg}${COLORS.reset}`);
@@ -206,6 +233,31 @@ function sendJson(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
+function sendXml(res, status, data) {
+  res.writeHead(status, {
+    "Content-Type": "text/xml; charset=utf-8",
+    "Cache-Control": "no-store",
+  });
+  res.end(data);
+}
+
+function readText(req, maxBytes = 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+      if (Buffer.byteLength(body) > maxBytes) {
+        reject(new Error("Payload too large"));
+        req.destroy();
+      }
+    });
+
+    req.on("end", () => resolve(body));
+    req.on("error", reject);
+  });
+}
+
 function readJson(req, maxBytes = 1024 * 1024) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -228,6 +280,12 @@ function readJson(req, maxBytes = 1024 * 1024) {
 
     req.on("error", reject);
   });
+}
+
+async function readForm(req) {
+  const body = await readText(req, 64 * 1024);
+  const params = new URLSearchParams(body);
+  return Object.fromEntries(params.entries());
 }
 
 function tokenMatches(authorizationHeader) {
@@ -300,10 +358,62 @@ async function sendPushToAll(alert = {}) {
   };
 }
 
-function triggerAlert() {
-  if (alertTriggered) {
-    logSystem("Risk alert was already triggered. Press R to reset before sending again.");
+function createIncidentId() {
+  incidentSequence += 1;
+  return `INC-${Date.now()}-${incidentSequence}`;
+}
+
+function clearIncidentTimer(incident) {
+  if (incident?.callTimer) {
+    clearTimeout(incident.callTimer);
+    incident.callTimer = null;
+  }
+
+  if (mockVoiceStatusTimer) {
+    clearTimeout(mockVoiceStatusTimer);
+    mockVoiceStatusTimer = null;
+  }
+}
+
+function broadcastIncidentEvents(incidentId, events) {
+  broadcast({ type: "trigger", incidentId, events });
+}
+
+async function placeIncidentVoiceCall(incidentId) {
+  const incident = currentIncident;
+
+  if (!incident || incident.id !== incidentId || incident.cancelled) {
     return;
+  }
+
+  clearIncidentTimer(incident);
+
+  try {
+    const result = await telephonyService.placeVoiceAlertCall({ incidentId });
+    incident.callSid = result.sid;
+    incident.callPlaced = true;
+    logSystem(`Voice alert placed: mode=${result.mode}, sid=${result.sid}, to=${result.toMasked}`);
+    broadcastIncidentEvents(incidentId, ["CUSTOMER_RESPONSE_TIMEOUT", "VOICE_CALL_PLACED"]);
+
+    if (telephonyConfig.mode === "mock") {
+      mockVoiceStatusTimer = setTimeout(() => {
+        logSystem(`Mock telephony: auto no-answer for incident ${incidentId}.`);
+        void handleIncidentVoiceStatus(incidentId, "no-answer");
+      }, 3000);
+    }
+  } catch (error) {
+    logSystem(`Voice alert failed for incident ${incidentId}: ${error.message || error}`);
+  }
+}
+
+async function startHighRiskIncident(source = "manual") {
+  if (alertTriggered && currentIncident && !currentIncident.cancelled) {
+    logSystem("Risk alert was already triggered. Press R to reset before sending again.");
+    return {
+      started: false,
+      incidentId: currentIncident.id,
+      reason: "already_running",
+    };
   }
 
   if (autoTriggerTimer) {
@@ -311,16 +421,101 @@ function triggerAlert() {
     autoTriggerTimer = null;
   }
 
+  const incident = {
+    id: createIncidentId(),
+    source,
+    cancelled: false,
+    callTimer: null,
+    callPlaced: false,
+    callAnswered: false,
+    noAnswerHandled: false,
+    callSid: "",
+  };
+
+  currentIncident = incident;
   alertTriggered = true;
-  logAlert("Triggering risk alert to mobile app and iPhone push subscriptions.");
-  broadcast({ type: "trigger", events: ["RISK_EVENT_RECEIVED"] });
-  void sendPushToAll();
+
+  logAlert("Triggering high-risk incident: Web Push now, voice call fallback after delay, SMS only on no-answer.");
+  broadcastIncidentEvents(incident.id, ["RISK_EVENT_RECEIVED", "AUTO_SUSPEND_ALLOWED", "PUSH_SENT"]);
+  const pushResult = await sendPushToAll();
+
+  incident.callTimer = setTimeout(() => {
+    void placeIncidentVoiceCall(incident.id);
+  }, telephonyConfig.callDelayMs);
+
+  logSystem(`Voice fallback scheduled in ${telephonyConfig.callDelayMs}ms for incident ${incident.id}.`);
+
+  return {
+    started: true,
+    incidentId: incident.id,
+    callDelayMs: telephonyConfig.callDelayMs,
+    telephonyMode: telephonyConfig.mode,
+    push: pushResult,
+  };
+}
+
+function triggerAlert() {
+  void startHighRiskIncident("terminal");
+}
+
+function cancelCurrentIncident(reason = "customer_response") {
+  if (!currentIncident || currentIncident.cancelled) {
+    return { cancelled: false, reason: "no_active_incident" };
+  }
+
+  clearIncidentTimer(currentIncident);
+  currentIncident.cancelled = true;
+  currentIncident.cancelReason = reason;
+  logSystem(`Cancelled pending incident escalation: incident=${currentIncident.id}, reason=${reason}`);
+
+  return {
+    cancelled: true,
+    incidentId: currentIncident.id,
+    reason,
+  };
+}
+
+async function handleIncidentVoiceStatus(incidentId, callStatus) {
+  const incident = currentIncident;
+
+  if (!incidentId || !incident || incident.id !== incidentId || incident.cancelled) {
+    return { ignored: true, reason: "incident_not_active" };
+  }
+
+  if (telephonyService.isAnsweredStatus(callStatus)) {
+    if (!incident.callAnswered) {
+      incident.callAnswered = true;
+      broadcastIncidentEvents(incidentId, ["VOICE_CALL_ANSWERED"]);
+    }
+    return { ignored: true, answered: true };
+  }
+
+  if (!telephonyService.isNoAnswerStatus(callStatus)) {
+    return { ignored: true, reason: "status_not_terminal_no_answer" };
+  }
+
+  if (incident.noAnswerHandled) {
+    return { ignored: true, reason: "duplicate_no_answer" };
+  }
+
+  incident.noAnswerHandled = true;
+  const result = await telephonyService.handleVoiceStatus({ incidentId, callStatus });
+
+  if (result.smsSent) {
+    broadcastIncidentEvents(incidentId, ["VOICE_CALL_NO_ANSWER", "SMS_SENT", "ESCALATE_FRAUD_OPS", "KEEP_CARD_SUSPENDED"]);
+  }
+
+  return result;
 }
 
 function triggerReset() {
   alertTriggered = false;
   lastAuditCount = 0;
   lastState = "";
+  if (currentIncident) {
+    clearIncidentTimer(currentIncident);
+    currentIncident = null;
+  }
   if (autoTriggerTimer) {
     clearTimeout(autoTriggerTimer);
     autoTriggerTimer = null;
@@ -404,6 +599,38 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (requestUrl.pathname === "/api/incidents/high-risk" && req.method === "POST") {
+    if (!sendPushSecret) {
+      sendJson(res, 503, { error: "SEND_PUSH_SECRET is not configured" });
+      return;
+    }
+
+    if (!tokenMatches(req.headers.authorization)) {
+      sendJson(res, 401, { error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const result = await startHighRiskIncident("api");
+      sendJson(res, 200, { success: true, ...result });
+    } catch (error) {
+      sendJson(res, 500, { error: error.message || "Could not start incident" });
+    }
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/incidents/current/cancel" && req.method === "POST") {
+    try {
+      const payload = await readJson(req);
+      const reason = typeof payload.reason === "string" && payload.reason ? payload.reason : "customer_response";
+      const result = cancelCurrentIncident(reason);
+      sendJson(res, 200, { success: true, ...result });
+    } catch (error) {
+      sendJson(res, 400, { error: error.message || "Invalid request" });
+    }
+    return;
+  }
+
   if (requestUrl.pathname === "/api/push/send" && req.method === "POST") {
     if (!sendPushSecret) {
       sendJson(res, 503, { error: "SEND_PUSH_SECRET is not configured" });
@@ -421,6 +648,40 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 200, { success: true, ...result });
     } catch (error) {
       sendJson(res, 400, { error: error.message || "Invalid request" });
+    }
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/twilio/voice-alert" && (req.method === "POST" || req.method === "GET")) {
+    sendXml(res, 200, createVoiceAlertTwiml());
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/twilio/voice-status" && req.method === "POST") {
+    try {
+      const params = await readForm(req);
+      const incidentId = requestUrl.searchParams.get("incidentId") || params.incidentId || "";
+      const callbackUrl = `${telephonyConfig.webhookBaseUrl}${requestUrl.pathname}${requestUrl.search}`;
+      const signature = String(req.headers["x-twilio-signature"] || "");
+
+      if (
+        telephonyConfig.mode === "live" &&
+        !validateTwilioWebhook({
+          authToken: telephonyConfig.authToken,
+          signature,
+          url: callbackUrl,
+          params,
+          validateRequest: twilio.validateRequest,
+        })
+      ) {
+        sendJson(res, 403, { error: "Invalid Twilio signature" });
+        return;
+      }
+
+      const result = await handleIncidentVoiceStatus(incidentId, params.CallStatus || params.CallStatusCallbackEvent);
+      sendJson(res, 200, { success: true, ...result });
+    } catch (error) {
+      sendJson(res, 400, { error: error.message || "Invalid Twilio callback" });
     }
     return;
   }
@@ -508,12 +769,13 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`${COLORS.bold}Server:${COLORS.reset} http://localhost:${PORT}`);
   console.log(`${COLORS.bold}LAN:${COLORS.reset}    http://${getLanIp()}:${PORT}`);
   console.log(`${COLORS.bold}Push:${COLORS.reset}   ${subscriptions.size} subscription(s) loaded`);
+  console.log(`${COLORS.bold}Phone:${COLORS.reset}  ${telephonyConfig.mode} mode, fallback delay ${telephonyConfig.callDelayMs}ms`);
   logSystem(`VAPID keys loaded from ${vapidKeys.source}. Public key: ${vapidPublicKey}`);
   if (!sendPushSecret) {
     logSystem("SEND_PUSH_SECRET is not set. /api/push/send is disabled, but terminal hotkeys still work.");
   }
   console.log(`${COLORS.bold}Keys:${COLORS.reset}`);
-  console.log(`  [Space] / [Enter] / [S] : Trigger risk alert and Web Push`);
+  console.log(`  [Space] / [Enter] / [S] : Trigger high-risk alert, Web Push, voice fallback, SMS no-answer`);
   console.log(`  [R]                     : Reset app state`);
   console.log(`  [Q]                     : Quit server`);
   console.log("\n------------------------------------------------------------\n");

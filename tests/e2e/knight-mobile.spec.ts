@@ -50,8 +50,8 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
     await expect(page.getByText("FR-20250601-001")).toHaveCount(0);
 
     await page.getByRole("button", { name: /timeout/i }).click();
-    await expect(page.getByRole("heading", { name: /Fraud Ops đang xem xét/i })).toBeVisible();
-    await expect(page.getByText(/Thẻ vẫn đang tạm khóa/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Fraud Ops dang xem xet/i })).toBeVisible();
+    await expect(page.getByText(/The van dang tam khoa/i)).toBeVisible();
     await expect(page.getByText(/Thẻ số mới đã sẵn sàng/i)).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: testInfo.outputPath("policy-branches.png"), fullPage: true });

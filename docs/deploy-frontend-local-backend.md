@@ -34,12 +34,26 @@ $env:VAPID_PUBLIC_KEY="PASTE_PUBLIC_KEY"
 $env:VAPID_PRIVATE_KEY="PASTE_PRIVATE_KEY"
 $env:VAPID_SUBJECT="mailto:you@example.com"
 $env:SEND_PUSH_SECRET="PASTE_LONG_RANDOM_SECRET"
+$env:TELEPHONY_MODE="mock"
+$env:HIGH_RISK_CALL_DELAY_MS="5000"
 npm run server
+```
+
+Neu muon goi/SMS that qua Twilio, chi bat live sau khi da co HTTPS public backend va allowlist so demo:
+
+```powershell
+$env:TELEPHONY_MODE="live"
+$env:TWILIO_ACCOUNT_SID="PASTE_TWILIO_ACCOUNT_SID"
+$env:TWILIO_AUTH_TOKEN="PASTE_TWILIO_AUTH_TOKEN"
+$env:TWILIO_FROM_NUMBER="+15551234567"
+$env:TWILIO_ALLOWED_TO_NUMBERS="+84901234567"
+$env:KNIGHT_DEMO_CUSTOMER_PHONE_E164="+84901234567"
+$env:TWILIO_WEBHOOK_BASE_URL="https://knight-api.danangtoiiu.live"
 ```
 
 Phim trong terminal backend:
 
-- `Space`, `Enter`, hoac `S`: kich hoat canh bao + gui Web Push.
+- `Space`, `Enter`, hoac `S`: kich hoat canh bao, gui Web Push, sau 5 giay se goi tu dong, khong bat may thi gui SMS.
 - `R`: reset demo.
 - `Q`: tat backend.
 
@@ -117,6 +131,15 @@ Neu da cap quyen dung, iPhone se hien notification. Khi bam notification, PWA mo
 ## 6. Goi API gui thu tu ben ngoai
 
 Chi dung khi da set `SEND_PUSH_SECRET`:
+
+Full high-risk chain (Web Push -> 5 giay -> call -> SMS neu khong bat may):
+
+```powershell
+curl -X POST "https://knight-api.danangtoiiu.live/api/incidents/high-risk" `
+  -H "Authorization: Bearer PASTE_LONG_RANDOM_SECRET"
+```
+
+Push-only, khong goi dien/SMS:
 
 ```powershell
 curl -X POST "https://knight-api.danangtoiiu.live/api/push/send" `

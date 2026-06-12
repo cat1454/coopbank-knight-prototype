@@ -112,6 +112,9 @@ export const demoTimelineBase = {
   caseCreatedAt: "2025-06-01T02:03:20+07:00",
   offerGeneratedAt: "2025-06-01T02:05:02+07:00",
   timeoutAt: "2025-06-01T02:05:00+07:00",
-  smsSentAt: "2025-06-01T02:05:01+07:00",
-  escalatedAt: "2025-06-01T02:05:02+07:00",
+  voiceCallAt: "2025-06-01T02:05:05+07:00",
+  voiceNoAnswerAt: "2025-06-01T02:05:18+07:00",
+  voiceAnsweredAt: "2025-06-01T02:05:12+07:00",
+  smsSentAt: "2025-06-01T02:05:19+07:00",
+  escalatedAt: "2025-06-01T02:05:20+07:00",
 };

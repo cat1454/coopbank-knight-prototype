@@ -24,8 +24,11 @@ The implementation should model KNIGHT as an event-driven state machine, not as 
 | `card_unsuspended` | Card restored after legitimate confirmation | Resolution screen |
 | `device_session_whitelisted` | Device/session whitelisted temporarily | Resolution screen |
 | `enhanced_monitoring_30m` | Monitoring elevated for 30 minutes | Resolution screen |
-| `customer_timeout` | No response in 5 minutes | Timeout/escalation screen |
-| `sms_fallback_sent` | SMS fallback sent | Timeout/escalation screen |
+| `customer_timeout` | No response after the urgent 3-5 second Web Push window | Timeout/escalation screen |
+| `voice_call_placed` | Automated phone call has been placed | Timeout/escalation screen |
+| `voice_call_no_answer` | Automated call was not answered | Timeout/escalation screen |
+| `voice_call_answered` | Automated call was answered; customer can continue in app | Fraud review |
+| `sms_fallback_sent` | SMS fallback sent after call no-answer | Timeout/escalation screen |
 | `fraud_ops_escalated` | Human review created | Timeout/escalation screen |
 | `card_remains_suspended` | Card stays suspended | Timeout/escalation screen |
 
@@ -50,7 +53,10 @@ The implementation should model KNIGHT as an event-driven state machine, not as 
 | `WHITELIST_SESSION_SUCCESS` | `card_unsuspended` | `device_session_whitelisted` |
 | `ENHANCED_MONITORING_STARTED` | `device_session_whitelisted` | `enhanced_monitoring_30m` |
 | `CUSTOMER_RESPONSE_TIMEOUT` | `awaiting_customer_response` | `customer_timeout` |
-| `SMS_SENT` | `customer_timeout` | `sms_fallback_sent` |
+| `VOICE_CALL_PLACED` | `customer_timeout` | `voice_call_placed` |
+| `VOICE_CALL_NO_ANSWER` | `voice_call_placed` | `voice_call_no_answer` |
+| `VOICE_CALL_ANSWERED` | `voice_call_placed` | `voice_call_answered` |
+| `SMS_SENT` | `voice_call_no_answer` | `sms_fallback_sent` |
 | `ESCALATE_FRAUD_OPS` | `sms_fallback_sent` | `fraud_ops_escalated` |
 | `KEEP_CARD_SUSPENDED` | `fraud_ops_escalated` | `card_remains_suspended` |
 | `RESET_SCENARIO` | any | `idle_monitoring` |

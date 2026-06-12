@@ -1,4 +1,4 @@
-import { ClockAlert, RotateCcw, Loader2 } from "lucide-react";
+import { ClockAlert, Loader2, RotateCcw } from "lucide-react";
 import type { KnightScenarioState } from "../domain/types";
 import { PrimaryButton } from "./PrimaryButton";
 import { StatusPill } from "./StatusPill";
@@ -9,20 +9,59 @@ interface TimeoutEscalationScreenProps {
   isProcessing?: boolean;
 }
 
-export function TimeoutEscalationScreen({ state, onReset, isProcessing = false }: TimeoutEscalationScreenProps) {
+export function TimeoutEscalationScreen({
+  state,
+  onReset,
+  isProcessing = false,
+}: TimeoutEscalationScreenProps) {
   const fraudCase = state.fraudCase;
-  const curState = state.currentState;
+  const currentState = state.currentState;
 
-  // Determine stage flags
-  const isTimeout = curState === "customer_timeout";
-  const isSmsSent = curState === "sms_fallback_sent";
-  const isEscalated = curState === "fraud_ops_escalated";
-  const isComplete = curState === "card_remains_suspended" || !!fraudCase;
+  const isWaitingToCall = currentState === "customer_timeout";
+  const isCalling = currentState === "voice_call_placed";
+  const isNoAnswer = currentState === "voice_call_no_answer";
+  const isSmsSent = currentState === "sms_fallback_sent";
+  const isEscalated = currentState === "fraud_ops_escalated";
+  const isComplete = currentState === "card_remains_suspended" || Boolean(fraudCase);
+
+  const title = isWaitingToCall
+    ? "Dang goi dien khan cap..."
+    : isCalling
+      ? "KNIGHT dang goi tu dong..."
+      : isNoAnswer
+        ? "Khach chua bat may."
+        : isSmsSent
+          ? "Da gui SMS du phong."
+          : isEscalated
+            ? "Dang chuyen Fraud Ops."
+            : "Fraud Ops dang xem xet.";
+
+  const lead = isWaitingToCall
+    ? "Sau 5 giay chua co phan hoi tu Web Push, KNIGHT chuan bi goi dien tu dong den so dien thoai da dang ky."
+    : isCalling
+      ? "Cuoc goi canh bao dang duoc thuc hien. The so van tam khoa trong khi cho khach xac minh."
+      : isNoAnswer
+        ? "Cuoc goi khong duoc tra loi, vi vay SMS du phong moi duoc phep gui."
+        : isSmsSent
+          ? "SMS da duoc gui de huong dan khach mo ung dung Co-opBank va xac minh giao dich."
+          : isEscalated
+            ? "Ho so dang duoc dua vao hang cho cua Fraud Ops. KNIGHT khong tu dong khoa vinh vien the."
+            : "Khach chua phan hoi sau Web Push, cuoc goi va SMS. The van tam khoa de bao ve tai san.";
+
+  const summaryDetail = isWaitingToCall
+    ? "Cho bo dem 5 giay..."
+    : isCalling
+      ? "Dang do chuong cuoc goi..."
+      : isNoAnswer
+        ? "Cho gui SMS du phong..."
+        : isSmsSent
+          ? "Da gui SMS, dang tao ho so tra soat..."
+          : "Cho ket qua kiem duyet thu cong tu doi ngu van hanh.";
 
   return (
     <section className="screen" aria-labelledby="timeout-title">
-      <div 
-        className={`resolution-icon ${isComplete ? "resolution-icon--warning" : ""}`} 
+      <div
+        className={`resolution-icon ${isComplete ? "resolution-icon--warning" : ""}`}
         style={!isComplete ? { background: "var(--color-warning-soft)", color: "var(--color-warning)" } : undefined}
         aria-hidden="true"
       >
@@ -30,52 +69,30 @@ export function TimeoutEscalationScreen({ state, onReset, isProcessing = false }
       </div>
 
       <StatusPill tone="warning">
-        {isComplete ? "Timeout branch active" : "Escalation in progress..."}
+        {isComplete ? "Timeout branch active" : "Escalation in progress"}
       </StatusPill>
 
-      <h1 id="timeout-title">
-        {isTimeout 
-          ? "Đang ứng phó khẩn cấp..." 
-          : isSmsSent 
-          ? "Đang gửi SMS dự phòng..." 
-          : isEscalated 
-          ? "Đang chuyển tiếp hồ sơ..." 
-          : "Fraud Ops đang xem xét."}
-      </h1>
+      <h1 id="timeout-title">{title}</h1>
 
-      <p className="screen-lead">
-        {isTimeout 
-          ? "Đã quá thời gian chờ 5 phút mà khách không phản hồi. KNIGHT bắt đầu luồng xử lý khẩn cấp..."
-          : isSmsSent 
-          ? "Đang gửi tin nhắn SMS dự phòng đến số điện thoại đăng ký của khách hàng..."
-          : isEscalated 
-          ? "Đang chuyển tiếp hồ sơ vụ việc sang hàng chờ kiểm duyệt của bộ phận Fraud Ops..."
-          : "Khách chưa phản hồi sau 5 phút. KNIGHT đã gửi SMS fallback, chuyển tiếp cho nhân sự kiểm tra, và tiếp tục tạm khóa thẻ số bảo toàn tài sản."}
-      </p>
+      <p className="screen-lead">{lead}</p>
 
       <div className="timeout-summary">
-        <strong>Thẻ vẫn đang tạm khóa</strong>
-        
+        <strong>The van dang tam khoa</strong>
+
         {fraudCase ? (
           <span>Case: {fraudCase.id}</span>
         ) : (
           <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Loader2 className="spin" size={14} /> Đang khởi tạo hồ sơ...
+            <Loader2 className="spin" size={14} /> Dang cap nhat trang thai...
           </span>
         )}
-        
-        <p>
-          {isTimeout 
-            ? "Đang kích hoạt quy trình..." 
-            : isSmsSent 
-            ? "Đã gửi SMS. Đang lập hồ sơ tra soát..." 
-            : "Chờ kết quả kiểm duyệt thủ công từ đội ngũ vận hành."}
-        </p>
+
+        <p>{summaryDetail}</p>
       </div>
 
-      <PrimaryButton 
-        icon={<RotateCcw size={18} />} 
-        onClick={onReset} 
+      <PrimaryButton
+        icon={<RotateCcw size={18} />}
+        onClick={onReset}
         variant="secondary"
         disabled={isProcessing && !isComplete}
       >

@@ -25,6 +25,7 @@ import type { CustomerIntent, KnightEventType } from "../domain/types";
 
 const startEvents: KnightEventType[] = ["RISK_EVENT_RECEIVED"];
 const reviewEvents: KnightEventType[] = ["AUTO_SUSPEND_ALLOWED", "PUSH_SENT"];
+const highRiskEvents: KnightEventType[] = [...startEvents, ...reviewEvents];
 
 const fraudResolutionEvents: KnightEventType[] = [
   "BIOMETRIC_SUCCESS_FRAUD",
@@ -41,9 +42,10 @@ const legitimateResolutionEvents: KnightEventType[] = [
 ];
 
 const timeoutEvents: KnightEventType[] = [
-  ...startEvents,
-  ...reviewEvents,
+  ...highRiskEvents,
   "CUSTOMER_RESPONSE_TIMEOUT",
+  "VOICE_CALL_PLACED",
+  "VOICE_CALL_NO_ANSWER",
   "SMS_SENT",
   "ESCALATE_FRAUD_OPS",
   "KEEP_CARD_SUSPENDED",
@@ -68,6 +70,7 @@ export function App() {
   const alarmAudio = useAlarmAudio();
 
   const [state, setState] = useState(() => createInitialKnightState());
+  const [showCriticalAlert, setShowCriticalAlert] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedQtdnd, setSelectedQtdnd] = useState("QTDND Đà Nẵng");
   const [bankBalance, setBankBalance] = useState(36360430);
@@ -111,6 +114,22 @@ export function App() {
     setState((currentState) => runScenarioEvents(currentState, events));
   }, []);
 
+  const cancelServerEscalation = useCallback(() => {
+    const cancelUrl = buildBackendUrl("/api/incidents/current/cancel");
+
+    if (!cancelUrl) {
+      return;
+    }
+
+    fetch(cancelUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "customer_response" }),
+    }).catch(() => {
+      // Ignore cancellation failures; local customer flow should continue.
+    });
+  }, []);
+
   const applyEventsSequentially = useCallback(async (events: KnightEventType[], delayMs = 1500) => {
     cancelActiveSequence();
     const seqId = ++activeSequenceId.current;
@@ -135,6 +154,7 @@ export function App() {
 
   const reset = useCallback(() => {
     cancelActiveSequence();
+    setShowCriticalAlert(false);
     setState(createInitialKnightState());
     setIsLoggedIn(false);
     setBankBalance(36360430);
@@ -168,21 +188,31 @@ export function App() {
 
   const startScenario = useCallback(() => {
     cancelActiveSequence();
+    setShowCriticalAlert(true);
     setState((currentState) => {
       const baseState = currentState.currentState === "idle_monitoring" ? currentState : createInitialKnightState();
-      return runScenarioEvents(baseState, startEvents);
+      return runScenarioEvents(baseState, highRiskEvents);
     });
   }, [cancelActiveSequence]);
 
   const openFraudReview = useCallback(() => {
-    applyEventsSequentially(reviewEvents);
-  }, [applyEventsSequentially]);
+    setShowCriticalAlert(false);
+    setState((currentState) => {
+      if (currentState.currentState === "risk_detected" || currentState.currentState === "card_suspended_l2") {
+        return runScenarioEvents(currentState, reviewEvents);
+      }
+
+      return currentState;
+    });
+  }, []);
 
   const requestBiometric = useCallback(
     (intent: "fraud" | "legitimate") => {
+      setShowCriticalAlert(false);
+      cancelServerEscalation();
       applyEventsSequentially([intent === "fraud" ? "CUSTOMER_TAPS_FRAUD" : "CUSTOMER_TAPS_LEGIT", "REQUEST_BIOMETRIC"]);
     },
-    [applyEventsSequentially],
+    [applyEventsSequentially, cancelServerEscalation],
   );
 
   const verifyBiometric = useCallback(
@@ -204,10 +234,10 @@ export function App() {
 
   const jumpFraud = useCallback(() => {
     cancelActiveSequence();
+    setShowCriticalAlert(false);
     setState(createInitialKnightState());
     applyEventsSequentially([
-      ...startEvents,
-      ...reviewEvents,
+      ...highRiskEvents,
       "CUSTOMER_TAPS_FRAUD",
       "REQUEST_BIOMETRIC",
       ...fraudResolutionEvents,
@@ -216,10 +246,10 @@ export function App() {
 
   const jumpLegitimate = useCallback(() => {
     cancelActiveSequence();
+    setShowCriticalAlert(false);
     setState(createInitialKnightState());
     applyEventsSequentially([
-      ...startEvents,
-      ...reviewEvents,
+      ...highRiskEvents,
       "CUSTOMER_TAPS_LEGIT",
       "REQUEST_BIOMETRIC",
       ...legitimateResolutionEvents,
@@ -228,6 +258,7 @@ export function App() {
 
   const jumpTimeout = useCallback(() => {
     cancelActiveSequence();
+    setShowCriticalAlert(false);
     setState(createInitialKnightState());
     applyEventsSequentially(timeoutEvents);
   }, [cancelActiveSequence, applyEventsSequentially]);
@@ -255,10 +286,20 @@ export function App() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "trigger" && data.events) {
-          if (data.events.includes("RISK_EVENT_RECEIVED")) {
-            startScenario();
-          } else if (data.events.includes("RESET_SCENARIO")) {
+          const events = data.events as KnightEventType[];
+
+          if (events.includes("RESET_SCENARIO")) {
             reset();
+          } else if (events.includes("RISK_EVENT_RECEIVED")) {
+            cancelActiveSequence();
+            setShowCriticalAlert(true);
+            setState((currentState) => {
+              const baseState = currentState.currentState === "idle_monitoring" ? currentState : createInitialKnightState();
+              return runScenarioEvents(baseState, events);
+            });
+          } else {
+            setShowCriticalAlert(false);
+            applyEvents(events);
           }
         }
       } catch (err) {
@@ -273,7 +314,7 @@ export function App() {
     return () => {
       eventSource.close();
     };
-  }, [isTestMode, startScenario, reset]);
+  }, [applyEvents, cancelActiveSequence, isTestMode, reset]);
 
 
   useEffect(() => {
@@ -318,6 +359,10 @@ export function App() {
   }, [state.currentState, state.auditEvents]);
 
   const screen = useMemo(() => {
+    if (showCriticalAlert && state.currentState !== "idle_monitoring") {
+      return <CriticalAlertSurface state={state} onOpenApp={openFraudReview} alarmAudio={alarmAudio} />;
+    }
+
     switch (visibleScreen) {
       case "guard":
         return !isLoggedIn ? (
@@ -397,6 +442,7 @@ export function App() {
     reset,
     selectedQtdnd,
     showTimeline,
+    showCriticalAlert,
     startScenario,
     state,
     verifyBiometric,

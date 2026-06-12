@@ -85,6 +85,8 @@ describe("KNIGHT state machine", () => {
       "AUTO_SUSPEND_ALLOWED",
       "PUSH_SENT",
       "CUSTOMER_RESPONSE_TIMEOUT",
+      "VOICE_CALL_PLACED",
+      "VOICE_CALL_NO_ANSWER",
       "SMS_SENT",
       "ESCALATE_FRAUD_OPS",
       "KEEP_CARD_SUSPENDED",
@@ -96,6 +98,14 @@ describe("KNIGHT state machine", () => {
     expect(completed.newCard).toBeUndefined();
     expect(completed.fraudCase?.status).toBe("escalated");
     expect(getVisibleScreen(completed)).toBe("timeout-escalation");
+    expect(completed.auditEvents.map((event) => event.action)).toEqual(
+      expect.arrayContaining([
+        "notification.voiceCall",
+        "notification.voiceNoAnswer",
+        "notification.smsFallback",
+        "card.keepSuspended",
+      ]),
+    );
   });
 
   it("records a failed biometric attempt without running L3 card actions", () => {
@@ -134,10 +144,65 @@ describe("KNIGHT state machine", () => {
     expect(deriveAllowedActions(fraudCaseCreated)).toContain("personalization.generateRecoveryOffer");
 
     const timedOut = run(["RISK_EVENT_RECEIVED", "AUTO_SUSPEND_ALLOWED", "PUSH_SENT", "CUSTOMER_RESPONSE_TIMEOUT"]);
-    expect(deriveAllowedActions(timedOut)).toContain("notification.smsFallback");
+    expect(deriveAllowedActions(timedOut)).toContain("notification.voiceCall");
+    expect(deriveAllowedActions(timedOut)).not.toContain("notification.smsFallback");
 
-    const smsSent = dispatchScenarioEvent(timedOut, "SMS_SENT");
+    const callPlaced = dispatchScenarioEvent(timedOut, "VOICE_CALL_PLACED");
+    expect(deriveAllowedActions(callPlaced)).not.toContain("notification.smsFallback");
+
+    const noAnswer = dispatchScenarioEvent(callPlaced, "VOICE_CALL_NO_ANSWER");
+    expect(deriveAllowedActions(noAnswer)).toContain("notification.smsFallback");
+
+    const smsSent = dispatchScenarioEvent(noAnswer, "SMS_SENT");
     expect(deriveAllowedActions(smsSent)).toContain("fraudOps.escalate");
+  });
+
+  it("does not send SMS before a call no-answer event or after an answered call", () => {
+    const timedOut = run(["RISK_EVENT_RECEIVED", "AUTO_SUSPEND_ALLOWED", "PUSH_SENT", "CUSTOMER_RESPONSE_TIMEOUT"]);
+
+    const smsBeforeCall = dispatchScenarioEvent(timedOut, "SMS_SENT");
+    expect(smsBeforeCall).toBe(timedOut);
+    expect(smsBeforeCall.smsFallbackSent).toBe(false);
+
+    const answered = run([
+      "RISK_EVENT_RECEIVED",
+      "AUTO_SUSPEND_ALLOWED",
+      "PUSH_SENT",
+      "CUSTOMER_RESPONSE_TIMEOUT",
+      "VOICE_CALL_PLACED",
+      "VOICE_CALL_ANSWERED",
+      "SMS_SENT",
+    ]);
+
+    expect(answered.currentState).toBe("voice_call_answered");
+    expect(answered.smsFallbackSent).toBe(false);
+    expect(answered.card.status).toBe("suspended");
+    expect(answered.newCard).toBeUndefined();
+    expect(answered.fraudCase).toBeUndefined();
+    expect(answered.auditEvents.map((event) => event.action)).not.toContain("notification.smsFallback");
+  });
+
+  it("keeps L3 card actions blocked throughout the timeout escalation path", () => {
+    const timedOut = run([
+      "RISK_EVENT_RECEIVED",
+      "AUTO_SUSPEND_ALLOWED",
+      "PUSH_SENT",
+      "CUSTOMER_RESPONSE_TIMEOUT",
+      "VOICE_CALL_PLACED",
+      "VOICE_CALL_NO_ANSWER",
+      "SMS_SENT",
+      "TERMINATE_CARD_SUCCESS",
+      "ISSUE_CARD_SUCCESS",
+    ]);
+
+    expect(timedOut.currentState).toBe("sms_fallback_sent");
+    expect(timedOut.card.status).toBe("suspended");
+    expect(timedOut.newCard).toBeUndefined();
+    expect(timedOut.fraudCase).toBeUndefined();
+
+    const oldTimeoutPath = run(["RISK_EVENT_RECEIVED", "AUTO_SUSPEND_ALLOWED", "PUSH_SENT", "CUSTOMER_RESPONSE_TIMEOUT"]);
+    expect(deriveAllowedActions(oldTimeoutPath)).not.toContain("card.terminate");
+    expect(deriveAllowedActions(oldTimeoutPath)).not.toContain("card.issueNewVirtualCard");
   });
 
   it("keeps invalid transitions as no-ops and returns guard for malformed state", () => {

@@ -1,105 +1,200 @@
-# Co-opBank KNIGHT - "Hiệp sĩ số" bảo vệ tài khoản
+# Co-opBank KNIGHT Mobile Prototype
 
-Dự án mẫu (Prototype) cho **Đề 02: Ngân hàng Co-opBank - "Hiệp sĩ số" toàn năng**. Trình diễn cơ chế AI Agent dựa trên kiến trúc ReAct (Reasoning & Acting) giám sát rủi ro thời gian thực, tạm khóa thẻ số bảo vệ tài sản, và phục hồi trải nghiệm của khách hàng thông qua Face ID.
+Prototype cho đề tài Co-opBank "Hiệp sĩ số": một AI Agent theo mô hình ReAct giám sát giao dịch thẻ số, đánh giá rủi ro thời gian thực, tạm khóa thẻ khi risk cao, đánh thức khách hàng bằng Web Push/voice/SMS, và giữ ranh giới an toàn trước khi thực hiện các hành động không thể đảo ngược.
 
----
+Ứng dụng này là demo kỹ thuật và trải nghiệm. Việc khóa thẻ, Face ID, thẻ mới và Fraud Ops đều là mô phỏng trong prototype; Web Push có thể chạy thật, còn voice/SMS thật chỉ bật khi cấu hình Twilio ở `TELEPHONY_MODE=live`.
 
-## 🌟 Tính Năng Nổi Bật của Prototype
+## Tính Năng Chính
 
-1. **Giao diện Ngân hàng Mobile & Hộ vệ AI**: Tích hợp trực tiếp màn hình bảo vệ an ninh của KNIGHT bên trong ứng dụng ngân hàng di động giả lập.
-2. **AI Agent Sinh Động**: Khung quan sát trực quan tiến trình suy luận (Reasoning), chỉ số rủi ro (Risk Score), biến động trạng thái thẻ, và hộp thoại cảnh báo thoại của KNIGHT Agent.
-3. **Luồng Chạy Tuần Tự (Sequential Demo Flow)**: Khi kích hoạt, kịch bản bảo vệ sẽ chạy từng bước một với độ trễ (1.5s) để người thuyết trình có thể giải thích chi tiết các pha **OBSERVE ➔ REASON ➔ ACT**.
-4. **Mô phỏng 3 Kịch Bản Demo**:
-   - **Fraud (Gian lận)**: Khách báo cáo thẻ bị lộ ➔ Face ID xác thực ➔ Hủy thẻ cũ vĩnh viễn ➔ Cấp thẻ mới ➔ Lập hồ sơ tra soát (Case L3).
-   - **Legit (Giao dịch thật)**: Khách xác nhận là họ mua sắm ➔ Face ID xác thực ➔ Mở khóa thẻ ➔ Whitelist phiên thiết bị ➔ Giám sát tăng cường 30 phút.
-   - **Timeout (Không phản hồi)**: Khách ngủ say ➔ Hết 5 phút chờ ➔ Gửi SMS fallback ➔ Chuyển tiếp khẩn cấp cho con người (Fraud Ops) ➔ Tiếp tục khóa bảo toàn thẻ.
-5. **Đồng bộ thời gian thực với Backend**: Frontend gửi trạng thái sang máy chủ backend giả lập để ghi nhật ký giao diện dòng lệnh (Terminal console log) chi tiết.
+- Mobile banking/PWA demo với màn đăng nhập, dashboard, tab bảo vệ AI và luồng cảnh báo khẩn cấp.
+- State machine rõ ràng cho ba nhánh: xác nhận gian lận, xác nhận giao dịch hợp lệ, và không phản hồi.
+- High-risk escalation: Web Push ngay lập tức, sau 3-5 giây chưa phản hồi thì gọi điện tự động, không bắt máy mới gửi SMS, sau đó chuyển Fraud Ops và tiếp tục giữ thẻ tạm khóa.
+- Twilio integration có khóa an toàn: mặc định mock, live mode yêu cầu HTTPS webhook, env secrets, số E.164 hợp lệ và allowlist số nhận.
+- Audit timeline cho các hành động nhạy cảm: risk evaluation, card suspend, push, voice, SMS, Fraud Ops, Face ID, terminate/issue card.
+- Playwright viewport checks cho iPhone/mobile và Vitest coverage cho state machine, UI và server telephony module.
 
----
+## Luồng Demo
 
-## 🛠️ Yêu Cầu Hệ Thống
+1. Risk score đạt 847/1000 với các tín hiệu bất thường.
+2. KNIGHT tạm khóa thẻ số theo policy L2 vì đây là hành động có thể đảo ngược.
+3. KNIGHT gửi Web Push khẩn cấp đến PWA.
+4. Nếu khách mở app và chọn "Không phải tôi":
+   - App yêu cầu Face ID.
+   - Sau Face ID thành công, thẻ cũ mới bị khóa vĩnh viễn.
+   - Thẻ số mới được phát hành và case Fraud Ops được tạo.
+5. Nếu khách chọn "Đây là giao dịch của tôi":
+   - App yêu cầu Face ID.
+   - Thẻ được mở lại.
+   - Session được whitelist tạm thời và tăng giám sát 30 phút.
+6. Nếu khách không phản hồi:
+   - Backend chờ `HIGH_RISK_CALL_DELAY_MS` mặc định 5000ms.
+   - Backend gọi voice fallback.
+   - Nếu voice no-answer/busy/failed/canceled, backend gửi SMS fallback.
+   - Fraud Ops được escalate và thẻ vẫn chỉ ở trạng thái tạm khóa.
 
-- **Node.js** (Phiên bản v18 trở lên khuyến nghị)
-- **NPM** (Đi kèm Node.js)
+## Cài Đặt
 
----
+Yêu cầu:
 
-## 🚀 Hướng Dẫn Cài Đặt và Khởi Chạy
+- Node.js 18 trở lên
+- npm
 
-Chạy các lệnh dưới đây từ thư mục gốc của dự án (`h:/Knight/coopbank-knight-prototype`):
-
-> Deploy frontend public tại `https://knight.danangtoiiu.live/` nhưng dùng backend laptop qua Cloudflare Tunnel: xem [`docs/deploy-frontend-local-backend.md`](docs/deploy-frontend-local-backend.md).
-
-### Bước 1: Cài đặt thư viện phụ thuộc
 ```bash
 npm install
 ```
 
-### Bước 2: Khởi động Máy chủ Cảnh báo Backend (Terminal 1)
-Máy chủ giả lập này nhận dữ liệu nhật ký bảo mật và cho phép kích hoạt sự cố từ xa:
+## Chạy Local
+
+Terminal 1, backend:
+
 ```bash
 npm run server
 ```
-* **Phím điều khiển tại Terminal**:
-  - `[Space]` / `[Enter]` / `[S]`: Kích hoạt cảnh báo rủi ro đột xuất.
-  - `[R]`: Reset trạng thái ứng dụng về ban đầu.
-  - `[Q]`: Thoát máy chủ.
 
-### Bước 3: Khởi động Giao diện Web App (Terminal 2)
+Terminal backend hỗ trợ:
+
+- `Space`, `Enter`, hoặc `S`: kích hoạt high-risk incident.
+- `R`: reset app state.
+- `Q`: thoát backend.
+
+Terminal 2, frontend:
+
 ```bash
 npm run dev
 ```
-Mở đường dẫn **http://localhost:5173/** trên trình duyệt của bạn (khuyến nghị chế độ Mobile View hoặc Responsive Mode có chiều rộng khoảng 400px - 500px).
 
----
+Mở `http://localhost:5173/`. Để test flow không cần backend thật, thêm query `?env=test`.
 
-## 📑 Kiến Trúc Các Tầng Bảo Mật (Policy Levels)
+## Cấu Hình Env
 
-Mô hình bảo vệ của KNIGHT được xây dựng trên 5 tầng bảo mật từ L0 đến L4:
+Copy `.env.example` thành `.env` nếu cần chạy backend/PWA với cấu hình riêng.
 
-| Cấp độ | Tên gọi | Hành động thực thi chính |
-| :---: | :---: | :--- |
-| **L0** | **Observe** | Phân tích 3 tín hiệu rủi ro (Thiết bị mới, IP VPN lạ, tần suất giao dịch đột biến lúc 2AM). Risk Score vọt lên 847/1000. |
-| **L1** | **Notify** | Gửi tin nhắn đẩy (Push Notification) và tin nhắn dự phòng (SMS fallback) đến thiết bị tin cậy của khách hàng. |
-| **L2** | **Protect** | Tạm khóa thẻ số trên hệ thống Core Banking để bảo toàn số dư tạm thời (Hành động có thể hoàn trả). |
-| **L3** | **Biometric Verify** | Yêu cầu Face ID để ký số không từ chối cho các hành động không thể hoàn trả (Hủy thẻ, cấp thẻ mới, whitelist thiết bị). |
-| **L4** | **Escalate** | Chuyển tiếp hồ sơ sự kiện và bằng chứng số lên đội ngũ kiểm duyệt thủ công của ngân hàng (Human Fraud Ops). |
-
----
-
-## 🧪 Kiểm Thử Tự Động (Automated Testing)
-
-Chúng tôi cung cấp hệ thống kiểm thử toàn diện bằng **Vitest** để xác thực các kịch bản chuyển đổi trạng thái của State Machine và giao diện người dùng:
+Các biến chính:
 
 ```bash
-# Chạy tất cả các bài kiểm thử đơn vị
-npm run test
-
-# Chạy kiểm thử có tạo báo cáo độ bao phủ mã nguồn (Coverage)
-npm run test:coverage
+VITE_BACKEND_URL=https://knight-api.danangtoiiu.live
+PORT=5000
+ALLOWED_ORIGINS=https://knight.danangtoiiu.live,http://localhost:5173,http://127.0.0.1:5173
+SEND_PUSH_SECRET=replace-with-a-long-random-secret
 ```
-*Lưu ý: Trong môi trường chạy test tự động, các độ trễ chuyển cảnh được thiết lập bằng 0 để các bước kiểm tra (assertions) diễn ra tức thì.*
 
----
+Web Push:
 
-## 📁 Cấu Trúc Thư Mục Dự Án
+```bash
+VAPID_PUBLIC_KEY=replace-with-generated-public-key
+VAPID_PRIVATE_KEY=replace-with-generated-private-key
+VAPID_SUBJECT=mailto:you@example.com
+PUSH_SUBSCRIPTIONS_FILE=server/push-subscriptions.json
+```
 
-```markdown
+Telephony mock mode, không tốn phí:
+
+```bash
+TELEPHONY_MODE=mock
+HIGH_RISK_CALL_DELAY_MS=5000
+```
+
+Telephony live mode qua Twilio, có thể phát sinh phí thật:
+
+```bash
+TELEPHONY_MODE=live
+TWILIO_ACCOUNT_SID=replace-with-twilio-account-sid
+TWILIO_AUTH_TOKEN=replace-with-twilio-auth-token
+TWILIO_FROM_NUMBER=+15551234567
+TWILIO_ALLOWED_TO_NUMBERS=+84901234567
+KNIGHT_DEMO_CUSTOMER_PHONE_E164=+84901234567
+TWILIO_WEBHOOK_BASE_URL=https://knight-api.example.com
+```
+
+Live mode chỉ hoạt động khi:
+
+- `TWILIO_WEBHOOK_BASE_URL` là HTTPS.
+- Số gửi và số nhận là E.164.
+- Số nhận nằm trong `TWILIO_ALLOWED_TO_NUMBERS`.
+- Twilio credentials hợp lệ.
+
+## API Backend
+
+High-risk chain đầy đủ:
+
+```bash
+curl -X POST "https://knight-api.danangtoiiu.live/api/incidents/high-risk" \
+  -H "Authorization: Bearer PASTE_LONG_RANDOM_SECRET"
+```
+
+Push-only, không gọi điện/SMS:
+
+```bash
+curl -X POST "https://knight-api.danangtoiiu.live/api/push/send" \
+  -H "Authorization: Bearer PASTE_LONG_RANDOM_SECRET" \
+  -H "Content-Type: application/json" \
+  -d "{\"title\":\"CANH BAO KHAN\",\"message\":\"Phat hien giao dich bat thuong.\",\"url\":\"/?alert=1\"}"
+```
+
+Twilio webhooks:
+
+- `POST /api/twilio/voice-alert`: trả TwiML cho cuộc gọi cảnh báo.
+- `POST /api/twilio/voice-status`: nhận status callback, validate chữ ký Twilio ở live mode, gửi SMS một lần khi no-answer/busy/failed/canceled.
+
+## Policy Levels
+
+| Level | Vai trò | Hành động chính |
+| --- | --- | --- |
+| L0 | Observe | Theo dõi giao dịch, tính risk score, ghi audit. |
+| L1 | Notify | Gửi Web Push, gọi điện fallback, gửi SMS sau no-answer. |
+| L2 | Protect | Tạm khóa thẻ số, hành động reversible. |
+| L3 | Customer-approved action | Chỉ terminate card/issue card sau xác nhận của khách và Face ID. |
+| L4 | Human review | Fraud Ops/Compliance xử lý chargeback, hoàn tiền, khóa tài khoản rộng hơn. |
+
+Các invariant quan trọng:
+
+- Timeout không bao giờ tự terminate card.
+- Không có xác nhận khách hàng và Face ID thì không issue thẻ mới.
+- Không lưu/hiển thị full PAN hoặc CVV.
+- SMS không chứa link, OTP, full PAN, CVV hoặc secret.
+
+## Kiểm Thử
+
+```bash
+npm test
+npm run build
+npm run test:e2e
+npm audit
+```
+
+Lint toàn repo:
+
+```bash
+npm run lint
+```
+
+Lưu ý: hiện full lint có thể bị chặn bởi nợ cũ ở một số component không thuộc slice telephony. Các file thay đổi trong slice này đã được kiểm bằng focused ESLint trong quá trình phát triển.
+
+## Cấu Trúc Repo
+
+```text
 coopbank-knight-prototype/
-├── docs/                      # Tài liệu thiết kế và đặc tả trải nghiệm
+├── docs/                         # Tài liệu business rules, state machine, deployment
 ├── server/
-│   └── index.js               # Động cơ backend nhận log và mô phỏng còi cảnh báo
+│   ├── index.js                  # Backend SSE, Web Push, incident orchestration
+│   ├── telephony.js              # Twilio/mock voice + SMS service
+│   └── telephony.test.js         # Server-side telephony tests
 ├── src/
-│   ├── app/
-│   │   ├── App.tsx            # Thành phần container chính (sequential state machine)
-│   │   └── App.test.tsx       # Bộ test tích hợp giao diện người dùng
-│   ├── components/            # Các màn hình điện thoại và khung hiển thị AI Agent
-│   │   ├── KnightAgentVisual.tsx # Giao diện hoạt họa của KNIGHT AI Agent
-│   │   ├── BiometricStepUp.tsx   # Giao diện Face ID
-│   │   └── ...
-│   ├── domain/                # Bộ máy trạng thái, kiểm tra chính sách bảo mật
-│   ├── styles/                # CSS styling hệ thống tokens và app
-│   └── main.tsx
+│   ├── app/                      # App shell, demo sequencing, integration tests
+│   ├── components/               # Mobile screens and AI visualization
+│   ├── data/                     # Demo customer/card/risk/case data
+│   ├── domain/                   # State machine, policy guards, audit helpers
+│   ├── services/                 # Backend and Web Push client helpers
+│   └── styles/                   # App CSS and design tokens
+├── tests/e2e/                    # Playwright tests across mobile viewports
 ├── package.json
 └── vite.config.ts
 ```
+
+## Tài Liệu Liên Quan
+
+- Local frontend + backend + iPhone PWA: [`docs/deploy-frontend-local-backend.md`](docs/deploy-frontend-local-backend.md)
+- Product capability: [`docs/knight-mobile/01-product-capability.md`](docs/knight-mobile/01-product-capability.md)
+- Business rules: [`docs/knight-mobile/02-business-rules-and-guardrails.md`](docs/knight-mobile/02-business-rules-and-guardrails.md)
+- State machine: [`docs/knight-mobile/05-state-machine.md`](docs/knight-mobile/05-state-machine.md)
+- Test plan: [`docs/knight-mobile/08-test-and-verification-plan.md`](docs/knight-mobile/08-test-and-verification-plan.md)

@@ -97,7 +97,9 @@ export function dispatchScenarioEvent(
       };
 
     case "CUSTOMER_TAPS_FRAUD":
-      if (state.currentState !== "awaiting_customer_response") return state;
+      if (state.currentState !== "awaiting_customer_response" && state.currentState !== "voice_call_answered") {
+        return state;
+      }
       return {
         ...state,
         currentState: "customer_confirms_fraud",
@@ -115,7 +117,9 @@ export function dispatchScenarioEvent(
       };
 
     case "CUSTOMER_TAPS_LEGIT":
-      if (state.currentState !== "awaiting_customer_response") return state;
+      if (state.currentState !== "awaiting_customer_response" && state.currentState !== "voice_call_answered") {
+        return state;
+      }
       return {
         ...state,
         currentState: "customer_confirms_legit",
@@ -318,14 +322,65 @@ export function dispatchScenarioEvent(
           actor: "System",
           action: "customer.timeout",
           result: "success",
-          reason: "Customer did not respond within the five-minute window",
+          reason: "Customer did not respond within the urgent 3-5 second window",
           customerVisible: true,
           label: "Customer timeout",
         }),
       };
 
-    case "SMS_SENT":
+    case "VOICE_CALL_PLACED":
       if (state.currentState !== "customer_timeout") return state;
+      return {
+        ...state,
+        currentState: "voice_call_placed",
+        auditEvents: appendAuditEvent(state.auditEvents, {
+          phase: "ACT",
+          policyLevel: "L1",
+          actor: "KNIGHT",
+          action: "notification.voiceCall",
+          result: "success",
+          reason: "Automated voice call placed after the urgent push alert received no response",
+          customerVisible: true,
+          label: "Automated voice call placed",
+        }),
+      };
+
+    case "VOICE_CALL_NO_ANSWER":
+      if (state.currentState !== "voice_call_placed") return state;
+      return {
+        ...state,
+        currentState: "voice_call_no_answer",
+        auditEvents: appendAuditEvent(state.auditEvents, {
+          phase: "OBSERVE",
+          policyLevel: "L1",
+          actor: "System",
+          action: "notification.voiceNoAnswer",
+          result: "success",
+          reason: "Automated call was not answered, so SMS fallback is now allowed",
+          customerVisible: true,
+          label: "Voice call no-answer",
+        }),
+      };
+
+    case "VOICE_CALL_ANSWERED":
+      if (state.currentState !== "voice_call_placed") return state;
+      return {
+        ...state,
+        currentState: "voice_call_answered",
+        auditEvents: appendAuditEvent(state.auditEvents, {
+          phase: "OBSERVE",
+          policyLevel: "L1",
+          actor: "System",
+          action: "notification.voiceAnswered",
+          result: "success",
+          reason: "Customer answered the automated call and was directed back to the app",
+          customerVisible: true,
+          label: "Voice call answered",
+        }),
+      };
+
+    case "SMS_SENT":
+      if (state.currentState !== "voice_call_no_answer") return state;
       return {
         ...state,
         currentState: "sms_fallback_sent",
@@ -336,7 +391,7 @@ export function dispatchScenarioEvent(
           actor: "KNIGHT",
           action: "notification.smsFallback",
           result: "success",
-          reason: "SMS fallback sent after no in-app response",
+          reason: "SMS fallback sent only after the automated call was not answered",
           customerVisible: true,
           label: "SMS fallback sent",
         }),
@@ -429,10 +484,14 @@ export function getVisibleScreen(state: KnightScenarioState): VisibleScreen {
     case "enhanced_monitoring_30m":
       return "legitimate-resolution";
     case "customer_timeout":
+    case "voice_call_placed":
+    case "voice_call_no_answer":
     case "sms_fallback_sent":
     case "fraud_ops_escalated":
     case "card_remains_suspended":
       return "timeout-escalation";
+    case "voice_call_answered":
+      return "fraud-review";
     default:
       return "guard";
   }
