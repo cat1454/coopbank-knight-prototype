@@ -10,8 +10,6 @@ export type KnightActionName =
   | "auth.verifyBiometric"
   | "case.createFraudCase"
   | "personalization.generateRecoveryOffer"
-  | "notification.voiceCall"
-  | "notification.smsFallback"
   | "fraudOps.escalate";
 
 export function canAutoSuspend(state: KnightScenarioState) {
@@ -74,14 +72,6 @@ export function deriveAllowedActions(state: KnightScenarioState): KnightActionNa
   }
 
   if (state.currentState === "customer_timeout") {
-    actions.push("notification.voiceCall");
-  }
-
-  if (state.currentState === "voice_call_no_answer") {
-    actions.push("notification.smsFallback");
-  }
-
-  if (state.currentState === "sms_fallback_sent") {
     actions.push("fraudOps.escalate");
   }
 

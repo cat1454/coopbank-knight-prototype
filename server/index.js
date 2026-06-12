@@ -5,14 +5,7 @@ import os from "os";
 import path from "path";
 import readline from "readline";
 import { fileURLToPath } from "url";
-import twilio from "twilio";
 import webPush from "web-push";
-import {
-  createTelephonyConfig,
-  createTelephonyService,
-  createVoiceAlertTwiml,
-  validateTwilioWebhook,
-} from "./telephony.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -30,6 +23,29 @@ const sendPushSecret = process.env.SEND_PUSH_SECRET || "";
 const subscriptionsFile = process.env.PUSH_SUBSCRIPTIONS_FILE || path.join(__dirname, "push-subscriptions.json");
 const vapidKeysFile = process.env.VAPID_KEYS_FILE || path.join(__dirname, "vapid-keys.local.json");
 
+// Repeating push messages — cycles through while alert is active
+const PUSH_MESSAGES = [
+  {
+    title: "🚨 CẢNH BÁO KHẨN — Co-opBank KNIGHT",
+    body: "Phát hiện giao dịch bất thường. Thẻ số đã được tạm khóa. Mở ứng dụng để xác minh ngay!",
+  },
+  {
+    title: "⚠️ KNIGHT: Giao dịch đáng ngờ bị chặn",
+    body: "Có giao dịch tại thiết bị lạ lúc 02:00. KNIGHT đã tạm khóa thẻ — Nhấn để xác nhận.",
+  },
+  {
+    title: "🛡️ KNIGHT AI đang chờ xác minh của bạn",
+    body: "Thẻ số vẫn đang tạm khóa. Bạn có 60 giây để mở Co-opBank và xác minh giao dịch.",
+  },
+  {
+    title: "🔴 Hành động cần thiết — KNIGHT Alert",
+    body: "Tài khoản của bạn đang trong tình trạng cảnh báo cao. Nhấn để mở Co-opBank ngay bây giờ!",
+  },
+];
+
+let pushMessageIndex = 0;
+let repeatPushInterval = null;
+
 let clients = [];
 let lastAuditCount = 0;
 let lastState = "";
@@ -38,7 +54,9 @@ let alertTriggered = false;
 let subscriptions = new Map();
 let currentIncident = null;
 let incidentSequence = 0;
-let mockVoiceStatusTimer = null;
+
+
+
 
 const COLORS = {
   reset: "\x1b[0m",
@@ -96,22 +114,6 @@ const vapidSubject = process.env.VAPID_SUBJECT || "mailto:knight-demo@example.co
 
 webPush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
-let telephonyConfig;
-let telephonyService;
-
-try {
-  telephonyConfig = createTelephonyConfig(process.env);
-  const twilioClient =
-    telephonyConfig.mode === "live" ? twilio(telephonyConfig.accountSid, telephonyConfig.authToken) : null;
-  telephonyService = createTelephonyService(telephonyConfig, { client: twilioClient, log: logSystem });
-} catch (error) {
-  logSystem(`Live telephony disabled: ${error.message}`);
-  telephonyConfig = createTelephonyConfig({
-    TELEPHONY_MODE: "mock",
-    HIGH_RISK_CALL_DELAY_MS: process.env.HIGH_RISK_CALL_DELAY_MS,
-  });
-  telephonyService = createTelephonyService(telephonyConfig, { log: logSystem });
-}
 
 function logSystem(msg) {
   console.log(`${COLORS.gray}[SYSTEM] ${msg}${COLORS.reset}`);
@@ -301,8 +303,11 @@ function tokenMatches(authorizationHeader) {
 }
 
 async function sendPushToAll(alert = {}) {
-  const title = alert.title || "CANH BAO KHAN TU KNIGHT";
-  const body = alert.message || alert.body || "Phat hien giao dich bat thuong. The so da duoc tam khoa.";
+  const msg = PUSH_MESSAGES[pushMessageIndex % PUSH_MESSAGES.length];
+  pushMessageIndex += 1;
+
+  const title = alert.title || msg.title;
+  const body = alert.message || alert.body || msg.body;
   const navigateUrl = alert.url || "/?alert=1";
   const payload = JSON.stringify({
     title,
@@ -345,18 +350,36 @@ async function sendPushToAll(alert = {}) {
   }
 
   if (subscriptions.size === 0) {
-    logSystem("No push subscriptions yet. Open the PWA on iPhone and enable Push first.");
+    logSystem("Chưa có push subscription. Mở PWA trên điện thoại và bật thông báo trước.");
   } else {
-    logSystem(`Push result: sent=${sent}, failed=${failed}, removed=${removed}`);
+    logSystem(`Push #${pushMessageIndex} gửi: sent=${sent}, failed=${failed}, removed=${removed}`);
   }
 
-  return {
-    total: subscriptions.size + removed,
-    sent,
-    failed,
-    removed,
-  };
+  return { total: subscriptions.size + removed, sent, failed, removed };
 }
+
+/** Start repeating push every 8 seconds while alert is active */
+function startRepeatPush(incidentId) {
+  if (repeatPushInterval) return; // already running
+  logSystem(`Bắt đầu push lặp mỗi 8 giây cho incident ${incidentId}...`);
+  repeatPushInterval = setInterval(async () => {
+    const incident = currentIncident;
+    if (!incident || incident.id !== incidentId || incident.cancelled) {
+      stopRepeatPush();
+      return;
+    }
+    await sendPushToAll();
+  }, 8000);
+}
+
+function stopRepeatPush() {
+  if (repeatPushInterval) {
+    clearInterval(repeatPushInterval);
+    repeatPushInterval = null;
+    logSystem("Dừng push lặp.");
+  }
+}
+
 
 function createIncidentId() {
   incidentSequence += 1;
@@ -364,51 +387,23 @@ function createIncidentId() {
 }
 
 function clearIncidentTimer(incident) {
-  if (incident?.callTimer) {
-    clearTimeout(incident.callTimer);
-    incident.callTimer = null;
+  if (incident?.repeatTimer) {
+    clearTimeout(incident.repeatTimer);
+    incident.repeatTimer = null;
   }
-
-  if (mockVoiceStatusTimer) {
-    clearTimeout(mockVoiceStatusTimer);
-    mockVoiceStatusTimer = null;
-  }
+  stopRepeatPush();
 }
+
 
 function broadcastIncidentEvents(incidentId, events) {
   broadcast({ type: "trigger", incidentId, events });
 }
 
-async function placeIncidentVoiceCall(incidentId) {
-  const incident = currentIncident;
 
-  if (!incident || incident.id !== incidentId || incident.cancelled) {
-    return;
-  }
-
-  clearIncidentTimer(incident);
-
-  try {
-    const result = await telephonyService.placeVoiceAlertCall({ incidentId });
-    incident.callSid = result.sid;
-    incident.callPlaced = true;
-    logSystem(`Voice alert placed: mode=${result.mode}, sid=${result.sid}, to=${result.toMasked}`);
-    broadcastIncidentEvents(incidentId, ["CUSTOMER_RESPONSE_TIMEOUT", "VOICE_CALL_PLACED"]);
-
-    if (telephonyConfig.mode === "mock") {
-      mockVoiceStatusTimer = setTimeout(() => {
-        logSystem(`Mock telephony: auto no-answer for incident ${incidentId}.`);
-        void handleIncidentVoiceStatus(incidentId, "no-answer");
-      }, 3000);
-    }
-  } catch (error) {
-    logSystem(`Voice alert failed for incident ${incidentId}: ${error.message || error}`);
-  }
-}
 
 async function startHighRiskIncident(source = "manual") {
   if (alertTriggered && currentIncident && !currentIncident.cancelled) {
-    logSystem("Risk alert was already triggered. Press R to reset before sending again.");
+    logSystem("Cảnh báo đã được kích hoạt. Nhấn R để reset trước khi gửi lại.");
     return {
       started: false,
       incidentId: currentIncident.id,
@@ -421,38 +416,31 @@ async function startHighRiskIncident(source = "manual") {
     autoTriggerTimer = null;
   }
 
+  pushMessageIndex = 0;
+
   const incident = {
     id: createIncidentId(),
     source,
     cancelled: false,
-    callTimer: null,
-    callPlaced: false,
-    callAnswered: false,
-    noAnswerHandled: false,
-    callSid: "",
+    repeatTimer: null,
   };
 
   currentIncident = incident;
   alertTriggered = true;
 
-  logAlert("Triggering high-risk incident: Web Push now, voice call fallback after delay, SMS only on no-answer.");
+  logAlert("Kích hoạt cảnh báo cao — Gửi Web Push ngay, lặp mỗi 8 giây.");
   broadcastIncidentEvents(incident.id, ["RISK_EVENT_RECEIVED", "AUTO_SUSPEND_ALLOWED", "PUSH_SENT"]);
+
   const pushResult = await sendPushToAll();
-
-  incident.callTimer = setTimeout(() => {
-    void placeIncidentVoiceCall(incident.id);
-  }, telephonyConfig.callDelayMs);
-
-  logSystem(`Voice fallback scheduled in ${telephonyConfig.callDelayMs}ms for incident ${incident.id}.`);
+  startRepeatPush(incident.id);
 
   return {
     started: true,
     incidentId: incident.id,
-    callDelayMs: telephonyConfig.callDelayMs,
-    telephonyMode: telephonyConfig.mode,
     push: pushResult,
   };
 }
+
 
 function triggerAlert() {
   void startHighRiskIncident("terminal");
@@ -475,41 +463,12 @@ function cancelCurrentIncident(reason = "customer_response") {
   };
 }
 
-async function handleIncidentVoiceStatus(incidentId, callStatus) {
-  const incident = currentIncident;
 
-  if (!incidentId || !incident || incident.id !== incidentId || incident.cancelled) {
-    return { ignored: true, reason: "incident_not_active" };
-  }
-
-  if (telephonyService.isAnsweredStatus(callStatus)) {
-    if (!incident.callAnswered) {
-      incident.callAnswered = true;
-      broadcastIncidentEvents(incidentId, ["VOICE_CALL_ANSWERED"]);
-    }
-    return { ignored: true, answered: true };
-  }
-
-  if (!telephonyService.isNoAnswerStatus(callStatus)) {
-    return { ignored: true, reason: "status_not_terminal_no_answer" };
-  }
-
-  if (incident.noAnswerHandled) {
-    return { ignored: true, reason: "duplicate_no_answer" };
-  }
-
-  incident.noAnswerHandled = true;
-  const result = await telephonyService.handleVoiceStatus({ incidentId, callStatus });
-
-  if (result.smsSent) {
-    broadcastIncidentEvents(incidentId, ["VOICE_CALL_NO_ANSWER", "SMS_SENT", "ESCALATE_FRAUD_OPS", "KEEP_CARD_SUSPENDED"]);
-  }
-
-  return result;
-}
 
 function triggerReset() {
+  stopRepeatPush();
   alertTriggered = false;
+  pushMessageIndex = 0;
   lastAuditCount = 0;
   lastState = "";
   if (currentIncident) {
@@ -520,9 +479,10 @@ function triggerReset() {
     clearTimeout(autoTriggerTimer);
     autoTriggerTimer = null;
   }
-  logSystem("Sending reset signal to connected app clients...");
+  logSystem("Gửi tín hiệu reset đến app...");
   broadcast({ type: "trigger", events: ["RESET_SCENARIO"] });
 }
+
 
 loadSubscriptions();
 
@@ -642,6 +602,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (!alertTriggered || !currentIncident || currentIncident.cancelled) {
+      sendJson(res, 400, { error: "Cảnh báo không hoạt động. Không thể gửi push." });
+      return;
+    }
+
     try {
       const payload = await readJson(req);
       const result = await sendPushToAll(payload);
@@ -652,39 +617,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (requestUrl.pathname === "/api/twilio/voice-alert" && (req.method === "POST" || req.method === "GET")) {
-    sendXml(res, 200, createVoiceAlertTwiml());
-    return;
-  }
 
-  if (requestUrl.pathname === "/api/twilio/voice-status" && req.method === "POST") {
-    try {
-      const params = await readForm(req);
-      const incidentId = requestUrl.searchParams.get("incidentId") || params.incidentId || "";
-      const callbackUrl = `${telephonyConfig.webhookBaseUrl}${requestUrl.pathname}${requestUrl.search}`;
-      const signature = String(req.headers["x-twilio-signature"] || "");
-
-      if (
-        telephonyConfig.mode === "live" &&
-        !validateTwilioWebhook({
-          authToken: telephonyConfig.authToken,
-          signature,
-          url: callbackUrl,
-          params,
-          validateRequest: twilio.validateRequest,
-        })
-      ) {
-        sendJson(res, 403, { error: "Invalid Twilio signature" });
-        return;
-      }
-
-      const result = await handleIncidentVoiceStatus(incidentId, params.CallStatus || params.CallStatusCallbackEvent);
-      sendJson(res, 200, { success: true, ...result });
-    } catch (error) {
-      sendJson(res, 400, { error: error.message || "Invalid Twilio callback" });
-    }
-    return;
-  }
 
   if (requestUrl.pathname === "/events" && req.method === "GET") {
     res.writeHead(200, {
@@ -769,7 +702,6 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`${COLORS.bold}Server:${COLORS.reset} http://localhost:${PORT}`);
   console.log(`${COLORS.bold}LAN:${COLORS.reset}    http://${getLanIp()}:${PORT}`);
   console.log(`${COLORS.bold}Push:${COLORS.reset}   ${subscriptions.size} subscription(s) loaded`);
-  console.log(`${COLORS.bold}Phone:${COLORS.reset}  ${telephonyConfig.mode} mode, fallback delay ${telephonyConfig.callDelayMs}ms`);
   logSystem(`VAPID keys loaded from ${vapidKeys.source}. Public key: ${vapidPublicKey}`);
   if (!sendPushSecret) {
     logSystem("SEND_PUSH_SECRET is not set. /api/push/send is disabled, but terminal hotkeys still work.");

@@ -23,12 +23,12 @@ self.addEventListener("push", (event) => {
   }
 
   const notification = payload.notification || payload;
-  const title = notification.title || "CANH BAO KNIGHT";
+  const title = notification.title || "CẢNH BÁO KNIGHT";
   const targetUrl = notification.url || notification.navigate || "/?alert=1";
 
   event.waitUntil(
     self.registration.showNotification(title, {
-      body: notification.body || "Phat hien giao dich bat thuong. The so da duoc tam khoa.",
+      body: notification.body || "Phát hiện giao dịch bất thường. Thẻ số đã được tạm khóa.",
       icon: notification.icon || "/knight-shield.svg",
       badge: notification.badge || "/knight-shield.svg",
       tag: notification.tag || "knight-critical-alert",

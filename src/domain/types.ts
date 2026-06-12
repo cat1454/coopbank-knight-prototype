@@ -22,10 +22,6 @@ export type ScenarioStateName =
   | "device_session_whitelisted"
   | "enhanced_monitoring_30m"
   | "customer_timeout"
-  | "voice_call_placed"
-  | "voice_call_no_answer"
-  | "voice_call_answered"
-  | "sms_fallback_sent"
   | "fraud_ops_escalated"
   | "card_remains_suspended";
 
@@ -59,10 +55,6 @@ export type KnightEventType =
   | "WHITELIST_SESSION_SUCCESS"
   | "ENHANCED_MONITORING_STARTED"
   | "CUSTOMER_RESPONSE_TIMEOUT"
-  | "VOICE_CALL_PLACED"
-  | "VOICE_CALL_NO_ANSWER"
-  | "VOICE_CALL_ANSWERED"
-  | "SMS_SENT"
   | "ESCALATE_FRAUD_OPS"
   | "KEEP_CARD_SUSPENDED"
   | "RESET_SCENARIO";
@@ -164,8 +156,6 @@ export interface KnightScenarioState {
   fraudCase?: FraudCase;
   recoveryOffer?: RecoveryOffer;
   auditEvents: AuditEvent[];
-  smsFallbackSent: boolean;
-  fraudOpsEscalated: boolean;
   enhancedMonitoringUntil?: string;
 }
 

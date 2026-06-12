@@ -314,29 +314,13 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
           audit: "AWAITING",
           badgeTitle: "TIMEOUT",
           badgeSubtitle: "Hết giờ chờ",
-          thought: "Khách hàng không phản hồi trên ứng dụng di động trong 5 phút. Kích hoạt Policy L1 gửi tin nhắn SMS dự phòng cảnh báo.",
-          assistantMessage: "Đã quá 5 phút chờ xác nhận. Để đảm bảo an toàn, tôi bắt đầu gửi SMS cảnh báo dự phòng.",
-          alert: "Hết thời gian phản hồi. Đang kích hoạt tin nhắn SMS dự phòng...",
+          thought: "Khách hàng không phản hồi trên ứng dụng di động trong 5 phút. Kích hoạt Policy chuyển tiếp vụ việc sang Fraud Ops để xử lý thủ công.",
+          assistantMessage: "Đã quá 5 phút chờ xác nhận. Để đảm bảo an toàn, tôi bắt đầu chuyển hồ sơ vụ việc sang bộ phận phòng chống gian lận (Fraud Ops).",
+          alert: "Hết thời gian phản hồi. Đang tiến hành chuyển tiếp hồ sơ sang Fraud Ops...",
           action: "customer.timeout()",
           hot: "response" as const,
         };
 
-      case "sms_fallback_sent":
-        return {
-          phase: "ACT" as const,
-          mood: "alert" as const,
-          riskScore: 892,
-          cardStatus: "SUSPENDED",
-          response: "5.2m",
-          audit: "WRITING",
-          badgeTitle: "SMS SENT",
-          badgeSubtitle: "SMS dự phòng",
-          thought: "SMS cảnh báo đã được gửi thành công. Vì giao dịch có tính rủi ro cao, tiến hành chuyển tiếp hồ sơ vụ việc sang Fraud Ops.",
-          assistantMessage: "Tôi vừa gửi tin nhắn SMS cảnh báo và đang chuyển hồ sơ sự việc sang cho bộ phận Nghiệp vụ để xử lý tiếp.",
-          alert: "Đã gửi SMS fallback. Đang bàn giao hồ sơ vụ việc sang Fraud Ops...",
-          action: "notification.sms()",
-          hot: "audit" as const,
-        };
 
       case "fraud_ops_escalated":
         return {
@@ -585,6 +569,14 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
         onPointerMove={handlePointerMove}
         aria-label="Knight AI Agent fraud protection visual workspace"
       >
+        {/* Radar Grid Background */}
+        <div className="radar-grid" aria-hidden="true">
+          <div className="radar-sweep" />
+          <div className="radar-circle rc-1" />
+          <div className="radar-circle rc-2" />
+          <div className="radar-circle rc-3" />
+        </div>
+
         {/* Starry background */}
         <div className="stars">
           {starsList.map((star, idx) => (
@@ -661,15 +653,34 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
                 <div className="eye" />
                 <div className="eye" />
               </div>
+              <div className="scan-beam" aria-hidden="true" />
             </div>
 
             <div className="knight-body">
               <div className="arms">
                 <div className="arm left">
                   <div className="beam" />
+                  <div className="shield" aria-hidden="true">
+                    <svg viewBox="0 0 100 120" className="shield-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10 22 C10 22, 50 6, 50 6 C50 6, 90 22, 90 22 C90 64, 74 98, 50 116 C26 98, 10 64, 10 22 Z" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M20 30 C20 30, 50 16, 50 16 C50 16, 80 30, 80 30 C80 64, 67 92, 50 107 C33 92, 20 64, 20 30 Z" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" opacity="0.7" />
+                      <line x1="50" y1="22" x2="50" y2="100" stroke="currentColor" strokeWidth="1.5" opacity="0.35" />
+                      <line x1="22" y1="55" x2="78" y2="55" stroke="currentColor" strokeWidth="1.5" opacity="0.35" />
+                      <polygon points="50,38 63,52 50,66 37,52" fill="currentColor" opacity="0.25" />
+                      <polygon points="50,38 63,52 50,66 37,52" stroke="currentColor" strokeWidth="2.5" fill="none" />
+                      <circle cx="50" cy="52" r="4" fill="#ffffff" opacity="0.9" />
+                      <circle cx="50" cy="52" r="6" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.5" />
+                    </svg>
+                  </div>
                 </div>
                 <div className="arm right">
                   <div className="beam" />
+                  <div className="sword" aria-hidden="true">
+                    <div className="sword-blade" />
+                    <div className="sword-guard" />
+                    <div className="sword-hilt" />
+                    <div className="sword-pommel" />
+                  </div>
                 </div>
               </div>
               <div className="armor">

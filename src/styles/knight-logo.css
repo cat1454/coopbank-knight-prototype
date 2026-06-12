@@ -1,0 +1,128 @@
+/* KnightLogoMini Styles and Animations */
+
+.knight-logo-mini {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  border-radius: 22%;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.15);
+  transition: all 0.3s ease;
+}
+
+.knight-logo-mini:hover {
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Animations for Logo SVGs */
+
+/* Visor Eyes Blink */
+.kl-eye-blink {
+  animation: kl-eye-blink-anim 4.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes kl-eye-blink-anim {
+  0%, 96%, 100% {
+    transform: scaleY(1);
+    opacity: 0.9;
+  }
+  98% {
+    transform: scaleY(0.15);
+    opacity: 0.25;
+  }
+}
+
+/* Crest Antenna pulse */
+.kl-crest-pulse {
+  animation: kl-crest-pulse-anim 2s ease-in-out infinite;
+}
+
+@keyframes kl-crest-pulse-anim {
+  0%, 100% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 2px #22d3ee);
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px #22d3ee);
+  }
+}
+
+/* Orbit rings rotation */
+.kl-orbit-ccw {
+  animation: kl-spin-ccw 25s linear infinite;
+  transform-origin: 256px 248px;
+}
+
+.kl-orbit-cw {
+  animation: kl-spin-cw 35s linear infinite;
+  transform-origin: 256px 248px;
+}
+
+@keyframes kl-spin-cw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes kl-spin-ccw {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+/* Shield float */
+.kl-shield {
+  animation: kl-shield-float-anim 4s ease-in-out infinite;
+  transform-origin: 92px 256px;
+}
+
+@keyframes kl-shield-float-anim {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1.5deg);
+  }
+}
+
+/* Sword swing */
+.kl-sword {
+  animation: kl-sword-swing-anim 4.8s ease-in-out infinite;
+  transform-origin: 420px 260px;
+}
+
+@keyframes kl-sword-swing-anim {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-3.5deg) translateY(-2px);
+  }
+}
+
+/* Status dots flashing */
+.kl-dot-1 {
+  animation: kl-dot-blink 1.5s step-start infinite;
+}
+.kl-dot-2 {
+  animation: kl-dot-blink 1.5s step-start infinite 0.5s;
+}
+.kl-dot-3 {
+  animation: kl-dot-blink 1.5s step-start infinite 1s;
+}
+
+@keyframes kl-dot-blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.95; }
+}
+
+/* Chest scanning bar */
+.kl-scanbar {
+  animation: kl-scan-line 3s ease-in-out infinite;
+}
+
+@keyframes kl-scan-line {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50% { transform: translateY(12px); opacity: 0.85; }
+}

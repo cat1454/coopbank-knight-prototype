@@ -13,6 +13,7 @@ import { VirtualCardScreen } from "../components/VirtualCardScreen";
 import { BankLoginScreen } from "../components/BankLoginScreen";
 import { BankDashboard } from "../components/BankDashboard";
 import { KnightAgentVisual } from "../components/KnightAgentVisual";
+import { KnightLogoMini } from "../components/KnightLogoMini";
 import { useAlarmAudio } from "../hooks/useAlarmAudio";
 import { buildBackendUrl } from "../services/backend";
 import {
@@ -44,9 +45,6 @@ const legitimateResolutionEvents: KnightEventType[] = [
 const timeoutEvents: KnightEventType[] = [
   ...highRiskEvents,
   "CUSTOMER_RESPONSE_TIMEOUT",
-  "VOICE_CALL_PLACED",
-  "VOICE_CALL_NO_ANSWER",
-  "SMS_SENT",
   "ESCALATE_FRAUD_OPS",
   "KEEP_CARD_SUSPENDED",
 ];
@@ -459,7 +457,7 @@ export function App() {
           <section className="phone-frame" aria-label="Co-opBank KNIGHT mobile prototype">
             <header className="app-header">
               <div className="app-brand">
-                <img src="/knight-shield.svg" alt="" className="app-brand__mark" />
+                <KnightLogoMini size={36} className="app-brand__mark" />
                 <div>
                   <span>Co-opBank</span>
                   <strong>KNIGHT</strong>

@@ -79,8 +79,8 @@ describe("KNIGHT mobile app", () => {
 
     await user.click(screen.getByRole("button", { name: /timeout/i }));
 
-    expect(screen.getByText(/Fraud Ops dang xem xet/i)).toBeInTheDocument();
-    expect(screen.getByText(/The van dang tam khoa/i)).toBeInTheDocument();
+    expect(screen.getByText(/Fraud Ops đang xem xét/i)).toBeInTheDocument();
+    expect(screen.getByText(/Thẻ vẫn đang tạm khóa/i)).toBeInTheDocument();
     expect(screen.queryByText(/Thẻ số mới đã sẵn sàng/i)).not.toBeInTheDocument();
   });
 });

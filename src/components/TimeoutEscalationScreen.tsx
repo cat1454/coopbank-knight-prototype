@@ -17,46 +17,27 @@ export function TimeoutEscalationScreen({
   const fraudCase = state.fraudCase;
   const currentState = state.currentState;
 
-  const isWaitingToCall = currentState === "customer_timeout";
-  const isCalling = currentState === "voice_call_placed";
-  const isNoAnswer = currentState === "voice_call_no_answer";
-  const isSmsSent = currentState === "sms_fallback_sent";
+  const isWaiting = currentState === "customer_timeout";
   const isEscalated = currentState === "fraud_ops_escalated";
   const isComplete = currentState === "card_remains_suspended" || Boolean(fraudCase);
 
-  const title = isWaitingToCall
-    ? "Dang goi dien khan cap..."
-    : isCalling
-      ? "KNIGHT dang goi tu dong..."
-      : isNoAnswer
-        ? "Khach chua bat may."
-        : isSmsSent
-          ? "Da gui SMS du phong."
-          : isEscalated
-            ? "Dang chuyen Fraud Ops."
-            : "Fraud Ops dang xem xet.";
+  const title = isWaiting
+    ? "Hết thời gian chờ phản hồi"
+    : isEscalated
+      ? "Đang chuyển tiếp Fraud Ops..."
+      : "Fraud Ops đang xem xét";
 
-  const lead = isWaitingToCall
-    ? "Sau 5 giay chua co phan hoi tu Web Push, KNIGHT chuan bi goi dien tu dong den so dien thoai da dang ky."
-    : isCalling
-      ? "Cuoc goi canh bao dang duoc thuc hien. The so van tam khoa trong khi cho khach xac minh."
-      : isNoAnswer
-        ? "Cuoc goi khong duoc tra loi, vi vay SMS du phong moi duoc phep gui."
-        : isSmsSent
-          ? "SMS da duoc gui de huong dan khach mo ung dung Co-opBank va xac minh giao dich."
-          : isEscalated
-            ? "Ho so dang duoc dua vao hang cho cua Fraud Ops. KNIGHT khong tu dong khoa vinh vien the."
-            : "Khach chua phan hoi sau Web Push, cuoc goi va SMS. The van tam khoa de bao ve tai san.";
+  const lead = isWaiting
+    ? "Khách hàng không phản hồi cảnh báo Push. Hệ thống chuẩn bị chuyển hồ sơ sang bộ phận vận hành (Fraud Ops) để kiểm tra."
+    : isEscalated
+      ? "Hồ sơ giao dịch bất thường đang được chuyển tiếp. Thẻ số tạm thời tiếp tục được khóa để bảo vệ tài khoản."
+      : "Hồ sơ đã được gửi đến Fraud Ops để xử lý thủ công. Thẻ vẫn tiếp tục được khóa tạm thời để bảo đảm an toàn.";
 
-  const summaryDetail = isWaitingToCall
-    ? "Cho bo dem 5 giay..."
-    : isCalling
-      ? "Dang do chuong cuoc goi..."
-      : isNoAnswer
-        ? "Cho gui SMS du phong..."
-        : isSmsSent
-          ? "Da gui SMS, dang tao ho so tra soat..."
-          : "Cho ket qua kiem duyet thu cong tu doi ngu van hanh.";
+  const summaryDetail = isWaiting
+    ? "Đang xử lý hồ sơ..."
+    : isEscalated
+      ? "Đang xếp hàng chờ xử lý..."
+      : "Chờ kết quả xét duyệt từ nhân viên Fraud Ops.";
 
   return (
     <section className="screen" aria-labelledby="timeout-title">
@@ -77,13 +58,13 @@ export function TimeoutEscalationScreen({
       <p className="screen-lead">{lead}</p>
 
       <div className="timeout-summary">
-        <strong>The van dang tam khoa</strong>
+        <strong>Thẻ vẫn đang tạm khóa</strong>
 
         {fraudCase ? (
-          <span>Case: {fraudCase.id}</span>
+          <span>Hồ sơ: {fraudCase.id}</span>
         ) : (
           <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Loader2 className="spin" size={14} /> Dang cap nhat trang thai...
+            <Loader2 className="spin" size={14} /> Đang cập nhật trạng thái...
           </span>
         )}
 
