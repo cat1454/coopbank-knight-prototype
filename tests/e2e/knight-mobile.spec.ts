@@ -11,56 +11,54 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page)
   expect(metrics.documentScrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function openFraudReview(page: import("@playwright/test").Page) {
+  await page.getByRole("button", { name: /bắt đầu/i }).click();
+  await expect(page.getByRole("heading", { name: /giao dịch bất thường vừa bị chặn/i })).toBeVisible();
+  await page.getByRole("button", { name: /mở co-opbank/i }).click();
+  await expect(page.getByRole("heading", { name: /KNIGHT đã tạm khóa thẻ số/i })).toBeVisible();
+  await expect(page.getByText("847/1000")).toBeVisible();
+  await expect(page.getByText(/10\.000\.000/).first()).toBeVisible();
+}
+
 test.describe("KNIGHT mobile/PWA prototype", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/?env=test");
   });
 
-  test("runs explainable trust recovery after securing the account", async ({ page }, testInfo) => {
-    await page.getByRole("button", { name: /bắt đầu/i }).click();
-    await expect(page.getByRole("heading", { name: /giao dịch bất thường vừa bị chặn/i })).toBeVisible();
-    await page.getByRole("button", { name: /mở co-opbank/i }).click();
-    await expect(page.getByRole("heading", { name: /KNIGHT đã tạm khóa thẻ số/i })).toBeVisible();
-    await expect(page.getByText("847/1000")).toBeVisible();
-    await expect(page.getByText(/10\.000\.000/).first()).toBeVisible();
+  test("hides the account balance by default until the user reveals it", async ({ page }) => {
+    await page.goto("/?env=test&capture=phone&shot=case");
+
+    await expect(page.getByText(/36\.360\.430/)).toHaveCount(0);
+
+    await page.locator(".balance-toggle").click();
+
+    await expect(page.getByText(/36\.360\.430/)).toBeVisible();
+  });
+
+  test("keeps the one-time card visible before returning to bank home", async ({ page }, testInfo) => {
+    await openFraudReview(page);
 
     await page.getByRole("button", { name: /không phải tôi/i }).click();
     await expect(page.getByRole("heading", { name: /xác thực để khóa thẻ cũ/i })).toBeVisible();
     await expect(page.getByText(/kiểm tra liveness/i)).toBeVisible();
 
     await page.getByRole("button", { name: /xác thực face id/i }).click();
-    await expect(page.getByRole("heading", { name: /hồ sơ tra soát đã gửi/i })).toBeVisible();
-    await expect(page.getByText("FR-20250601-001")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /thẻ số mới đã sẵn sàng/i })).toBeVisible();
+    await expect(page.getByLabel(/Demo virtual card/i)).toBeVisible();
+    await expect(page.getByLabel(/One-time emergency virtual card/i)).toBeVisible();
+    await expect(page.getByText("4221 0982 7361 8839")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /bắt đầu phục hồi/i })).toHaveCount(0);
 
-    await page.getByRole("button", { name: /chuyển sang sáng hôm sau/i }).click();
-    await expect(page.getByRole("heading", { name: /bắt đầu phục hồi niềm tin đúng thời điểm/i })).toBeVisible();
-
-    await page.getByRole("button", { name: /mở phiên phục hồi buổi sáng/i }).click();
-    await expect(page.getByRole("heading", { name: /\[observe\] hành vi sau sự cố/i })).toBeVisible();
-    await expect(page.getByText("6 lần từ sáng sớm")).toBeVisible();
-
-    await page.getByRole("button", { name: /đánh giá nhu cầu phục hồi niềm tin/i }).click();
-    await expect(page.getByRole("heading", { name: /điểm nhu cầu phục hồi: 82\/100/i })).toBeVisible();
-    await expect(page.getByText(/ngưỡng kích hoạt/i)).toBeVisible();
-
-    await page.getByRole("button", { name: /kích hoạt gói phục hồi an tâm/i }).click();
-    await expect(page.getByRole("heading", { name: /gói phục hồi an tâm đã được kích hoạt/i })).toBeVisible();
-    await expect(page.getByText(/bảo vệ tài khoản 30 ngày/i)).toBeVisible();
-
-    await page.getByRole("button", { name: /kích hoạt hoàn tiền thiết yếu/i }).click();
-    await expect(page.getByText(/khách hàng quay lại thanh toán điện/i).first()).toBeVisible();
-    await expect(page.getByText(/recovery react cycle complete/i)).toBeVisible();
-
-    await page.getByRole("button", { name: /hoàn tất & về trang chủ/i }).click();
-    await expect(page.getByRole("heading", { name: /Hiệp sĩ số bảo vệ thẻ/i })).toBeVisible();
-    await expect(page.getByText(/KNIGHT AI v2\.0/i)).toBeAttached();
+    await page.getByRole("button", { name: /trang chủ ngân hàng/i }).click();
+    await expect(page.getByRole("heading", { name: /thẻ số của tôi/i })).toBeVisible();
+    await expect(page.getByText("4532 **** **** 7291")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /bắt đầu phục hồi/i })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
-    await page.screenshot({ path: testInfo.outputPath("full-fraud-personalization-audit.png"), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath("new-card-home-flow.png"), fullPage: true });
   });
 
   test("keeps legitimate and timeout branches inside policy boundaries", async ({ page }, testInfo) => {
-    await page.getByRole("button", { name: /bắt đầu/i }).click();
-    await page.getByRole("button", { name: /mở co-opbank/i }).click();
+    await openFraudReview(page);
     await page.getByRole("button", { name: /đây là giao dịch của tôi/i }).click();
     await page.getByRole("button", { name: /xác thực/i }).click();
     await expect(page.getByRole("heading", { name: /thẻ đã được mở lại/i })).toBeVisible();
@@ -92,7 +90,8 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
       { name: "alert", url: "/?env=test&capture=phone&shot=reason&controls=0", text: /giao dịch bất thường vừa bị chặn/i },
       { name: "fraud-review", url: "/?env=test&capture=phone&shot=fraud-review&controls=0", text: /KNIGHT đã tạm khóa thẻ số/i },
       { name: "faceid", url: "/?env=test&capture=phone&shot=faceid&controls=0", text: /kiểm tra liveness/i },
-      { name: "case", url: "/?env=test&capture=phone&shot=case&controls=0", text: /hồ sơ tra soát đã gửi/i },
+      { name: "card", url: "/?env=test&capture=phone&shot=card&controls=0", text: /thẻ số mới đã sẵn sàng/i },
+      { name: "case-home", url: "/?env=test&capture=phone&shot=case&controls=0", text: /thẻ số của tôi/i },
       { name: "behavior", url: "/?env=test&capture=phone&shot=behavior&controls=0", text: /\[observe\] hành vi sau sự cố/i },
       { name: "assessment", url: "/?env=test&capture=phone&shot=assessment&controls=0", text: /điểm nhu cầu phục hồi: 82\/100/i },
       { name: "package", url: "/?env=test&capture=phone&shot=package&controls=0", text: /gói phục hồi an tâm đã được kích hoạt/i },

@@ -48,11 +48,11 @@ export function BankDashboard({
   setTransactions,
 }: BankDashboardProps) {
   const [activeTab, setActiveTab] = useState<"home" | "transfer" | "knight" | "history" | "settings">("home");
-  const [balanceVisible, setBalanceVisible] = useState(true);
+  const [balanceVisible, setBalanceVisible] = useState(false);
 
   // Transfer Step States
   const [transferStep, setTransferStep] = useState<"input" | "confirm" | "processing" | "success">("input");
-  const [transferBank, setTransferBank] = useState("Techcombank");
+  const [transferBank, setTransferBank] = useState("Ngân hàng liên kết");
   const [transferAccount, setTransferAccount] = useState("");
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
@@ -70,7 +70,7 @@ export function BankDashboard({
   // Suggested Beneficiaries
   const handleSelectSuggestion = (type: "safe" | "fraud") => {
     if (type === "safe") {
-      setTransferBank("Techcombank");
+      setTransferBank("Ngân hàng liên kết");
       setTransferAccount("19038472910");
       setTransferRecipient("Nguyễn Văn B");
       setTransferAmount("200000");
@@ -120,7 +120,7 @@ export function BankDashboard({
 
   const resetTransferForm = () => {
     setTransferStep("input");
-    setTransferBank("Techcombank");
+    setTransferBank("Ngân hàng liên kết");
     setTransferAccount("");
     setTransferRecipient("");
     setTransferAmount("");
@@ -311,7 +311,7 @@ export function BankDashboard({
                 value={transferBank}
                 onChange={(e) => setTransferBank(e.target.value)}
               >
-                <option value="Techcombank">Techcombank</option>
+                <option value="Ngân hàng liên kết">Ngân hàng liên kết</option>
                 <option value="Vietcombank">Vietcombank</option>
                 <option value="Co-opBank">Co-opBank</option>
                 <option value="BIDV">BIDV</option>

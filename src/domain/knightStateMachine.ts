@@ -610,7 +610,7 @@ export function getVisibleScreen(state: KnightScenarioState): VisibleScreen {
     case "new_card_issued":
       return "virtual-card";
     case "fraud_case_created":
-      return "fraud-case-submitted";
+      return "guard";
     case "next_morning_recovery_ready":
       return "next-morning-recovery";
     case "post_incident_behavior_observed":

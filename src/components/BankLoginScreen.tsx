@@ -1,7 +1,18 @@
 import { useState } from "react";
-import { Lock, QrCode, ScanFace } from "lucide-react";
-import { PrimaryButton } from "./PrimaryButton";
+import {
+  ArrowLeftRight,
+  Award,
+  Bot,
+  CalendarDays,
+  Headphones,
+  MapPin,
+  Phone,
+  QrCode,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { FaceIdGlyph } from "./BiometricStepUp";
+import { KnightLogoMini } from "./KnightLogoMini";
 
 interface BankLoginScreenProps {
   onLogin: () => void;
@@ -14,19 +25,10 @@ export function BankLoginScreen({
   selectedQtdnd,
   setSelectedQtdnd,
 }: BankLoginScreenProps) {
-  const [password, setPassword] = useState("");
   const [faceIdModalVisible, setFaceIdModalVisible] = useState(false);
   const [faceIdStatus, setFaceIdStatus] = useState<"idle" | "scanning" | "success" | "failed">("idle");
   const [faceIdText, setFaceIdText] = useState("Face ID");
-
-  const qtdndList = [
-    "QTDND Đà Nẵng",
-    "QTDND Thái Bình",
-    "QTDND An Giang",
-    "QTDND Lam Sơn",
-    "QTDND Nghệ An",
-    "QTDND Đồng Tháp",
-  ];
+  const qtdndList = ["QTDND Đà Nẵng", "QTDND Thái Bình", "QTDND An Giang", "QTDND Lam Sơn"];
 
   const handleBiometricLoginClick = () => {
     setFaceIdModalVisible(true);
@@ -52,54 +54,73 @@ export function BankLoginScreen({
     }, 2250);
   };
 
+  const rotateBranch = () => {
+    const currentIndex = qtdndList.indexOf(selectedQtdnd);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % qtdndList.length;
+    setSelectedQtdnd(qtdndList[nextIndex]);
+  };
+
   return (
     <section className="screen screen--login" aria-labelledby="login-title">
-      <div className="login-banner">
-        <div className="login-banner__overlay"></div>
-        <div className="login-banner__content">
-          <div className="qtdnd-logo" aria-label="Branch Logo">
-            <span className="qtdnd-logo__icon">🏦</span>
-            <strong className="qtdnd-logo__text">{selectedQtdnd}</strong>
-          </div>
-          <h1 id="login-title">Co-opBank KNIGHT</h1>
-          <h2 className="login-banner__desc">Hiệp sĩ số bảo vệ thẻ giao dịch tự động bằng Agentic AI và cá nhân hóa trải nghiệm khôi phục</h2>
+      <div className="login-art" aria-hidden="true">
+        <div className="login-art__scan login-art__scan--one"></div>
+        <div className="login-art__scan login-art__scan--two"></div>
+        <div className="login-art__cliff">
+          <span className="login-art__runner"></span>
+        </div>
+        <div className="login-art__cloud login-art__cloud--left"></div>
+        <div className="login-art__cloud login-art__cloud--right"></div>
+        <div className="login-art__island">
+          <span></span>
         </div>
       </div>
 
-      <div className="login-form">
-        <div className="form-group">
-          <label htmlFor="qtdnd-select" className="form-label">Chi nhánh QTDND</label>
-          <select
-            id="qtdnd-select"
-            value={selectedQtdnd}
-            onChange={(e) => setSelectedQtdnd(e.target.value)}
-            className="form-control"
+      <div className="login-hero">
+        <KnightLogoMini size={62} className="login-hero__logo" />
+        <div className="login-hero__copy">
+          <p>An tâm giao dịch,</p>
+          <h1 id="login-title">HUYNH PHUOC PHU</h1>
+          <button
+            type="button"
+            className="login-branch-chip"
+            onClick={rotateBranch}
+            aria-label={`Chi nhánh hiện tại ${selectedQtdnd}`}
           >
-            {qtdndList.map((branch) => (
-              <option key={branch} value={branch}>
-                {branch}
-              </option>
-            ))}
-          </select>
+            <ShieldCheck size={14} aria-hidden="true" />
+            <span>{selectedQtdnd}</span>
+          </button>
         </div>
+      </div>
 
-        <div className="form-group">
-          <label htmlFor="password-input" className="form-label">Mật khẩu</label>
-          <div className="input-with-icon">
-            <Lock size={16} className="input-icon" />
-            <input
-              id="password-input"
-              type="password"
-              placeholder="Nhập mật khẩu"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="form-control"
-            />
-          </div>
+      <p className="login-inspiration">
+        <span>KNIGHT AI 24/7</span>
+        <strong>sẵn sàng</strong>
+      </p>
+
+      <div className="login-panel">
+        <div className="login-quick-actions" aria-label="Tiện ích nhanh">
+          <button type="button" className="login-quick-action">
+            <ArrowLeftRight size={30} aria-hidden="true" />
+            <span>Chuyển tiền<br />& Thanh toán</span>
+          </button>
+          <button type="button" className="login-quick-action">
+            <QrCode size={30} aria-hidden="true" />
+            <span>Quét mã<br />QR</span>
+          </button>
+          <button type="button" className="login-quick-action">
+            <Award size={30} aria-hidden="true" />
+            <span>KNIGHT<br />Rewards</span>
+          </button>
         </div>
 
         <div className="login-actions">
-          <PrimaryButton onClick={onLogin}>Đăng nhập</PrimaryButton>
+          <button type="button" className="login-primary-btn" onClick={onLogin}>
+            Đăng nhập
+          </button>
+          <button type="button" className="login-secondary-btn" onClick={handleBiometricLoginClick}>
+            <QrCode size={24} aria-hidden="true" />
+            Mã QR cá nhân
+          </button>
           <button
             type="button"
             className="biometric-login-btn"
@@ -107,21 +128,39 @@ export function BankLoginScreen({
             title="Đăng nhập Face ID"
             aria-label="Đăng nhập Face ID"
           >
-            <ScanFace size={28} />
+            <span className="login-faceid-button-glyph" aria-hidden="true">
+              <FaceIdGlyph state="idle" />
+            </span>
           </button>
+        </div>
+
+        <div className="login-ai-strip" aria-label="Trạng thái bảo vệ AI">
+          <Bot size={18} aria-hidden="true" />
+          <span>AI đang giám sát giao dịch bất thường</span>
+          <Sparkles size={16} aria-hidden="true" />
         </div>
       </div>
 
-      <div className="quick-utilities">
+      <nav className="login-bottom-nav" aria-label="Tiện ích hỗ trợ">
         <button type="button" className="utility-btn">
-          <QrCode size={18} />
-          <span>QR Pay</span>
+          <CalendarDays size={27} aria-hidden="true" />
+          <span>Đặt lịch hẹn</span>
         </button>
         <button type="button" className="utility-btn">
-          <QrCode size={18} />
-          <span>QR của tôi</span>
+          <MapPin size={27} aria-hidden="true" />
+          <span>Chi nhánh & ATM</span>
         </button>
-      </div>
+        <button type="button" className="utility-btn">
+          <Phone size={27} aria-hidden="true" />
+          <span>Tổng đài</span>
+        </button>
+        <button type="button" className="utility-btn">
+          <Headphones size={27} aria-hidden="true" />
+          <span>Hỗ trợ</span>
+        </button>
+      </nav>
+
+      <div className="login-home-indicator" aria-hidden="true"></div>
 
       {faceIdModalVisible && (
         <div className="ios-faceid-modal-backdrop" onClick={() => setFaceIdModalVisible(false)}>

@@ -91,7 +91,7 @@ describe("KNIGHT state machine", () => {
     expect(dispatchScenarioEvent(initial, "ACTIVATE_REASSURANCE_PACKAGE_SUCCESS")).toBe(initial);
 
     const caseCreated = run(fraudRecoveryEvents);
-    expect(getVisibleScreen(caseCreated)).toBe("fraud-case-submitted");
+    expect(getVisibleScreen(caseCreated)).toBe("guard");
 
     const morningReady = dispatchScenarioEvent(caseCreated, "OPEN_NEXT_MORNING_RECOVERY");
     expect(morningReady.currentState).toBe("next_morning_recovery_ready");
@@ -109,6 +109,30 @@ describe("KNIGHT state machine", () => {
     expect(packageActive.currentState).toBe("reassurance_package_active");
     expect(packageActive.reassurancePackage?.benefits).toHaveLength(5);
     expect(getVisibleScreen(packageActive)).toBe("reassurance-package");
+  });
+
+  it("keeps the newly issued one-time card visible before returning to bank home", () => {
+    const cardIssued = run([
+      "RISK_EVENT_RECEIVED",
+      "AUTO_SUSPEND_ALLOWED",
+      "PUSH_SENT",
+      "CUSTOMER_TAPS_FRAUD",
+      "REQUEST_BIOMETRIC",
+      "BIOMETRIC_SUCCESS_FRAUD",
+      "TERMINATE_CARD_SUCCESS",
+      "ISSUE_CARD_SUCCESS",
+    ]);
+
+    expect(cardIssued.currentState).toBe("new_card_issued");
+    expect(getVisibleScreen(cardIssued)).toBe("virtual-card");
+    expect(cardIssued.newCard?.status).toBe("active");
+    expect(cardIssued.fraudCase).toBeUndefined();
+
+    const returnedHome = dispatchScenarioEvent(cardIssued, "CREATE_CASE_SUCCESS");
+
+    expect(returnedHome.currentState).toBe("fraud_case_created");
+    expect(returnedHome.fraudCase?.status).toBe("created");
+    expect(getVisibleScreen(returnedHome)).toBe("guard");
   });
 
   it("does not activate a reassurance package below the score threshold", () => {

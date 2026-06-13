@@ -924,6 +924,7 @@
 
 /* Assistant Dialogue Overlay (KNIGHT dialogue) */
 .assistant-layer {
+  display: none;
   position: absolute;
   right: clamp(8px, 9vw, 88px);
   top: clamp(108px, 22vw, 178px);
@@ -2368,4 +2369,3 @@
   width: 120px;
   height: 120px;
 }
-

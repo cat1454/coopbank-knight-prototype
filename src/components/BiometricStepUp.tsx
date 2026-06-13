@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import { CheckCircle2, Fingerprint, RotateCcw, ScanFace, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, RotateCcw, ScanFace, XCircle, Loader2 } from "lucide-react";
 import type { CustomerIntent, KnightScenarioState } from "../domain/types";
 import { PrimaryButton } from "./PrimaryButton";
 import { StatusPill } from "./StatusPill";
@@ -283,7 +283,7 @@ export function BiometricStepUp({ state, onVerify, onFail, isProcessing = false 
 
       <div className="action-stack">
         <PrimaryButton
-          icon={isVerified ? <CheckCircle2 size={18} /> : <Fingerprint size={18} />}
+          icon={isVerified ? <CheckCircle2 size={18} /> : <ScanFace size={18} />}
           onClick={() => startScanning(false)}
           disabled={isProcessing || isVerified || isScanning}
         >
@@ -301,4 +301,3 @@ export function BiometricStepUp({ state, onVerify, onFail, isProcessing = false 
     </section>
   );
 }
-

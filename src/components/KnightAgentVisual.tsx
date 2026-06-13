@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps */
 import { useEffect, useRef, useState, useMemo } from "react";
 import type { KnightScenarioState } from "../domain/types";
 import "../styles/knight-agent.css";
@@ -43,7 +43,6 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
   
   const [alarmEnabled, setAlarmEnabled] = useState(false);
   const [alarmActive, setAlarmActive] = useState(false);
-  const [typedText, setTypedText] = useState("");
 
   // Map state to scenario visual properties
   const step = useMemo(() => {
@@ -454,23 +453,6 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
   // Is threat active (danger mode)?
   const isDanger = step.mood === "alert" || step.mood === "protect";
 
-  // Typing Effect for Assistant Message
-  useEffect(() => {
-    setTypedText("");
-    if (!step.assistantMessage) return;
-
-    let index = 0;
-    const timer = setInterval(() => {
-      setTypedText(step.assistantMessage.slice(0, index));
-      index++;
-      if (index > step.assistantMessage.length) {
-        clearInterval(timer);
-      }
-    }, 14);
-
-    return () => clearInterval(timer);
-  }, [step.assistantMessage]);
-
   // Mouse Parallax Effect
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const scene = sceneRef.current;
@@ -800,8 +782,7 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
             </div>
           </div>
 
-          {/* Dialog assistant layer */}
-          <aside className="assistant-layer" aria-live="polite">
+          <aside className="assistant-layer" aria-hidden="true">
             <div className="assistant-min">
               <span className="live-dot" />
               <span>KNIGHT đang canh gác</span>
@@ -814,7 +795,7 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
                 </div>
                 <div className="assistant-avatar" />
               </div>
-              <p className="assistant-text">{typedText}</p>
+              <p className="assistant-text">{step.assistantMessage}</p>
               <div className="assistant-actions">
                 <span className="action-chip">{step.action}</span>
                 <span className="action-chip">explain()</span>
