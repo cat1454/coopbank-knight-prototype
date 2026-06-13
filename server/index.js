@@ -314,8 +314,8 @@ async function sendPushToAll(alert = {}) {
     body,
     url: navigateUrl,
     tag: "knight-critical-alert",
-    icon: "/knight-shield.svg",
-    badge: "/knight-shield.svg",
+    icon: "/logo.png",
+    badge: "/logo.png",
   });
 
   let sent = 0;

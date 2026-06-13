@@ -29,8 +29,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body: notification.body || "Phát hiện giao dịch bất thường. Thẻ số đã được tạm khóa.",
-      icon: notification.icon || "/knight-shield.svg",
-      badge: notification.badge || "/knight-shield.svg",
+      icon: notification.icon || "/logo.png",
+      badge: notification.badge || "/logo.png",
       tag: notification.tag || "knight-critical-alert",
       renotify: true,
       data: {
