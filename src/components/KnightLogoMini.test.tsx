@@ -11,6 +11,10 @@ describe("KnightLogoMini", () => {
     expect(logo).toHaveAttribute("src", "/logo.png");
     expect(logo).toHaveAttribute("width", "48");
     expect(logo).toHaveAttribute("height", "48");
-    expect(logo).toHaveClass("knight-logo-mini", "custom-logo");
+    expect(logo).toHaveClass(
+      "knight-logo-mini",
+      "knight-logo-mini--highlighted",
+      "custom-logo",
+    );
   });
 });
