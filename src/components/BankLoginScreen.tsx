@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Lock, Fingerprint, QrCode } from "lucide-react";
+import { Lock, QrCode, ScanFace } from "lucide-react";
 import { PrimaryButton } from "./PrimaryButton";
+import { FaceIdGlyph } from "./BiometricStepUp";
 
 interface BankLoginScreenProps {
   onLogin: () => void;
@@ -14,6 +15,9 @@ export function BankLoginScreen({
   setSelectedQtdnd,
 }: BankLoginScreenProps) {
   const [password, setPassword] = useState("");
+  const [faceIdModalVisible, setFaceIdModalVisible] = useState(false);
+  const [faceIdStatus, setFaceIdStatus] = useState<"idle" | "scanning" | "success" | "failed">("idle");
+  const [faceIdText, setFaceIdText] = useState("Face ID");
 
   const qtdndList = [
     "QTDND Đà Nẵng",
@@ -24,6 +28,30 @@ export function BankLoginScreen({
     "QTDND Đồng Tháp",
   ];
 
+  const handleBiometricLoginClick = () => {
+    setFaceIdModalVisible(true);
+    setFaceIdStatus("scanning");
+    setFaceIdText("Đang nhận dạng khuôn mặt...");
+
+    // Stage 1: Match database
+    setTimeout(() => {
+      setFaceIdStatus("scanning");
+      setFaceIdText("Đối chiếu dữ liệu sinh trắc...");
+    }, 750);
+
+    // Stage 2: Verified Success
+    setTimeout(() => {
+      setFaceIdStatus("success");
+      setFaceIdText("Xác thực thành công");
+    }, 1500);
+
+    // Stage 3: Close modal and log in
+    setTimeout(() => {
+      setFaceIdModalVisible(false);
+      onLogin();
+    }, 2250);
+  };
+
   return (
     <section className="screen screen--login" aria-labelledby="login-title">
       <div className="login-banner">
@@ -33,8 +61,8 @@ export function BankLoginScreen({
             <span className="qtdnd-logo__icon">🏦</span>
             <strong className="qtdnd-logo__text">{selectedQtdnd}</strong>
           </div>
-          <h1 id="login-title">Co-opBank Mobile</h1>
-          <h2 className="login-banner__desc">Co-opBank luôn canh gác các giao dịch bất thường.</h2>
+          <h1 id="login-title">Co-opBank KNIGHT</h1>
+          <h2 className="login-banner__desc">Hiệp sĩ số bảo vệ thẻ giao dịch tự động bằng Agentic AI và cá nhân hóa trải nghiệm khôi phục</h2>
         </div>
       </div>
 
@@ -75,11 +103,11 @@ export function BankLoginScreen({
           <button
             type="button"
             className="biometric-login-btn"
-            onClick={onLogin}
+            onClick={handleBiometricLoginClick}
             title="Đăng nhập Face ID"
             aria-label="Đăng nhập Face ID"
           >
-            <Fingerprint size={28} />
+            <ScanFace size={28} />
           </button>
         </div>
       </div>
@@ -94,6 +122,17 @@ export function BankLoginScreen({
           <span>QR của tôi</span>
         </button>
       </div>
+
+      {faceIdModalVisible && (
+        <div className="ios-faceid-modal-backdrop" onClick={() => setFaceIdModalVisible(false)}>
+          <div className="ios-faceid-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ios-faceid-modal__glyph-wrapper">
+              <FaceIdGlyph state={faceIdStatus} />
+            </div>
+            <p className="ios-faceid-modal__status">{faceIdText}</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

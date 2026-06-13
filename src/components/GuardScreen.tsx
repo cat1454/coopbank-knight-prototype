@@ -15,8 +15,8 @@ export function GuardScreen({ state, onStart }: GuardScreenProps) {
       <div className="guard-visual" aria-hidden="true">
         <ShieldCheck size={52} strokeWidth={1.8} />
       </div>
-      <StatusPill tone="success">KNIGHT đang bảo vệ thẻ số</StatusPill>
-      <h1 id="guard-title">Co-opBank luôn canh gác các giao dịch bất thường.</h1>
+      <StatusPill tone="success">CO-OPBANK KNIGHT</StatusPill>
+      <h1 id="guard-title">Hiệp sĩ số bảo vệ thẻ giao dịch tự động bằng Agentic AI và cá nhân hóa trải nghiệm khôi phục</h1>
       <p>
         Demo bắt đầu lúc 02:00 với giao dịch {formatVnd(state.transaction.amountVnd)} tại{" "}
         {state.transaction.merchantName}.

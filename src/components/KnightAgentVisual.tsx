@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useRef, useState, useMemo } from "react";
 import type { KnightScenarioState } from "../domain/types";
 import "../styles/knight-agent.css";
@@ -11,6 +12,7 @@ const phaseColors = {
   REASON: "#00d8ff",
   ACT: "#ef9f27",
   OBSERVE: "#1fd89a",
+  UPGRADED: "#bf5af2",
 };
 
 const particleLabels = [
@@ -24,6 +26,8 @@ const particleLabels = [
   "audit_log: write",
   "ReAct: REASON",
   "policy: L2",
+  "trust_score: 82",
+  "threshold: 70",
   "token.rotate()",
   "card.issue_new()",
 ];
@@ -149,7 +153,7 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
           hot: "response" as const,
         };
 
-      case "biometric_verified":
+      case "biometric_verified": {
         const isLegit = state.customerIntent === "legitimate";
         return {
           phase: "ACT" as const,
@@ -166,6 +170,7 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
           action: "auth.success()",
           hot: "audit" as const,
         };
+      }
 
       case "card_terminated_l3":
         return {
@@ -211,28 +216,113 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
           audit: "COMPLETE",
           badgeTitle: "HỒ SƠ FRAUD",
           badgeSubtitle: "Đã tạo Case",
-          thought: "Hồ sơ tra soát (Dispute Case L3) đã được tạo và gửi thành công sang hàng đợi của phòng Fraud Ops xem xét bồi hoàn.",
-          assistantMessage: "Đã tạo hồ sơ tra soát thành công để bảo vệ quyền lợi của bạn. Tôi cũng đã chuẩn bị một chương trình ưu đãi đặc biệt.",
-          alert: "Đã tạo hồ sơ tra soát L3. Quy trình xử lý sự cố hoàn tất.",
+          thought: "[GOAL] Thẻ cũ đã khóa, thẻ mới hoạt động và hồ sơ tra soát đã được tạo. Chỉ sau mốc an toàn này mới được đánh giá nhu cầu phục hồi niềm tin.",
+          assistantMessage: "Tài khoản đã được bảo vệ. Tiếp theo tôi sẽ quan sát các tín hiệu hành vi sau sự cố để xác định khách hàng có cần hỗ trợ thêm hay không.",
+          alert: "Mốc an toàn đã xác nhận. Sẵn sàng quan sát hành vi sau sự cố.",
           action: "case.create()",
           hot: "audit" as const,
         };
 
-      case "recovery_offer_ready":
-      case "audit_complete":
+      case "post_incident_behavior_observed":
+        return {
+          phase: "OBSERVE" as const,
+          mood: "resolve" as const,
+          riskScore: 180,
+          cardStatus: "PROTECTED",
+          response: "1.1s",
+          audit: "WRITING",
+          badgeTitle: "HÀNH VI",
+          badgeSubtitle: "5 tín hiệu",
+          thought: "[OBSERVE] Ghi nhận 6 lần kiểm tra số dư, 4 lần mở lịch sử, 3 lần xem bảo vệ, 2 lần mở hỗ trợ và 1 thanh toán thiết yếu bị dừng.",
+          assistantMessage: "Tôi chỉ dùng hành vi có thể kiểm chứng. Đây là dấu hiệu nhu cầu hỗ trợ, không phải kết luận rằng tôi biết khách hàng đang cảm thấy gì.",
+          alert: "behavior.observePostIncident() · 5 tín hiệu đã ghi nhận.",
+          action: "behavior.observe()",
+          hot: "phase" as const,
+        };
+
+      case "trust_recovery_assessed":
+        return {
+          phase: "REASON" as const,
+          mood: "resolve" as const,
+          riskScore: 170,
+          cardStatus: "PROTECTED",
+          response: "0.9s",
+          audit: "WRITING",
+          badgeTitle: "82 / 100",
+          badgeSubtitle: "Ngưỡng 70",
+          thought: "[ANALYSIS] Tổng trọng số 82/100. [REASONING] Điểm vượt ngưỡng 70 và lịch sử consent cho thấy Điện, Nước, Siêu thị là nhu cầu thật. [DECISION] Kích hoạt Gói Phục Hồi An Tâm.",
+          assistantMessage: "Điểm Nhu Cầu Phục Hồi là 82 trên 100. Tôi sẽ bật các lớp hỗ trợ an toàn phù hợp; hoàn tiền thiết yếu vẫn cần khách hàng xác nhận riêng.",
+          alert: "trustRecovery.checkThreshold() · 82 ≥ 70 · ELIGIBLE",
+          action: "trustRecovery.calculate()",
+          hot: "phase" as const,
+        };
+
+      case "reassurance_package_active":
+        return {
+          phase: "ACT" as const,
+          mood: "resolve" as const,
+          riskScore: 150,
+          cardStatus: "PROTECTED",
+          response: "0.8s",
+          audit: "WRITING",
+          badgeTitle: "AN TÂM",
+          badgeSubtitle: "Gói đã bật",
+          thought: "[ACTION] Đã bật bảo vệ 30 ngày, cảnh báo realtime, hỗ trợ ưu tiên 24/7, xem xét hoàn phí và báo cáo an toàn. Cashback thiết yếu đang chờ consent.",
+          assistantMessage: "Các lớp hỗ trợ an toàn đã hoạt động. Phần hoàn tiền 10% cho Điện, Nước và Siêu thị chỉ được bật khi khách hàng xác nhận.",
+          alert: "reassurance.activateSafetySupport() success.",
+          action: "reassurance.activate()",
+          hot: "audit" as const,
+        };
+
+      case "cashback_activated":
+        return {
+          phase: "ACT" as const,
+          mood: "resolve" as const,
+          riskScore: 140,
+          cardStatus: "PROTECTED",
+          response: "0.7s",
+          audit: "WRITING",
+          badgeTitle: "ĐÃ XÁC NHẬN",
+          badgeSubtitle: "Chi tiêu thiết yếu",
+          thought: "[ACTION] Khách hàng đã đồng ý. Kích hoạt hoàn tiền 10% đúng ba nhóm Điện, Nước và Siêu thị trong tháng này.",
+          assistantMessage: "Hoàn tiền thiết yếu đã được kích hoạt theo consent. Tôi tiếp tục quan sát hành vi sử dụng để đánh giá hiệu quả hỗ trợ.",
+          alert: "cashback.activateEssential() success.",
+          action: "cashback.activate()",
+          hot: "audit" as const,
+        };
+
+      case "recovery_observed":
+      case "react_cycle_completed":
         return {
           phase: "OBSERVE" as const,
           mood: "idle" as const,
-          riskScore: 190,
+          riskScore: 120,
           cardStatus: "PROTECTED",
-          response: "0.9s",
+          response: "0.6s",
           audit: "COMPLETE",
-          badgeTitle: "AN TOÀN",
-          badgeSubtitle: "Đã bảo vệ",
-          thought: "Rủi ro đã hạ về mức an toàn. Tôi đề xuất chương trình hoàn tiền an tâm 5% dành riêng cho bạn dựa trên lịch sử chi tiêu.",
-          assistantMessage: "Tôi đã chuẩn bị một ưu đãi hoàn tiền an tâm cho bạn. Hãy kích hoạt nó trên màn hình thẻ mới để nhận ưu đãi nhé.",
-          alert: "Vòng bảo vệ hoàn tất. KNIGHT trở lại chế độ giám sát.",
-          action: "guard.resume()",
+          badgeTitle: "HOÀN TẤT",
+          badgeSubtitle: "Có bằng chứng",
+          thought: "[OBSERVE] Khách hàng quay lại thanh toán điện và số lần kiểm tra số dư lặp lại giảm 60%. Đây là tín hiệu hành vi phục hồi có thể kiểm chứng.",
+          assistantMessage: "Tín hiệu sau hỗ trợ cho thấy khách hàng đã tiếp tục giao dịch thiết yếu và giảm kiểm tra số dư lặp lại. Vòng phục hồi hoàn tất.",
+          alert: "Recovery evidence observed · ReAct Cycle Complete",
+          action: "recovery.observe()",
+          hot: "phase" as const,
+        };
+
+      case "audit_complete":
+        return {
+          phase: "UPGRADED" as const,
+          mood: "upgraded" as const,
+          riskScore: 120,
+          cardStatus: "PROTECTED",
+          response: "0.6s",
+          audit: "COMPLETE",
+          badgeTitle: "AI UPGRADED",
+          badgeSubtitle: "Hiệu năng cao",
+          thought: "Lõi bảo vệ KNIGHT đã tự động học tập hành vi an toàn và tự nâng cấp lên v2.0 (Chế độ tăng cường).",
+          assistantMessage: "Vòng phục hồi hoàn tất thành công! Tôi đã tự nâng cấp lõi phòng thủ ReAct lên phiên bản v2.0 để bảo vệ tài khoản tối ưu.",
+          alert: "KNIGHT AI v2.0: Chế độ bảo vệ tăng cường đã kích hoạt.",
+          action: "agent.upgrade()",
           hot: "phase" as const,
         };
 
@@ -491,7 +581,7 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
       setTimeout(() => {
         try {
           osc.stop();
-        } catch (e) {
+        } catch {
           // ignore
         }
       }, 90);
@@ -567,7 +657,7 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
           ["--mood-color" as any]: isDanger ? "#ff2d55" : phaseColor,
         }}
         onPointerMove={handlePointerMove}
-        aria-label="Knight AI Agent fraud protection visual workspace"
+        aria-label="KNIGHT animated agent fraud protection visual workspace"
       >
         {/* Radar Grid Background */}
         <div className="radar-grid" aria-hidden="true">
@@ -617,8 +707,8 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
 
         {/* Name tag */}
         <header className="name-tag">
-          <div className="title">KNIGHT</div>
-          <div className="subtitle">Co-opBank AI Agent · ReAct v2.0</div>
+          <div className="title">CO-OPBANK KNIGHT</div>
+          <div className="subtitle">Hiệp sĩ số bảo vệ thẻ giao dịch tự động</div>
         </header>
 
         {/* Reasoning thought bubble */}

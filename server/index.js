@@ -6,6 +6,7 @@ import path from "path";
 import readline from "readline";
 import { fileURLToPath } from "url";
 import webPush from "web-push";
+import { DEMO_FLOW_IDS, getDemoFlow, listDemoFlows } from "./demoFlows.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -20,6 +21,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.j
   .map((origin) => origin.trim())
   .filter(Boolean);
 const sendPushSecret = process.env.SEND_PUSH_SECRET || "";
+const autoTriggerOnConnect = process.env.AUTO_TRIGGER_ON_CONNECT === "1";
 const subscriptionsFile = process.env.PUSH_SUBSCRIPTIONS_FILE || path.join(__dirname, "push-subscriptions.json");
 const vapidKeysFile = process.env.VAPID_KEYS_FILE || path.join(__dirname, "vapid-keys.local.json");
 
@@ -394,7 +396,6 @@ function clearIncidentTimer(incident) {
   stopRepeatPush();
 }
 
-
 function broadcastIncidentEvents(incidentId, events) {
   broadcast({ type: "trigger", incidentId, events });
 }
@@ -483,6 +484,49 @@ function triggerReset() {
   broadcast({ type: "trigger", events: ["RESET_SCENARIO"] });
 }
 
+function startDemoFlow(flowId, source = "terminal") {
+  const flow = getDemoFlow(flowId);
+
+  triggerReset();
+
+  const incident = {
+    id: createIncidentId(),
+    source,
+    flowId,
+    cancelled: false,
+    repeatTimer: null,
+  };
+
+  currentIncident = incident;
+  alertTriggered = true;
+
+  logSystem(`Mở điểm bắt đầu demo: ${flow.label}`);
+  broadcast({
+    type: "demo-flow",
+    incidentId: incident.id,
+    flowId: flow.id,
+    events: flow.events,
+    showCriticalAlert: flow.showCriticalAlert,
+    autoAdvance: false,
+  });
+
+  if (flow.sendPush) {
+    void sendPushToAll();
+    startRepeatPush(incident.id);
+  } else {
+    stopRepeatPush();
+  }
+
+  return {
+    started: true,
+    incidentId: incident.id,
+    flowId: flow.id,
+    label: flow.label,
+    events: flow.events.length,
+    autoAdvance: false,
+  };
+}
+
 
 loadSubscriptions();
 
@@ -510,6 +554,43 @@ const server = http.createServer(async (req, res) => {
 
   if (requestUrl.pathname === "/api/lan-ip" && req.method === "GET") {
     sendJson(res, 200, { ip: getLanIp() });
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/demo-flows" && req.method === "GET") {
+    sendJson(
+      res,
+      200,
+      listDemoFlows().map((flow) => ({
+        id: flow.id,
+        label: flow.label,
+        description: flow.description,
+        events: flow.events.length,
+        showCriticalAlert: flow.showCriticalAlert,
+        autoAdvance: false,
+      })),
+    );
+    return;
+  }
+
+  const demoFlowMatch = requestUrl.pathname.match(/^\/api\/demo-flows\/([^/]+)\/start$/);
+  if (demoFlowMatch && req.method === "POST") {
+    if (!sendPushSecret) {
+      sendJson(res, 503, { error: "SEND_PUSH_SECRET is not configured" });
+      return;
+    }
+
+    if (!tokenMatches(req.headers.authorization)) {
+      sendJson(res, 401, { error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const result = startDemoFlow(decodeURIComponent(demoFlowMatch[1]), "api");
+      sendJson(res, 200, { success: true, ...result });
+    } catch (error) {
+      sendJson(res, 404, { error: error.message || "Unknown demo flow" });
+    }
     return;
   }
 
@@ -633,7 +714,7 @@ const server = http.createServer(async (req, res) => {
     lastAuditCount = 0;
     lastState = "";
 
-    if (!alertTriggered && clients.length === 1) {
+    if (autoTriggerOnConnect && !alertTriggered && clients.length === 1) {
       logSystem("Auto-triggering risk alert after 2.5 seconds...");
       autoTriggerTimer = setTimeout(() => {
         logSystem("Auto-trigger timeout reached.");
@@ -706,8 +787,15 @@ server.listen(PORT, "0.0.0.0", () => {
   if (!sendPushSecret) {
     logSystem("SEND_PUSH_SECRET is not set. /api/push/send is disabled, but terminal hotkeys still work.");
   }
+  logSystem(
+    autoTriggerOnConnect
+      ? "AUTO_TRIGGER_ON_CONNECT=1: cảnh báo ban đầu sẽ tự chạy khi app kết nối."
+      : "Auto-trigger khi app kết nối đang tắt. Dùng phím 1/2 để bắt đầu flow quay.",
+  );
   console.log(`${COLORS.bold}Keys:${COLORS.reset}`);
-  console.log(`  [Space] / [Enter] / [S] : Trigger high-risk alert, Web Push, voice fallback, SMS no-answer`);
+  console.log(`  [1]                     : Mở cảnh 02:00 · tự bấm luồng bảo vệ`);
+  console.log(`  [2]                     : Mở cảnh 08:30 · tự bấm luồng phục hồi`);
+  console.log(`  [Space] / [Enter] / [S] : Chỉ trigger cảnh báo rủi ro ban đầu`);
   console.log(`  [R]                     : Reset app state`);
   console.log(`  [Q]                     : Quit server`);
   console.log("\n------------------------------------------------------------\n");
@@ -724,7 +812,11 @@ process.stdin.on("keypress", (_str, key) => {
   }
 
   const keyName = key.name || "";
-  if (keyName === "s" || keyName === "space" || keyName === "return") {
+  if (keyName === "1") {
+    startDemoFlow(DEMO_FLOW_IDS.NIGHT_PROTECTION);
+  } else if (keyName === "2") {
+    startDemoFlow(DEMO_FLOW_IDS.NEXT_MORNING_RECOVERY);
+  } else if (keyName === "s" || keyName === "space" || keyName === "return") {
     triggerAlert();
   } else if (keyName === "r") {
     triggerReset();

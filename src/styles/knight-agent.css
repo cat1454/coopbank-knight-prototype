@@ -98,6 +98,19 @@
   --phase-color: var(--green);
 }
 
+.scene[data-mood="upgraded"] {
+  --mood-color: #bf5af2;
+  --phase-color: #bf5af2;
+  background:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(191, 90, 242, 0.18), transparent 28%),
+    radial-gradient(circle at 78% 18%, rgba(191, 90, 242, 0.12), transparent 24%),
+    linear-gradient(145deg, #0d0916 0%, #0f081d 44%, #13071b 100%);
+  border-color: rgba(191, 90, 242, 0.35);
+  box-shadow:
+    0 22px 80px rgba(191, 90, 242, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
 .scene.is-speaking .assistant-shell {
   opacity: 1;
   transform: translateY(0) scale(1);

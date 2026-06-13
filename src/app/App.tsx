@@ -3,11 +3,14 @@ import { ShieldCheck } from "lucide-react";
 import { AuditTimeline } from "../components/AuditTimeline";
 import { BiometricStepUp } from "../components/BiometricStepUp";
 import { CriticalAlertSurface } from "../components/CriticalAlertSurface";
-import { DemoControls } from "../components/DemoControls";
+import { FraudCaseSubmittedScreen } from "../components/FraudCaseSubmittedScreen";
 import { FraudReviewScreen } from "../components/FraudReviewScreen";
 import { GuardScreen } from "../components/GuardScreen";
 import { LegitimateResolutionScreen } from "../components/LegitimateResolutionScreen";
-import { RecoveryOfferScreen } from "../components/RecoveryOfferScreen";
+import { NextMorningRecoveryScreen } from "../components/NextMorningRecoveryScreen";
+import { PostIncidentBehaviorScreen } from "../components/PostIncidentBehaviorScreen";
+import { ReassurancePackageScreen } from "../components/ReassurancePackageScreen";
+import { TrustRecoveryAssessmentScreen } from "../components/TrustRecoveryAssessmentScreen";
 import { TimeoutEscalationScreen } from "../components/TimeoutEscalationScreen";
 import { VirtualCardScreen } from "../components/VirtualCardScreen";
 import { BankLoginScreen } from "../components/BankLoginScreen";
@@ -35,6 +38,25 @@ const fraudResolutionEvents: KnightEventType[] = [
   "CREATE_CASE_SUCCESS",
 ];
 
+const trustRecoveryEvents: KnightEventType[] = [
+  "OPEN_NEXT_MORNING_RECOVERY",
+  "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS",
+  "ASSESS_TRUST_RECOVERY_SUCCESS",
+  "ACTIVATE_REASSURANCE_PACKAGE_SUCCESS",
+  "CUSTOMER_ACCEPTS_ESSENTIAL_CASHBACK",
+  "ACTIVATE_ESSENTIAL_CASHBACK_SUCCESS",
+  "OBSERVE_RECOVERY_SUCCESS",
+  "COMPLETE_REACT_CYCLE",
+];
+
+const fullFraudStoryEvents: KnightEventType[] = [
+  ...highRiskEvents,
+  "CUSTOMER_TAPS_FRAUD",
+  "REQUEST_BIOMETRIC",
+  ...fraudResolutionEvents,
+  ...trustRecoveryEvents,
+];
+
 const legitimateResolutionEvents: KnightEventType[] = [
   "BIOMETRIC_SUCCESS_LEGIT",
   "UNSUSPEND_CARD_SUCCESS",
@@ -48,6 +70,70 @@ const timeoutEvents: KnightEventType[] = [
   "ESCALATE_FRAUD_OPS",
   "KEEP_CARD_SUSPENDED",
 ];
+
+function getShotEvents(shot: string | null): KnightEventType[] | null {
+  switch (shot) {
+    case "reason":
+    case "alert":
+      return ["RISK_EVENT_RECEIVED"];
+    case "fraud-review":
+      return highRiskEvents;
+    case "faceid":
+      return [...highRiskEvents, "CUSTOMER_TAPS_FRAUD", "REQUEST_BIOMETRIC"];
+    case "card":
+      return [...highRiskEvents, "CUSTOMER_TAPS_FRAUD", "REQUEST_BIOMETRIC", ...fraudResolutionEvents.slice(0, 3)];
+    case "case":
+      return [...highRiskEvents, "CUSTOMER_TAPS_FRAUD", "REQUEST_BIOMETRIC", ...fraudResolutionEvents];
+    case "behavior":
+    case "insight":
+      return [
+        ...highRiskEvents,
+        "CUSTOMER_TAPS_FRAUD",
+        "REQUEST_BIOMETRIC",
+        ...fraudResolutionEvents,
+        "OPEN_NEXT_MORNING_RECOVERY",
+        "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS",
+      ];
+    case "morning":
+      return [
+        ...highRiskEvents,
+        "CUSTOMER_TAPS_FRAUD",
+        "REQUEST_BIOMETRIC",
+        ...fraudResolutionEvents,
+        "OPEN_NEXT_MORNING_RECOVERY",
+      ];
+    case "assessment":
+    case "offer":
+      return [
+        ...highRiskEvents,
+        "CUSTOMER_TAPS_FRAUD",
+        "REQUEST_BIOMETRIC",
+        ...fraudResolutionEvents,
+        "OPEN_NEXT_MORNING_RECOVERY",
+        "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS",
+        "ASSESS_TRUST_RECOVERY_SUCCESS",
+      ];
+    case "package":
+    case "activated":
+      return [
+        ...highRiskEvents,
+        "CUSTOMER_TAPS_FRAUD",
+        "REQUEST_BIOMETRIC",
+        ...fraudResolutionEvents,
+        "OPEN_NEXT_MORNING_RECOVERY",
+        "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS",
+        "ASSESS_TRUST_RECOVERY_SUCCESS",
+        "ACTIVATE_REASSURANCE_PACKAGE_SUCCESS",
+      ];
+    case "recovery":
+    case "sentiment":
+      return fullFraudStoryEvents;
+    case "timeout":
+      return timeoutEvents;
+    default:
+      return null;
+  }
+}
 
 export interface BankTransaction {
   id: string;
@@ -64,10 +150,24 @@ export function App() {
            (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("env") === "test");
   }, []);
 
+  const queryParams = useMemo(() => {
+    return typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
+  }, []);
+
+  const captureMode = useMemo<"split" | "phone" | "agent">(() => {
+    const requestedMode = queryParams.get("capture");
+    return requestedMode === "phone" || requestedMode === "agent" ? requestedMode : "split";
+  }, [queryParams]);
+
+  const requestedShot = queryParams.get("shot");
+
   // Pre-create and unlock alarm audio during normal usage so it auto-plays on iOS
   const alarmAudio = useAlarmAudio();
 
-  const [state, setState] = useState(() => createInitialKnightState());
+  const [state, setState] = useState(() => {
+    const shotEvents = getShotEvents(requestedShot);
+    return shotEvents ? runScenarioEvents(createInitialKnightState(), shotEvents) : createInitialKnightState();
+  });
   const [showCriticalAlert, setShowCriticalAlert] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedQtdnd, setSelectedQtdnd] = useState("QTDND Đà Nẵng");
@@ -101,6 +201,7 @@ export function App() {
   const visibleScreen = getVisibleScreen(state);
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const activeSequenceId = useRef(0);
 
   const cancelActiveSequence = useCallback(() => {
@@ -230,36 +331,44 @@ export function App() {
     applyEvents(["AUDIT_COMPLETE"]);
   }, [applyEvents]);
 
-  const jumpFraud = useCallback(() => {
-    cancelActiveSequence();
-    setShowCriticalAlert(false);
-    setState(createInitialKnightState());
-    applyEventsSequentially([
-      ...highRiskEvents,
-      "CUSTOMER_TAPS_FRAUD",
-      "REQUEST_BIOMETRIC",
-      ...fraudResolutionEvents,
-    ]);
-  }, [cancelActiveSequence, applyEventsSequentially]);
+  const completeScenarioFlow = useCallback(() => {
+    setIsTransitioning(true);
+    const delay = isTestMode ? 0 : 600;
+    if (delay === 0) {
+      applyEvents(["AUDIT_COMPLETE"]);
+      setIsTransitioning(false);
+    } else {
+      setTimeout(() => {
+        applyEvents(["AUDIT_COMPLETE"]);
+        setIsTransitioning(false);
+      }, delay);
+    }
+  }, [applyEvents, isTestMode]);
 
-  const jumpLegitimate = useCallback(() => {
-    cancelActiveSequence();
-    setShowCriticalAlert(false);
-    setState(createInitialKnightState());
-    applyEventsSequentially([
-      ...highRiskEvents,
-      "CUSTOMER_TAPS_LEGIT",
-      "REQUEST_BIOMETRIC",
-      ...legitimateResolutionEvents,
-    ]);
-  }, [cancelActiveSequence, applyEventsSequentially]);
+  const observePostIncidentBehavior = useCallback(() => {
+    applyEvents(["OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS"]);
+  }, [applyEvents]);
 
-  const jumpTimeout = useCallback(() => {
-    cancelActiveSequence();
-    setShowCriticalAlert(false);
-    setState(createInitialKnightState());
-    applyEventsSequentially(timeoutEvents);
-  }, [cancelActiveSequence, applyEventsSequentially]);
+  const openNextMorningRecovery = useCallback(() => {
+    applyEvents(["OPEN_NEXT_MORNING_RECOVERY"]);
+  }, [applyEvents]);
+
+  const assessTrustRecovery = useCallback(() => {
+    applyEvents(["ASSESS_TRUST_RECOVERY_SUCCESS"]);
+  }, [applyEvents]);
+
+  const activateReassurancePackage = useCallback(() => {
+    applyEvents(["ACTIVATE_REASSURANCE_PACKAGE_SUCCESS"]);
+  }, [applyEvents]);
+
+  const activateEssentialCashback = useCallback(() => {
+    applyEventsSequentially([
+      "CUSTOMER_ACCEPTS_ESSENTIAL_CASHBACK",
+      "ACTIVATE_ESSENTIAL_CASHBACK_SUCCESS",
+      "OBSERVE_RECOVERY_SUCCESS",
+      "COMPLETE_REACT_CYCLE",
+    ], 900);
+  }, [applyEventsSequentially]);
 
   // Connect to backend server SSE stream
   useEffect(() => {
@@ -283,7 +392,12 @@ export function App() {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === "trigger" && data.events) {
+        if (data.type === "demo-flow" && data.events) {
+          const events = data.events as KnightEventType[];
+          cancelActiveSequence();
+          setShowCriticalAlert(Boolean(data.showCriticalAlert));
+          setState(runScenarioEvents(createInitialKnightState(), events));
+        } else if (data.type === "trigger" && data.events) {
           const events = data.events as KnightEventType[];
 
           if (events.includes("RESET_SCENARIO")) {
@@ -408,12 +522,26 @@ export function App() {
         return (
           <VirtualCardScreen
             state={state}
-            onShowOffer={() => applyEvents(["GENERATE_OFFER_SUCCESS"])}
+            onShowOffer={observePostIncidentBehavior}
             isProcessing={isProcessing}
           />
         );
-      case "recovery-offer":
-        return <RecoveryOfferScreen state={state} onShowTimeline={showTimeline} />;
+      case "fraud-case-submitted":
+        return <FraudCaseSubmittedScreen state={state} onOpenNextMorning={openNextMorningRecovery} />;
+      case "next-morning-recovery":
+        return <NextMorningRecoveryScreen state={state} onObserveBehavior={observePostIncidentBehavior} />;
+      case "post-incident-behavior":
+        return <PostIncidentBehaviorScreen state={state} onAssessTrustRecovery={assessTrustRecovery} />;
+      case "trust-recovery-assessment":
+        return <TrustRecoveryAssessmentScreen state={state} onActivatePackage={activateReassurancePackage} />;
+      case "reassurance-package":
+        return (
+          <ReassurancePackageScreen
+            state={state}
+            onActivateCashback={activateEssentialCashback}
+            onComplete={completeScenarioFlow}
+          />
+        );
       case "audit-timeline":
         return <AuditTimeline state={state} onReset={reset} />;
       case "legitimate-resolution":
@@ -432,9 +560,14 @@ export function App() {
     }
   }, [
     applyEvents,
+    activateEssentialCashback,
+    activateReassurancePackage,
+    assessTrustRecovery,
     bankBalance,
     isLoggedIn,
     normalTransactions,
+    openNextMorningRecovery,
+    observePostIncidentBehavior,
     openFraudReview,
     requestBiometric,
     reset,
@@ -450,34 +583,52 @@ export function App() {
     isTestMode,
   ]);
 
+  const renderPhoneFrame = () => {
+    const isVibrating = showCriticalAlert && state.currentState === "risk_detected";
+    const accountStatus =
+      state.card.status === "terminated" && state.newCard?.status === "active"
+        ? "protected"
+        : state.card.status;
+    return (
+      <section className={`phone-frame ${isVibrating ? "phone-frame-vibrate" : ""}`} aria-label="Co-opBank KNIGHT mobile prototype">
+        <header className="app-header">
+          <div className="app-brand">
+            <KnightLogoMini size={36} className="app-brand__mark" />
+            <div>
+              <span>Co-opBank</span>
+              <strong>KNIGHT</strong>
+            </div>
+          </div>
+          <div className="header-status" aria-label={`Account ${accountStatus}`}>
+            <ShieldCheck size={16} aria-hidden="true" />
+            <span>{accountStatus}</span>
+          </div>
+        </header>
+        <div className={`screen-host ${isTransitioning ? "screen-exit" : "screen-enter"}`}>{screen}</div>
+      </section>
+    );
+  };
+
   const renderDemoContent = () => {
+    if (captureMode === "agent") {
+      return (
+        <div className="agent-capture-frame">
+          <KnightAgentVisual state={state} />
+        </div>
+      );
+    }
+
+    if (captureMode === "phone") {
+      return (
+        <div className="demo-content-grid demo-content-grid--phone-only">
+          <div className="phone-panel-wrapper">{renderPhoneFrame()}</div>
+        </div>
+      );
+    }
+
     return (
       <div className="demo-content-grid">
-        <div className="phone-panel-wrapper">
-          <section className="phone-frame" aria-label="Co-opBank KNIGHT mobile prototype">
-            <header className="app-header">
-              <div className="app-brand">
-                <KnightLogoMini size={36} className="app-brand__mark" />
-                <div>
-                  <span>Co-opBank</span>
-                  <strong>KNIGHT</strong>
-                </div>
-              </div>
-              <div className="header-status" aria-label={`Card ${state.card.status}`}>
-                <ShieldCheck size={16} aria-hidden="true" />
-                <span>{state.card.status}</span>
-              </div>
-            </header>
-            <div className="screen-host">{screen}</div>
-            <DemoControls
-              onJumpFraud={jumpFraud}
-              onJumpLegitimate={jumpLegitimate}
-              onJumpTimeout={jumpTimeout}
-              onReset={reset}
-              onStart={startScenario}
-            />
-          </section>
-        </div>
+        <div className="phone-panel-wrapper">{renderPhoneFrame()}</div>
         <div className="agent-panel-wrapper">
           <KnightAgentVisual state={state} />
         </div>
@@ -486,7 +637,7 @@ export function App() {
   };
 
   return (
-    <main className={`platform-container ${isTestMode ? "is-test-mode" : ""}`}>
+    <main className={`platform-container ${isTestMode ? "is-test-mode" : ""} capture-${captureMode}`}>
       <div className="platform-content">
         <div className="workspace-layout">{renderDemoContent()}</div>
       </div>

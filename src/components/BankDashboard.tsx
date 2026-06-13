@@ -65,7 +65,7 @@ export function BankDashboard({
   const [protectionLevel, setProtectionLevel] = useState<"monitor" | "standard" | "maximum">("standard");
   const [pushAlerts, setPushAlerts] = useState(false);
   const [pushStatus, setPushStatus] = useState<"idle" | "saving" | "enabled" | "error">("idle");
-  const [pushMessage, setPushMessage] = useState("Them vao Home Screen, mo tu icon KNIGHT, roi bat Push.");
+  const [pushMessage, setPushMessage] = useState("Thêm vào Màn hình chính, mở từ biểu tượng KNIGHT, rồi bật thông báo.");
 
   // Suggested Beneficiaries
   const handleSelectSuggestion = (type: "safe" | "fraud") => {
@@ -79,7 +79,7 @@ export function BankDashboard({
       setTransferBank("Co-opBank");
       setTransferAccount("88884920412");
       setTransferRecipient("ShopMall Global");
-      setTransferAmount("4800000");
+      setTransferAmount("10000000");
       setTransferContent("Thanh toan don hang");
     }
   };
@@ -96,8 +96,8 @@ export function BankDashboard({
     setTimeout(() => {
       const amountNum = Number(transferAmount);
 
-      // If it is the suspicious transaction (ShopMall Global or 4,800,000 VND)
-      if (transferRecipient.toLowerCase().includes("shopmall") || amountNum === 4800000) {
+      // If it is the suspicious transaction (ShopMall Global or 10,000,000 VND)
+      if (transferRecipient.toLowerCase().includes("shopmall") || amountNum === 10000000) {
         onStartDemo(); // Intercept! Trigger background AI agent risk detection
       } else {
         // Safe Transaction
@@ -131,26 +131,26 @@ export function BankDashboard({
   const handlePushAlertsChange = async (checked: boolean) => {
     if (!checked) {
       setPushStatus("saving");
-      setPushMessage("Dang tat subscription tren thiet bi nay...");
+      setPushMessage("Đang tắt thông báo trên thiết bị này...");
       await disablePushNotifications();
       setPushAlerts(false);
       setPushStatus("idle");
-      setPushMessage("Thong bao Push da tat tren prototype nay.");
+      setPushMessage("Thông báo đã tắt trên bản prototype này.");
       return;
     }
 
     setPushAlerts(true);
     setPushStatus("saving");
-    setPushMessage("Dang dang ky thiet bi voi backend laptop...");
+    setPushMessage("Đang đăng ký thiết bị với máy chủ laptop...");
 
     try {
       await enablePushNotifications();
       setPushStatus("enabled");
-      setPushMessage("Da bat Push. Khoa man hinh iPhone roi bam Space o terminal backend de thu.");
+      setPushMessage("Đã bật thông báo. Hãy khóa màn hình điện thoại rồi bấm Space tại cửa sổ dòng lệnh ở máy tính để thử nghiệm.");
     } catch (error) {
       setPushAlerts(false);
       setPushStatus("error");
-      setPushMessage(error instanceof Error ? error.message : "Khong the bat Push tren thiet bi nay.");
+      setPushMessage(error instanceof Error ? error.message : "Không thể bật thông báo Push trên thiết bị này.");
     }
   };
 
@@ -201,10 +201,14 @@ export function BankDashboard({
         </div>
 
         {/* AI Background Protection Status */}
-        <div className="ai-status-bar">
+        <div className={`ai-status-bar ${state.currentState === "audit_complete" ? "upgraded" : ""}`}>
           <div className="ai-pulse-dot"></div>
           <ShieldCheck size={16} className="ai-shield" />
-          <span>Hệ thống <strong>KNIGHT AI</strong> đang chạy ngầm bảo vệ thẻ</span>
+          {state.currentState === "audit_complete" ? (
+            <span>Hộ vệ <strong>KNIGHT AI v2.0 (Enhanced)</strong> đã kích hoạt tối đa</span>
+          ) : (
+            <span>Hệ thống <strong>KNIGHT AI</strong> đang chạy ngầm bảo vệ thẻ</span>
+          )}
         </div>
 
         {/* Primary Features */}
@@ -238,25 +242,32 @@ export function BankDashboard({
         {/* Card Management */}
         <div className="dashboard-section">
           <h2 className="section-title">Thẻ số của tôi</h2>
-          <div className={`my-card-widget ${state.card.status}`}>
-            <div className="my-card-header">
-              <CreditCard size={20} />
-              <span>Thẻ Ghi Nợ Số</span>
-            </div>
-            <strong className="my-card-number">
-              {state.newCard ? state.newCard.maskedPan : state.card.maskedPan}
-            </strong>
-            <div className="my-card-footer">
-              <span>Trạng thái:</span>
-              <span className={`card-badge card-badge--${state.card.status}`}>
-                {state.card.status === "active"
-                  ? "Đang hoạt động"
-                  : state.card.status === "suspended"
-                  ? "Đang tạm khóa"
-                  : "Đã khóa vĩnh viễn"}
-              </span>
-            </div>
-          </div>
+          {(() => {
+            const hasNewCard = !!state.newCard;
+            const displayCard = state.newCard || state.card;
+            const displayStatus = hasNewCard ? "active" : state.card.status;
+            return (
+              <div className={`my-card-widget ${displayStatus}`}>
+                <div className="my-card-header">
+                  <CreditCard size={20} />
+                  <span>Thẻ Ghi Nợ Số</span>
+                </div>
+                <strong className="my-card-number">
+                  {displayCard.maskedPan}
+                </strong>
+                <div className="my-card-footer">
+                  <span>Trạng thái:</span>
+                  <span className={`card-badge card-badge--${displayStatus}`}>
+                    {displayStatus === "active"
+                      ? "Đang hoạt động"
+                      : displayStatus === "suspended"
+                      ? "Đang tạm khóa"
+                      : "Đã khóa vĩnh viễn"}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Life Services */}
@@ -573,16 +584,48 @@ export function BankDashboard({
           <KnightAgentVisual state={state} variant="mobile" />
         </div>
 
-        {/* Info & Description */}
-        <div className="knight-info-card">
-          <div className="knight-info-card__title">
-            <ShieldCheck size={18} className="knight-shield-icon" />
-            <span>Hiệp Sĩ Số Co-opBank KNIGHT AI</span>
-          </div>
-          <p className="knight-info-card__desc">
-            Tác nhân bảo mật tự động bảo vệ tài khoản 24/7. Tự động kiểm tra IP VPN, thiết bị lạ, tần suất giao dịch và thực thi các biện pháp ngăn chặn tức thời để bảo vệ tiền của bạn.
-          </p>
-        </div>
+        {/* Bảng điều khiển bảo mật AI Security Cockpit */}
+        {(() => {
+          const isUpgraded = state.currentState === "audit_complete";
+          const cockpitClass = isUpgraded ? "ai-cockpit upgraded" : "ai-cockpit";
+          const coreStatus = isUpgraded ? "Hoạt động (v2.0 Enhanced)" : "Hoạt động (v1.0 Standard)";
+          const policyLevel = isUpgraded ? "L2 & L3 (Nâng cao)" : "L2 (Khóa thẻ tự động)";
+          
+          return (
+            <div className={cockpitClass}>
+              <div className="ai-cockpit-header">
+                <span className="ai-cockpit-dot"></span>
+                <strong>BẢNG ĐIỀU KHIỂN GIÁM SÁT AI</strong>
+              </div>
+              <div className="ai-cockpit-grid">
+                <div className="cockpit-item">
+                  <span>Lõi bảo vệ</span>
+                  <strong>{coreStatus}</strong>
+                </div>
+                <div className="cockpit-item">
+                  <span>Phản ứng</span>
+                  <strong>250ms (Real-time)</strong>
+                </div>
+                <div className="cockpit-item">
+                  <span>Cấp độ Policy</span>
+                  <strong>{policyLevel}</strong>
+                </div>
+                <div className="cockpit-item">
+                  <span>Thiết bị tin cậy</span>
+                  <strong>1 thiết bị (Chính chủ)</strong>
+                </div>
+                <div className="cockpit-item">
+                  <span>Nhật ký bảo mật</span>
+                  <strong>{state.auditEvents.length} sự kiện</strong>
+                </div>
+                <div className="cockpit-item">
+                  <span>Lớp mạng/IP</span>
+                  <strong>An toàn (0 đe dọa)</strong>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Protection Levels */}
         <div className="settings-section">

@@ -1,14 +1,14 @@
 import {
   demoFraudCase,
   demoNewCard,
-  demoRecoveryOffer,
+  demoReassurancePackage,
   demoRiskAssessment,
 } from "../data/demoScenario";
 import type {
   AuditEvent,
   CreateFraudCaseInput,
   CustomerIntent,
-  RecoveryOffer,
+  ReassurancePackage,
   RiskAssessment,
   TransactionEvent,
   VirtualCard,
@@ -22,7 +22,7 @@ export interface KnightServices {
   issueNewVirtualCard(customerId: string): Promise<VirtualCard>;
   verifyBiometric(intent: CustomerIntent): Promise<{ verified: boolean }>;
   createFraudCase(input: CreateFraudCaseInput): Promise<ReturnType<typeof createCase>>;
-  generateRecoveryOffer(customerId: string): Promise<RecoveryOffer | null>;
+  generateReassurancePackage(customerId: string): Promise<ReassurancePackage | null>;
   writeAudit(event: Omit<AuditEvent, "id">): Promise<AuditEvent>;
 }
 
@@ -77,8 +77,8 @@ export const mockKnightServices: KnightServices = {
   async createFraudCase(input) {
     return createCase(input);
   },
-  async generateRecoveryOffer(customerId) {
-    return customerId ? demoRecoveryOffer : null;
+  async generateReassurancePackage(customerId) {
+    return customerId ? demoReassurancePackage : null;
   },
   async writeAudit(event) {
     return event as AuditEvent;

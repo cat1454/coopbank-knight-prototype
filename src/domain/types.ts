@@ -16,7 +16,13 @@ export type ScenarioStateName =
   | "card_terminated_l3"
   | "new_card_issued"
   | "fraud_case_created"
-  | "recovery_offer_ready"
+  | "next_morning_recovery_ready"
+  | "post_incident_behavior_observed"
+  | "trust_recovery_assessed"
+  | "reassurance_package_active"
+  | "cashback_activated"
+  | "recovery_observed"
+  | "react_cycle_completed"
   | "audit_complete"
   | "card_unsuspended"
   | "device_session_whitelisted"
@@ -31,7 +37,11 @@ export type VisibleScreen =
   | "fraud-review"
   | "biometric-step-up"
   | "virtual-card"
-  | "recovery-offer"
+  | "fraud-case-submitted"
+  | "next-morning-recovery"
+  | "post-incident-behavior"
+  | "trust-recovery-assessment"
+  | "reassurance-package"
   | "audit-timeline"
   | "legitimate-resolution"
   | "timeout-escalation";
@@ -49,7 +59,14 @@ export type KnightEventType =
   | "TERMINATE_CARD_SUCCESS"
   | "ISSUE_CARD_SUCCESS"
   | "CREATE_CASE_SUCCESS"
-  | "GENERATE_OFFER_SUCCESS"
+  | "OPEN_NEXT_MORNING_RECOVERY"
+  | "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS"
+  | "ASSESS_TRUST_RECOVERY_SUCCESS"
+  | "ACTIVATE_REASSURANCE_PACKAGE_SUCCESS"
+  | "CUSTOMER_ACCEPTS_ESSENTIAL_CASHBACK"
+  | "ACTIVATE_ESSENTIAL_CASHBACK_SUCCESS"
+  | "OBSERVE_RECOVERY_SUCCESS"
+  | "COMPLETE_REACT_CYCLE"
   | "AUDIT_COMPLETE"
   | "UNSUSPEND_CARD_SUCCESS"
   | "WHITELIST_SESSION_SUCCESS"
@@ -117,17 +134,79 @@ export interface FraudCase {
   transactions: string[];
 }
 
-export interface RecoveryOffer {
+export interface EssentialSpendingCategory {
+  id: "electricity" | "water" | "supermarket";
+  label: string;
+  amountVnd: number;
+  usagePattern: string;
+}
+
+export interface PostIncidentBehaviorSignal {
+  id:
+    | "balance_checks"
+    | "transaction_history_views"
+    | "account_protection_views"
+    | "support_channel_opens"
+    | "essential_payment_pause";
+  label: string;
+  observedAt: string;
+  occurrenceCount: number;
+  weight: number;
+  evidence: string;
+}
+
+export interface TrustRecoveryAssessment {
   id: string;
   customerId: string;
-  trigger: "post_fraud_incident";
+  generatedAt: string;
+  score: number;
+  threshold: number;
+  level: "standard" | "high";
+  decision: "continue_monitoring" | "activate_reassurance_package";
+  explanation: string;
+  signals: PostIncidentBehaviorSignal[];
+  essentialSpendingCategories?: EssentialSpendingCategory[];
+}
+
+export interface ReassuranceBenefit {
+  id:
+    | "account_protection"
+    | "realtime_alerts"
+    | "priority_support"
+    | "conditional_fee_refund"
+    | "safety_report";
   title: string;
-  body: string;
-  cashbackRatePercent: number;
-  durationDays: number;
-  categories: string[];
-  consentBasis: "personalization_consent";
-  status: "ready" | "activated" | "dismissed";
+  description: string;
+  activation: "automatic";
+  status: "active";
+}
+
+export interface ReassurancePackage {
+  id: string;
+  customerId: string;
+  trigger: "trust_recovery_threshold";
+  title: string;
+  activatedAt: string;
+  protectionDurationDays: number;
+  status: "active";
+  benefits: ReassuranceBenefit[];
+  essentialCashback: {
+    ratePercent: number;
+    categories: string[];
+    durationLabel: string;
+    validThroughLabel: string;
+    consentBasis: "personalization_consent";
+    status: "pending_consent" | "consented" | "activated" | "unavailable";
+  };
+}
+
+export interface RecoveryObservation {
+  observedAt: string;
+  essentialPaymentResumed: boolean;
+  repeatedBalanceChecksChangePercent: number;
+  supportCaseStatus: "priority_support_active";
+  summary: string;
+  reactCycleStatus: "COMPLETE";
 }
 
 export interface AuditEvent {
@@ -154,7 +233,10 @@ export interface KnightScenarioState {
   biometricStatus: "not_required" | "required" | "verified" | "failed";
   newCard?: VirtualCard;
   fraudCase?: FraudCase;
-  recoveryOffer?: RecoveryOffer;
+  postIncidentBehaviorSignals?: PostIncidentBehaviorSignal[];
+  trustRecoveryAssessment?: TrustRecoveryAssessment;
+  reassurancePackage?: ReassurancePackage;
+  recoveryObservation?: RecoveryObservation;
   auditEvents: AuditEvent[];
   enhancedMonitoringUntil?: string;
 }

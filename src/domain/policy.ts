@@ -1,4 +1,5 @@
 import type { KnightScenarioState } from "./types";
+import { isAccountSecuredForRecovery, shouldActivateReassurancePackage } from "./trustRecovery";
 
 export type KnightActionName =
   | "risk.evaluate"
@@ -9,7 +10,11 @@ export type KnightActionName =
   | "card.issueNewVirtualCard"
   | "auth.verifyBiometric"
   | "case.createFraudCase"
-  | "personalization.generateRecoveryOffer"
+  | "behavior.observePostIncident"
+  | "trustRecovery.calculate"
+  | "reassurance.activateSafetySupport"
+  | "cashback.activateEssential"
+  | "recovery.observe"
   | "fraudOps.escalate";
 
 export function canAutoSuspend(state: KnightScenarioState) {
@@ -32,8 +37,38 @@ export function canIssueNewCard(state: KnightScenarioState) {
   );
 }
 
-export function canShowRecoveryOffer(state: KnightScenarioState) {
-  return state.fraudCase?.status === "created" && state.customer.personalizationConsent;
+export function canObservePostIncidentBehavior(state: KnightScenarioState) {
+  return state.currentState === "next_morning_recovery_ready" && isAccountSecuredForRecovery(state);
+}
+
+export function canAssessTrustRecovery(state: KnightScenarioState) {
+  return (
+    state.currentState === "post_incident_behavior_observed" &&
+    !!state.postIncidentBehaviorSignals?.length
+  );
+}
+
+export function canActivateReassurancePackage(state: KnightScenarioState) {
+  return (
+    state.currentState === "trust_recovery_assessed" &&
+    !!state.trustRecoveryAssessment &&
+    shouldActivateReassurancePackage(state, state.trustRecoveryAssessment)
+  );
+}
+
+export function canActivateEssentialCashback(state: KnightScenarioState) {
+  return (
+    state.currentState === "reassurance_package_active" &&
+    state.customer.personalizationConsent &&
+    state.reassurancePackage?.essentialCashback.status === "consented"
+  );
+}
+
+export function canObserveRecovery(state: KnightScenarioState) {
+  return (
+    state.currentState === "cashback_activated" &&
+    state.reassurancePackage?.essentialCashback.status === "activated"
+  );
 }
 
 export function canUnsuspend(state: KnightScenarioState) {
@@ -63,8 +98,24 @@ export function deriveAllowedActions(state: KnightScenarioState): KnightActionNa
     actions.push("case.createFraudCase");
   }
 
-  if (canShowRecoveryOffer(state)) {
-    actions.push("personalization.generateRecoveryOffer");
+  if (canObservePostIncidentBehavior(state)) {
+    actions.push("behavior.observePostIncident");
+  }
+
+  if (canAssessTrustRecovery(state)) {
+    actions.push("trustRecovery.calculate");
+  }
+
+  if (canActivateReassurancePackage(state)) {
+    actions.push("reassurance.activateSafetySupport");
+  }
+
+  if (canActivateEssentialCashback(state)) {
+    actions.push("cashback.activateEssential");
+  }
+
+  if (canObserveRecovery(state)) {
+    actions.push("recovery.observe");
   }
 
   if (canUnsuspend(state)) {

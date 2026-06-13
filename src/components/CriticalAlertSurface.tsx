@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { ShieldAlert, Bell, Volume2, VolumeX, ShieldCheck, AlertTriangle } from "lucide-react";
+import { ShieldAlert, Bell, ShieldCheck, AlertTriangle } from "lucide-react";
 import type { KnightScenarioState } from "../domain/types";
 import { formatVnd } from "../domain/format";
 import { KnightAgentVisual } from "./KnightAgentVisual";
@@ -140,10 +140,7 @@ function useWebAudioSiren() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function CriticalAlertSurface({ state, onOpenApp }: CriticalAlertSurfaceProps) {
-  const { playing, muted, toggle } = useWebAudioSiren();
-
-  const needsTap  = !muted && !playing;
-  const isRinging = !muted &&  playing;
+  useWebAudioSiren();
 
   return (
     <>
@@ -205,21 +202,12 @@ export function CriticalAlertSurface({ state, onOpenApp }: CriticalAlertSurfaceP
         <div className="critical-alert-overlay">
           <div className="critical-alert-modal" onClick={(e) => e.stopPropagation()}>
 
-            {/* Header: live badge + mute button */}
+            {/* Header: live badge */}
             <div className="ca-header">
               <div className="ca-live-badge">
                 <span className="ca-live-dot" />
                 KNIGHT · CẢNH BÁO KHẨN
               </div>
-              <button
-                type="button"
-                id="mute-btn"
-                className={`ca-mute-btn${muted ? " is-muted" : ""}${needsTap ? " is-pulsing" : ""}`}
-                onClick={toggle}
-                aria-label={muted ? "Bật âm thanh" : "Tắt âm thanh"}
-              >
-                {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-              </button>
             </div>
 
             {/* Animated AI Agent */}
@@ -250,9 +238,15 @@ export function CriticalAlertSurface({ state, onOpenApp }: CriticalAlertSurfaceP
                 <span className="ca-txn-label">Số tiền</span>
                 <span className="ca-txn-value ca-txn-amount">{formatVnd(state.transaction.amountVnd)}</span>
               </div>
-              <div className="ca-txn-row">
-                <span className="ca-txn-label">Dấu hiệu</span>
-                <span className="ca-txn-value">Thiết bị mới · IP VPN · 02:00</span>
+              <div className="ca-txn-row" style={{ flexDirection: "column", alignItems: "stretch", marginTop: "4px" }}>
+                <span className="ca-txn-label" style={{ marginBottom: "6px" }}>Dấu hiệu bất thường</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", color: "#fda29b", paddingLeft: "8px", borderLeft: "2px solid #f04438" }}>
+                  {state.riskAssessment.signals.map((sig) => (
+                    <div key={sig.code} style={{ lineHeight: "1.4" }}>
+                      • <strong>{sig.label}:</strong> {sig.customerText}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -262,13 +256,7 @@ export function CriticalAlertSurface({ state, onOpenApp }: CriticalAlertSurfaceP
               <span>KNIGHT đã tự động tạm khóa thẻ số của bạn (Policy L2)</span>
             </div>
 
-            {/* Sound status */}
-            {needsTap && (
-              <p className="ca-sound-hint">🔔 Chạm bất kỳ đâu để bật còi báo</p>
-            )}
-            {isRinging && (
-              <p className="ca-sound-hint ca-sound-hint--active">🔔 Còi báo đang phát…</p>
-            )}
+
 
             {/* CTA */}
             <button

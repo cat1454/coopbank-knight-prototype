@@ -26,6 +26,7 @@ export function AuditTimeline({ state, onReset }: AuditTimelineProps) {
               <time>{formatTime(event.timestamp)}</time>
               <div>
                 <strong>{event.label}</strong>
+                <code>{event.action}</code>
                 <p>{event.reason}</p>
               </div>
               <StatusPill tone={event.result === "failed" ? "danger" : "success"}>{event.policyLevel}</StatusPill>

@@ -51,7 +51,7 @@ export function FraudReviewScreen({
 
       <div className="action-stack">
         <PrimaryButton icon={<ShieldAlert size={18} />} onClick={onConfirmFraud} variant="danger">
-          Không phải tôi
+          Không phải tôi - Báo gian lận
         </PrimaryButton>
         <PrimaryButton icon={<CheckCircle2 size={18} />} onClick={onConfirmLegitimate} variant="secondary">
           Đây là giao dịch của tôi

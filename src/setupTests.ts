@@ -4,8 +4,8 @@ import { vi } from "vitest";
 // Mock EventSource globally for JSDOM testing
 class MockEventSource {
   url: string;
-  onmessage: ((ev: MessageEvent) => any) | null = null;
-  onerror: (() => any) | null = null;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+  onerror: (() => void) | null = null;
   
   constructor(url: string) {
     this.url = url;
@@ -14,12 +14,10 @@ class MockEventSource {
   close() {}
 }
 
-global.EventSource = MockEventSource as any;
+vi.stubGlobal("EventSource", MockEventSource);
 
 // Mock fetch globally for JSDOM testing
-global.fetch = vi.fn().mockImplementation(() =>
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve({ status: "ok" }),
-  })
-) as any;
+vi.stubGlobal(
+  "fetch",
+  vi.fn(async () => new Response(JSON.stringify({ status: "ok" }), { status: 200 })),
+);

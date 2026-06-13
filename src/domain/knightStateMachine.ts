@@ -1,14 +1,27 @@
 import {
+  demoBehaviorSignals,
   demoCard,
   demoCustomer,
   demoFraudCase,
   demoNewCard,
-  demoRecoveryOffer,
+  demoReassurancePackage,
+  demoRecoveryObservation,
   demoRiskAssessment,
+  demoTrustRecoveryAssessment,
   demoTransaction,
 } from "../data/demoScenario";
 import { appendAuditEvent, resetAuditSequence } from "./audit";
-import { canAutoSuspend, canIssueNewCard, canShowRecoveryOffer, canTerminateCard, canUnsuspend } from "./policy";
+import {
+  canActivateEssentialCashback,
+  canActivateReassurancePackage,
+  canAssessTrustRecovery,
+  canAutoSuspend,
+  canIssueNewCard,
+  canObservePostIncidentBehavior,
+  canObserveRecovery,
+  canTerminateCard,
+  canUnsuspend,
+} from "./policy";
 import type { KnightEventType, KnightScenarioState, VisibleScreen } from "./types";
 
 export type { KnightEventType } from "./types";
@@ -226,26 +239,225 @@ export function dispatchScenarioEvent(
         }),
       };
 
-    case "GENERATE_OFFER_SUCCESS":
-      if (!canShowRecoveryOffer(state)) return state;
+    case "OPEN_NEXT_MORNING_RECOVERY":
+      if (state.currentState !== "fraud_case_created" || !state.fraudCase || !state.newCard) {
+        return state;
+      }
       return {
         ...state,
-        currentState: "recovery_offer_ready",
-        recoveryOffer: demoRecoveryOffer,
+        currentState: "next_morning_recovery_ready",
+        auditEvents: appendAuditEvent(state.auditEvents, {
+          phase: "OBSERVE",
+          policyLevel: "L0",
+          actor: "KNIGHT",
+          action: "recovery.openNextMorningWindow",
+          result: "success",
+          reason: "Phiên khẩn cấp ban đêm đã kết thúc; KNIGHT chờ đến 08:30 sáng hôm sau mới bắt đầu đánh giá phục hồi niềm tin",
+          customerVisible: true,
+          label: "Sáng hôm sau: mở phiên phục hồi",
+        }),
+      };
+
+    case "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS": {
+      if (!canObservePostIncidentBehavior(state)) return state;
+      const withSafetyConfirmation = appendAuditEvent(state.auditEvents, {
+        phase: "OBSERVE",
+        policyLevel: "L0",
+        actor: "KNIGHT",
+        action: "account.confirmSecured",
+        result: "success",
+        reason: "Thẻ cũ đã khóa, thẻ thay thế đang hoạt động và hồ sơ tra soát đã được tạo trước khi phân tích phục hồi niềm tin",
+        customerVisible: true,
+        label: "Tài khoản đã được bảo vệ",
+      });
+
+      return {
+        ...state,
+        currentState: "post_incident_behavior_observed",
+        postIncidentBehaviorSignals: demoBehaviorSignals,
+        auditEvents: appendAuditEvent(withSafetyConfirmation, {
+          phase: "OBSERVE",
+          policyLevel: "L0",
+          actor: "KNIGHT",
+          action: "behavior.observePostIncident",
+          result: "success",
+          reason: "Ghi nhận 5 tín hiệu hành vi sau sự cố mà không khẳng định cảm xúc là dữ kiện",
+          customerVisible: true,
+          label: "Thu thập tín hiệu hành vi",
+        }),
+      };
+    }
+
+    case "ASSESS_TRUST_RECOVERY_SUCCESS": {
+      if (!canAssessTrustRecovery(state)) return state;
+      const withScore = appendAuditEvent(state.auditEvents, {
+        phase: "REASON",
+        policyLevel: "L2",
+        actor: "KNIGHT",
+        action: "trustRecovery.calculate",
+        result: "success",
+        reason: "Tổng trọng số tín hiệu hành vi có thể kiểm chứng tạo Điểm Nhu Cầu Phục Hồi 82/100",
+        customerVisible: true,
+        label: "Tính điểm nhu cầu phục hồi: 82/100",
+      });
+
+      return {
+        ...state,
+        currentState: "trust_recovery_assessed",
+        trustRecoveryAssessment: {
+          ...demoTrustRecoveryAssessment,
+          essentialSpendingCategories: state.customer.personalizationConsent
+            ? demoTrustRecoveryAssessment.essentialSpendingCategories
+            : undefined,
+        },
+        auditEvents: appendAuditEvent(withScore, {
+          phase: "REASON",
+          policyLevel: "L2",
+          actor: "KNIGHT",
+          action: "trustRecovery.checkThreshold",
+          result: "success",
+          reason: "Điểm 82 vượt ngưỡng 70 nên khách hàng đủ điều kiện nhận hỗ trợ an toàn",
+          customerVisible: true,
+          label: "Đối chiếu ngưỡng kích hoạt",
+        }),
+      };
+    }
+
+    case "ACTIVATE_REASSURANCE_PACKAGE_SUCCESS": {
+      if (!canActivateReassurancePackage(state)) return state;
+      const reassurancePackage = {
+        ...demoReassurancePackage,
+        essentialCashback: {
+          ...demoReassurancePackage.essentialCashback,
+          status: state.customer.personalizationConsent
+            ? ("pending_consent" as const)
+            : ("unavailable" as const),
+        },
+      };
+      const withBenefitSelection = appendAuditEvent(state.auditEvents, {
+        phase: "REASON",
+        policyLevel: "L2",
+        actor: "KNIGHT",
+        action: "reassurance.selectBenefits",
+        result: "success",
+        reason: "Chọn bảo vệ, cảnh báo realtime, hỗ trợ ưu tiên, hoàn phí có điều kiện, báo cáo an toàn và nhóm chi tiêu thiết yếu phù hợp",
+        customerVisible: true,
+        label: "Chọn hỗ trợ đúng nhu cầu",
+      });
+
+      return {
+        ...state,
+        currentState: "reassurance_package_active",
+        reassurancePackage,
+        auditEvents: appendAuditEvent(withBenefitSelection, {
+          phase: "ACT",
+          policyLevel: "L2",
+          actor: "KNIGHT",
+          action: "reassurance.activateSafetySupport",
+          result: "success",
+          reason: "Hỗ trợ an toàn tự động chỉ được bật sau khi tài khoản an toàn và điểm phục hồi vượt ngưỡng",
+          customerVisible: true,
+          label: "Kích hoạt Gói Phục Hồi An Tâm",
+        }),
+      };
+    }
+
+    case "CUSTOMER_ACCEPTS_ESSENTIAL_CASHBACK":
+      if (
+        state.currentState !== "reassurance_package_active" ||
+        !state.customer.personalizationConsent ||
+        state.reassurancePackage?.essentialCashback.status !== "pending_consent"
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        reassurancePackage: {
+          ...state.reassurancePackage,
+          essentialCashback: {
+            ...state.reassurancePackage.essentialCashback,
+            status: "consented",
+          },
+        },
+        auditEvents: appendAuditEvent(state.auditEvents, {
+          phase: "OBSERVE",
+          policyLevel: "L1",
+          actor: "Customer",
+          action: "customer.consentEssentialCashback",
+          result: "success",
+          reason: "Khách hàng xác nhận đồng ý cá nhân hóa hoàn tiền cho chi tiêu thiết yếu",
+          customerVisible: true,
+          label: "Khách xác nhận hoàn tiền thiết yếu",
+        }),
+      };
+
+    case "ACTIVATE_ESSENTIAL_CASHBACK_SUCCESS":
+      if (!canActivateEssentialCashback(state) || !state.reassurancePackage) return state;
+      return {
+        ...state,
+        currentState: "cashback_activated",
+        reassurancePackage: {
+          ...state.reassurancePackage,
+          essentialCashback: {
+            ...state.reassurancePackage.essentialCashback,
+            status: "activated",
+          },
+        },
         auditEvents: appendAuditEvent(state.auditEvents, {
           phase: "ACT",
-          policyLevel: "L3",
+          policyLevel: "L1",
           actor: "KNIGHT",
-          action: "personalization.generateRecoveryOffer",
+          action: "cashback.activateEssential",
           result: "success",
-          reason: "Offer generated only because personalization consent exists",
+          reason: "Kích hoạt hoàn tiền 10% đúng các nhóm đã được đồng ý: Điện, Nước và Siêu thị",
           customerVisible: true,
-          label: "Recovery offer generated",
+          label: "Kích hoạt hoàn tiền thiết yếu",
+        }),
+      };
+
+    case "OBSERVE_RECOVERY_SUCCESS":
+      if (!canObserveRecovery(state)) return state;
+      return {
+        ...state,
+        currentState: "recovery_observed",
+        recoveryObservation: demoRecoveryObservation,
+        auditEvents: appendAuditEvent(state.auditEvents, {
+          phase: "OBSERVE",
+          policyLevel: "L0",
+          actor: "KNIGHT",
+          action: "recovery.observe",
+          result: "success",
+          reason: "Khách hàng tiếp tục thanh toán thiết yếu và số lần kiểm tra số dư lặp lại giảm 60%",
+          customerVisible: true,
+          label: "Quan sát tín hiệu phục hồi",
+        }),
+      };
+
+    case "COMPLETE_REACT_CYCLE":
+      if (state.currentState !== "recovery_observed" || !state.recoveryObservation) return state;
+      return {
+        ...state,
+        currentState: "react_cycle_completed",
+        auditEvents: appendAuditEvent(state.auditEvents, {
+          phase: "OBSERVE",
+          policyLevel: "L0",
+          actor: "KNIGHT",
+          action: "react.complete",
+          result: "success",
+          reason: "Vòng phục hồi hoàn tất bằng bằng chứng hành vi quan sát được thay vì một điểm cảm xúc suy đoán",
+          customerVisible: false,
+          label: "ReAct cycle complete",
         }),
       };
 
     case "AUDIT_COMPLETE":
-      if (state.currentState !== "recovery_offer_ready" && state.currentState !== "enhanced_monitoring_30m") {
+      if (
+        state.currentState !== "reassurance_package_active" &&
+        state.currentState !== "cashback_activated" &&
+        state.currentState !== "recovery_observed" &&
+        state.currentState !== "react_cycle_completed" &&
+        state.currentState !== "enhanced_monitoring_30m"
+      ) {
         return state;
       }
       return { ...state, currentState: "audit_complete" };
@@ -290,7 +502,7 @@ export function dispatchScenarioEvent(
       return {
         ...state,
         currentState: "enhanced_monitoring_30m",
-        enhancedMonitoringUntil: "2025-06-01T02:33:18+07:00",
+        enhancedMonitoringUntil: "2026-06-01T02:33:18+07:00",
         auditEvents: appendAuditEvent(state.auditEvents, {
           phase: "ACT",
           policyLevel: "L2",
@@ -396,12 +608,22 @@ export function getVisibleScreen(state: KnightScenarioState): VisibleScreen {
       return "biometric-step-up";
     case "card_terminated_l3":
     case "new_card_issued":
-    case "fraud_case_created":
       return "virtual-card";
-    case "recovery_offer_ready":
-      return "recovery-offer";
+    case "fraud_case_created":
+      return "fraud-case-submitted";
+    case "next_morning_recovery_ready":
+      return "next-morning-recovery";
+    case "post_incident_behavior_observed":
+      return "post-incident-behavior";
+    case "trust_recovery_assessed":
+      return "trust-recovery-assessment";
+    case "reassurance_package_active":
+    case "cashback_activated":
+    case "recovery_observed":
+    case "react_cycle_completed":
+      return "reassurance-package";
     case "audit_complete":
-      return "audit-timeline";
+      return "guard";
     case "card_unsuspended":
     case "device_session_whitelisted":
     case "enhanced_monitoring_30m":
