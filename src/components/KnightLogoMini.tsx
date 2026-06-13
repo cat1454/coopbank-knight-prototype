@@ -10,7 +10,7 @@ export function KnightLogoMini({ size = 36, className = "" }: KnightLogoMiniProp
     <img
       src="/logo.png"
       alt="Logo hệ thống KNIGHT"
-      className={`knight-logo-mini ${className}`}
+      className={`knight-logo-mini knight-logo-mini--highlighted ${className}`}
       width={size}
       height={size}
     />

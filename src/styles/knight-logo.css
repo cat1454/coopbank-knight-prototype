@@ -1,16 +1,27 @@
 .knight-logo-mini {
   display: inline-block;
+  box-sizing: border-box;
   flex-shrink: 0;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 2px;
   vertical-align: middle;
-  border-radius: 22%;
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.15);
+  border-radius: 28%;
   transition:
     box-shadow 0.3s ease,
     transform 0.3s ease;
 }
 
+.knight-logo-mini--highlighted {
+  border: 1px solid rgba(14, 116, 144, 0.9);
+  background: linear-gradient(145deg, #ecfeff 0%, #67e8f9 52%, #22d3ee 100%);
+  box-shadow:
+    0 3px 10px rgba(8, 145, 178, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
 .knight-logo-mini:hover {
-  box-shadow: 0 0 16px rgba(34, 211, 238, 0.4);
+  box-shadow:
+    0 5px 16px rgba(8, 145, 178, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transform: translateY(-1px);
 }
