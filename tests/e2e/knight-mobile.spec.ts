@@ -15,6 +15,8 @@ async function openFraudReview(page: import("@playwright/test").Page) {
   await page.getByRole("button", { name: /bắt đầu/i }).click();
   await expect(page.getByRole("heading", { name: /giao dịch bất thường vừa bị chặn/i })).toBeVisible();
   await page.getByRole("button", { name: /mở co-opbank/i }).click();
+  await expect(page.getByRole("heading", { name: /cảnh báo AI khẩn cấp/i })).toBeVisible();
+  await page.getByRole("button", { name: /xem cảnh báo/i }).click();
   await expect(page.getByRole("heading", { name: /KNIGHT đã tạm khóa thẻ số/i })).toBeVisible();
   await expect(page.getByText("847/1000")).toBeVisible();
   await expect(page.getByText(/10\.000\.000/).first()).toBeVisible();

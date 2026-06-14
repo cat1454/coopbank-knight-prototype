@@ -10,6 +10,7 @@ function setTestUrl(search = "?env=test") {
 async function openFraudReview(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: /bắt đầu/i }));
   await user.click(screen.getByRole("button", { name: /mở co-opbank/i }));
+  await user.click(screen.getByRole("button", { name: /xem cảnh báo/i }));
 }
 
 async function confirmFraudAndVerifyFaceId(user: ReturnType<typeof userEvent.setup>) {

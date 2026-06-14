@@ -12,12 +12,14 @@ import { PostIncidentBehaviorScreen } from "../components/PostIncidentBehaviorSc
 import { ReassurancePackageScreen } from "../components/ReassurancePackageScreen";
 import { TrustRecoveryAssessmentScreen } from "../components/TrustRecoveryAssessmentScreen";
 import { TimeoutEscalationScreen } from "../components/TimeoutEscalationScreen";
+import { UnlockedCriticalAlertPopup } from "../components/UnlockedCriticalAlertPopup";
 import { VirtualCardScreen } from "../components/VirtualCardScreen";
 import { BankLoginScreen } from "../components/BankLoginScreen";
 import { BankDashboard } from "../components/BankDashboard";
 import { KnightAgentVisual } from "../components/KnightAgentVisual";
 import { KnightLogoMini } from "../components/KnightLogoMini";
 import { useAlarmAudio } from "../hooks/useAlarmAudio";
+import { CyberAttackDashboard } from "../components/CyberAttackDashboard";
 import { buildBackendUrl } from "../services/backend";
 import {
   createInitialKnightState,
@@ -172,6 +174,8 @@ export function App() {
 
   const [state, setState] = useState(initialScenarioState);
   const [showCriticalAlert, setShowCriticalAlert] = useState(false);
+  const [showUnlockedAlert, setShowUnlockedAlert] = useState(false);
+  const [showCyberSimulation, setShowCyberSimulation] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return requestedShot !== null && initialScenarioState.currentState !== "idle_monitoring";
   });
@@ -259,6 +263,8 @@ export function App() {
   const reset = useCallback(() => {
     cancelActiveSequence();
     setShowCriticalAlert(false);
+    setShowUnlockedAlert(false);
+    setShowCyberSimulation(false);
     setState(createInitialKnightState());
     setIsLoggedIn(false);
     setBankBalance(36360430);
@@ -293,14 +299,22 @@ export function App() {
   const startScenario = useCallback(() => {
     cancelActiveSequence();
     setShowCriticalAlert(true);
+    setShowUnlockedAlert(false);
     setState((currentState) => {
       const baseState = currentState.currentState === "idle_monitoring" ? currentState : createInitialKnightState();
       return runScenarioEvents(baseState, highRiskEvents);
     });
   }, [cancelActiveSequence]);
 
+  const openUnlockedAlert = useCallback(() => {
+    setShowCriticalAlert(false);
+    setIsLoggedIn(true);
+    setShowUnlockedAlert(true);
+  }, []);
+
   const openFraudReview = useCallback(() => {
     setShowCriticalAlert(false);
+    setShowUnlockedAlert(false);
     setIsLoggedIn(true);
     setState((currentState) => {
       if (currentState.currentState === "risk_detected" || currentState.currentState === "card_suspended_l2") {
@@ -314,6 +328,7 @@ export function App() {
   const requestBiometric = useCallback(
     (intent: "fraud" | "legitimate") => {
       setShowCriticalAlert(false);
+      setShowUnlockedAlert(false);
       cancelServerEscalation();
       applyEventsSequentially([intent === "fraud" ? "CUSTOMER_TAPS_FRAUD" : "CUSTOMER_TAPS_LEGIT", "REQUEST_BIOMETRIC"]);
     },
@@ -406,6 +421,7 @@ export function App() {
           const events = data.events as KnightEventType[];
           cancelActiveSequence();
           setShowCriticalAlert(Boolean(data.showCriticalAlert));
+          setShowUnlockedAlert(false);
           setState(runScenarioEvents(createInitialKnightState(), events));
         } else if (data.type === "trigger" && data.events) {
           const events = data.events as KnightEventType[];
@@ -415,12 +431,14 @@ export function App() {
           } else if (events.includes("RISK_EVENT_RECEIVED")) {
             cancelActiveSequence();
             setShowCriticalAlert(true);
+            setShowUnlockedAlert(false);
             setState((currentState) => {
               const baseState = currentState.currentState === "idle_monitoring" ? currentState : createInitialKnightState();
               return runScenarioEvents(baseState, events);
             });
           } else {
             setShowCriticalAlert(false);
+            setShowUnlockedAlert(false);
             applyEvents(events);
           }
         }
@@ -460,6 +478,45 @@ export function App() {
   }, [isTestMode, startScenario]);
 
 
+  // Centralized siren alarm playback and gesture unlocking control
+  useEffect(() => {
+    if (isTestMode) return;
+
+    const alarmStates = [
+      "risk_detected",
+      "card_suspended_l2",
+      "awaiting_customer_response",
+      "customer_confirms_fraud",
+      "customer_confirms_legit",
+      "biometric_required",
+    ];
+    const shouldPlay =
+      (showCriticalAlert || showUnlockedAlert || alarmStates.includes(state.currentState)) &&
+      state.currentState !== "idle_monitoring";
+
+    if (shouldPlay) {
+      // Attempt to play immediately (works if context is already unlocked)
+      alarmAudio.startAlarm();
+
+      // Register window gesture listeners to start the alarm on first user interaction
+      const triggerAlarm = () => {
+        alarmAudio.startAlarm();
+      };
+
+      window.addEventListener("pointerdown", triggerAlarm, { passive: true, capture: true });
+      window.addEventListener("touchstart", triggerAlarm, { passive: true, capture: true });
+      window.addEventListener("click", triggerAlarm, { capture: true });
+
+      return () => {
+        window.removeEventListener("pointerdown", triggerAlarm, { capture: true });
+        window.removeEventListener("touchstart", triggerAlarm, { capture: true });
+        window.removeEventListener("click", triggerAlarm, { capture: true });
+      };
+    } else {
+      alarmAudio.stopAlarm();
+    }
+  }, [showCriticalAlert, showUnlockedAlert, state.currentState, alarmAudio, isTestMode]);
+
   // Synchronize state updates to backend for real-time terminal logs
   useEffect(() => {
     const reportStateUrl = buildBackendUrl("/api/report-state");
@@ -482,7 +539,29 @@ export function App() {
 
   const screen = useMemo(() => {
     if (showCriticalAlert && state.currentState !== "idle_monitoring") {
-      return <CriticalAlertSurface state={state} onOpenApp={openFraudReview} alarmAudio={alarmAudio} />;
+      return <CriticalAlertSurface state={state} onOpenApp={openUnlockedAlert} />;
+    }
+
+    const dashboardScreen = (
+      <BankDashboard
+        state={state}
+        selectedQtdnd={selectedQtdnd}
+        onStartDemo={startScenario}
+        onLogout={() => setIsLoggedIn(false)}
+        balance={bankBalance}
+        setBalance={setBankBalance}
+        transactions={normalTransactions}
+        setTransactions={setNormalTransactions}
+      />
+    );
+
+    if (showUnlockedAlert && state.currentState !== "idle_monitoring") {
+      return (
+        <>
+          {dashboardScreen}
+          <UnlockedCriticalAlertPopup state={state} onContinue={openFraudReview} />
+        </>
+      );
     }
 
     switch (visibleScreen) {
@@ -498,19 +577,10 @@ export function App() {
             />
           )
         ) : (
-          <BankDashboard
-            state={state}
-            selectedQtdnd={selectedQtdnd}
-            onStartDemo={startScenario}
-            onLogout={() => setIsLoggedIn(false)}
-            balance={bankBalance}
-            setBalance={setBankBalance}
-            transactions={normalTransactions}
-            setTransactions={setNormalTransactions}
-          />
+          dashboardScreen
         );
       case "critical-alert":
-        return <CriticalAlertSurface state={state} onOpenApp={openFraudReview} alarmAudio={alarmAudio} />;
+        return <CriticalAlertSurface state={state} onOpenApp={openUnlockedAlert} />;
       case "fraud-review":
         return (
           <FraudReviewScreen
@@ -578,6 +648,7 @@ export function App() {
     normalTransactions,
     openNextMorningRecovery,
     observePostIncidentBehavior,
+    openUnlockedAlert,
     openFraudReview,
     returnToBankHomeAfterCardReview,
     requestBiometric,
@@ -585,13 +656,14 @@ export function App() {
     selectedQtdnd,
     showTimeline,
     showCriticalAlert,
+    showUnlockedAlert,
     startScenario,
     state,
     verifyBiometric,
     visibleScreen,
     isProcessing,
-    alarmAudio,
     isTestMode,
+    completeScenarioFlow,
   ]);
 
   const renderPhoneFrame = () => {
@@ -625,6 +697,17 @@ export function App() {
   };
 
   const renderDemoContent = () => {
+    const isCyberAttack = queryParams.get("capture") === "cyber-attack" || 
+                         queryParams.get("shot") === "cyber-attack" ||
+                         showCyberSimulation;
+    if (isCyberAttack) {
+      return (
+        <div className="cyber-sim-frame" style={{ width: "100%", height: "100%" }}>
+          <CyberAttackDashboard state={state} alarmAudio={alarmAudio} />
+        </div>
+      );
+    }
+
     if (captureMode === "agent") {
       return (
         <div className="agent-capture-frame">
@@ -656,6 +739,16 @@ export function App() {
       <div className="platform-content">
         <div className="workspace-layout">{renderDemoContent()}</div>
       </div>
+      {!isTestMode && queryParams.get("capture") !== "cyber-attack" && queryParams.get("shot") !== "cyber-attack" && (
+        <button
+          className="cyber-toggle-btn"
+          onClick={() => setShowCyberSimulation((prev) => !prev)}
+          title="Chuyển chế độ xem"
+        >
+          <ShieldCheck size={16} />
+          {showCyberSimulation ? "Mobile View" : "Cyber Control Room"}
+        </button>
+      )}
     </main>
   );
 }
