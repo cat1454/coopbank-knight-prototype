@@ -87,6 +87,24 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test("runs GuardianFlow Decision Intelligence demo scenarios", async ({ page }) => {
+    await page.goto("/?env=test&capture=phone&shot=case&demo=true&controls=0");
+
+    await page.getByRole("button", { name: /hộ vệ ai/i }).click();
+    await expect(page.getByRole("heading", { name: /KNIGHT Decision Intelligence/i })).toBeVisible();
+    await page.getByRole("checkbox", { name: /đồng ý/i }).click();
+    await page.getByRole("button", { name: /bắt đầu/i }).click();
+
+    await page.getByLabel(/scenario/i).selectOption("critical_risk");
+    await page.getByRole("button", { name: /chạy scenario/i }).click();
+
+    await expect(page.getByRole("heading", { name: /giao dịch tạm thời bị giữ lại/i })).toBeVisible();
+    await expect(page.getByText(/GF-CRITICAL_RISK-001/i)).toBeVisible();
+    await page.getByRole("button", { name: /xem chi tiết phân tích/i }).click();
+    await expect(page.getByLabel(/GuardianFlow agent console/i)).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("renders required video shots across iPhone viewports", async ({ page }, testInfo) => {
     const shots = [
       { name: "alert", url: "/?env=test&capture=phone&shot=reason&controls=0", text: /giao dịch bất thường vừa bị chặn/i },
