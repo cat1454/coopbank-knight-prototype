@@ -337,6 +337,32 @@ The agent should not claim success unless the repository builds or it clearly st
 
 ---
 
+## AI Agent Scope Control
+
+AI Agents must keep changes small, reviewable, and tied to the requested task.
+
+Rules:
+
+* Do not refactor the whole repository in one pass.
+* Do not modify unrelated features just because they look messy.
+* Do not change UI behavior and business logic in the same step unless explicitly requested.
+* Do not move many files at once without first explaining the migration plan.
+* Do not rename public functions, routes, events, mock fields, or test selectors unless all usages are updated.
+* Do not delete mock/demo data unless it is proven unused or unsafe.
+* Prefer one feature slice, one domain flow, or one UI area per change.
+
+Before editing, the agent should state:
+
+* The exact files likely to change.
+* The behavior expected to remain unchanged.
+* The validation commands it will run.
+
+After editing, the agent should state:
+
+* What changed.
+* What did not change.
+* Which checks passed.
+* Which checks failed or were not run.
 ## 15. Expansion Rules
 
 When adding a new feature, create it as a feature slice.
@@ -374,6 +400,4 @@ The long-term goal is to make the repository:
 - Safe to refactor.
 - Clear enough for an AI Agent to modify without destroying the product logic.
 
-Prefer clarity over cleverness.
-Prefer explicit flow over hidden magic.
-Prefer tested business rules over beautiful but fragile abstractions.
+Prefer clarity over cleverness. Prefer explicit flow over hidden magic. Prefer tested business rules over beautiful but fragile abstractions.
