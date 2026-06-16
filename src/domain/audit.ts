@@ -57,3 +57,7 @@ export function appendAuditEvent(
 ) {
   return [...auditEvents, createAuditEvent(event)];
 }
+
+export function getCustomerVisibleAuditEvents(auditEvents: AuditEvent[]) {
+  return auditEvents.filter((event) => event.customerVisible);
+}

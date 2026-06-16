@@ -28,124 +28,14 @@ import {
   dispatchScenarioEvent,
 } from "../domain/knightStateMachine";
 import type { CustomerIntent, KnightEventType } from "../domain/types";
-
-const startEvents: KnightEventType[] = ["RISK_EVENT_RECEIVED"];
-const reviewEvents: KnightEventType[] = ["AUTO_SUSPEND_ALLOWED", "PUSH_SENT"];
-const highRiskEvents: KnightEventType[] = [...startEvents, ...reviewEvents];
-
-const fraudResolutionEvents: KnightEventType[] = [
-  "BIOMETRIC_SUCCESS_FRAUD",
-  "TERMINATE_CARD_SUCCESS",
-  "ISSUE_CARD_SUCCESS",
-];
-
-const fraudCaseEvents: KnightEventType[] = [...fraudResolutionEvents, "CREATE_CASE_SUCCESS"];
-
-const trustRecoveryEvents: KnightEventType[] = [
-  "OPEN_NEXT_MORNING_RECOVERY",
-  "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS",
-  "ASSESS_TRUST_RECOVERY_SUCCESS",
-  "ACTIVATE_REASSURANCE_PACKAGE_SUCCESS",
-  "CUSTOMER_ACCEPTS_ESSENTIAL_CASHBACK",
-  "ACTIVATE_ESSENTIAL_CASHBACK_SUCCESS",
-  "OBSERVE_RECOVERY_SUCCESS",
-  "COMPLETE_REACT_CYCLE",
-];
-
-const fullFraudStoryEvents: KnightEventType[] = [
-  ...highRiskEvents,
-  "CUSTOMER_TAPS_FRAUD",
-  "REQUEST_BIOMETRIC",
-  ...fraudCaseEvents,
-  ...trustRecoveryEvents,
-];
-
-const legitimateResolutionEvents: KnightEventType[] = [
-  "BIOMETRIC_SUCCESS_LEGIT",
-  "UNSUSPEND_CARD_SUCCESS",
-  "WHITELIST_SESSION_SUCCESS",
-  "ENHANCED_MONITORING_STARTED",
-];
-
-const timeoutEvents: KnightEventType[] = [
-  ...highRiskEvents,
-  "CUSTOMER_RESPONSE_TIMEOUT",
-  "ESCALATE_FRAUD_OPS",
-  "KEEP_CARD_SUSPENDED",
-];
-
-function getShotEvents(shot: string | null): KnightEventType[] | null {
-  switch (shot) {
-    case "reason":
-    case "alert":
-      return ["RISK_EVENT_RECEIVED"];
-    case "fraud-review":
-      return highRiskEvents;
-    case "faceid":
-      return [...highRiskEvents, "CUSTOMER_TAPS_FRAUD", "REQUEST_BIOMETRIC"];
-    case "card":
-      return [...highRiskEvents, "CUSTOMER_TAPS_FRAUD", "REQUEST_BIOMETRIC", ...fraudResolutionEvents.slice(0, 3)];
-    case "case":
-      return [...highRiskEvents, "CUSTOMER_TAPS_FRAUD", "REQUEST_BIOMETRIC", ...fraudCaseEvents];
-    case "behavior":
-    case "insight":
-      return [
-        ...highRiskEvents,
-        "CUSTOMER_TAPS_FRAUD",
-        "REQUEST_BIOMETRIC",
-        ...fraudCaseEvents,
-        "OPEN_NEXT_MORNING_RECOVERY",
-        "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS",
-      ];
-    case "morning":
-      return [
-        ...highRiskEvents,
-        "CUSTOMER_TAPS_FRAUD",
-        "REQUEST_BIOMETRIC",
-        ...fraudCaseEvents,
-        "OPEN_NEXT_MORNING_RECOVERY",
-      ];
-    case "assessment":
-    case "offer":
-      return [
-        ...highRiskEvents,
-        "CUSTOMER_TAPS_FRAUD",
-        "REQUEST_BIOMETRIC",
-        ...fraudCaseEvents,
-        "OPEN_NEXT_MORNING_RECOVERY",
-        "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS",
-        "ASSESS_TRUST_RECOVERY_SUCCESS",
-      ];
-    case "package":
-    case "activated":
-      return [
-        ...highRiskEvents,
-        "CUSTOMER_TAPS_FRAUD",
-        "REQUEST_BIOMETRIC",
-        ...fraudCaseEvents,
-        "OPEN_NEXT_MORNING_RECOVERY",
-        "OBSERVE_POST_INCIDENT_BEHAVIOR_SUCCESS",
-        "ASSESS_TRUST_RECOVERY_SUCCESS",
-        "ACTIVATE_REASSURANCE_PACKAGE_SUCCESS",
-      ];
-    case "recovery":
-    case "sentiment":
-      return fullFraudStoryEvents;
-    case "timeout":
-      return timeoutEvents;
-    default:
-      return null;
-  }
-}
-
-export interface BankTransaction {
-  id: string;
-  merchantName: string;
-  amountVnd: number;
-  time: string;
-  status: "success" | "pending";
-  type: "transfer" | "receive";
-}
+import {
+  fraudResolutionEvents,
+  getShotEvents,
+  highRiskEvents,
+  legitimateResolutionEvents,
+  reviewEvents,
+} from "./demoEventSequences";
+import { createInitialBankTransactions, initialBankBalance } from "../data/bankingDemo";
 
 export function App() {
   const isTestMode = useMemo(() => {
@@ -180,33 +70,8 @@ export function App() {
     return requestedShot !== null && initialScenarioState.currentState !== "idle_monitoring";
   });
   const [selectedQtdnd, setSelectedQtdnd] = useState("QTDND Đà Nẵng");
-  const [bankBalance, setBankBalance] = useState(36360430);
-  const [normalTransactions, setNormalTransactions] = useState<BankTransaction[]>([
-    {
-      id: "TXN-002",
-      merchantName: "Circle K Thái Hà",
-      amountVnd: 85000,
-      time: "Hôm qua - 19:42",
-      status: "success",
-      type: "transfer",
-    },
-    {
-      id: "TXN-003",
-      merchantName: "Highlands Coffee",
-      amountVnd: 55000,
-      time: "Hôm qua - 14:15",
-      status: "success",
-      type: "transfer",
-    },
-    {
-      id: "TXN-004",
-      merchantName: "Chuyển khoản từ Nguyễn Văn B",
-      amountVnd: 1200000,
-      time: "09/06/2026 - 10:30",
-      status: "success",
-      type: "receive",
-    },
-  ]);
+  const [bankBalance, setBankBalance] = useState(initialBankBalance);
+  const [normalTransactions, setNormalTransactions] = useState(createInitialBankTransactions);
   const visibleScreen = getVisibleScreen(state);
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -267,33 +132,8 @@ export function App() {
     setShowCyberSimulation(false);
     setState(createInitialKnightState());
     setIsLoggedIn(false);
-    setBankBalance(36360430);
-    setNormalTransactions([
-      {
-        id: "TXN-002",
-        merchantName: "Circle K Thái Hà",
-        amountVnd: 85000,
-        time: "Hôm qua - 19:42",
-        status: "success",
-        type: "transfer",
-      },
-      {
-        id: "TXN-003",
-        merchantName: "Highlands Coffee",
-        amountVnd: 55000,
-        time: "Hôm qua - 14:15",
-        status: "success",
-        type: "transfer",
-      },
-      {
-        id: "TXN-004",
-        merchantName: "Chuyển khoản từ Nguyễn Văn B",
-        amountVnd: 1200000,
-        time: "09/06/2026 - 10:30",
-        status: "success",
-        type: "receive",
-      },
-    ]);
+    setBankBalance(initialBankBalance);
+    setNormalTransactions(createInitialBankTransactions());
   }, [cancelActiveSequence]);
 
   const startScenario = useCallback(() => {

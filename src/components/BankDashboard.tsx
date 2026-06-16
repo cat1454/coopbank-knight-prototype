@@ -22,7 +22,7 @@ import {
 import type { KnightScenarioState } from "../domain/types";
 import { formatVnd } from "../domain/format";
 import { PrimaryButton } from "./PrimaryButton";
-import type { BankTransaction } from "../app/App";
+import type { BankTransaction } from "../data/bankingDemo";
 import { KnightAgentVisual } from "./KnightAgentVisual";
 import { disablePushNotifications, enablePushNotifications } from "../services/pushNotifications";
 

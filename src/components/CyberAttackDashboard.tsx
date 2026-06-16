@@ -4,7 +4,6 @@ import {
   Activity, 
   CreditCard, 
   AlertTriangle, 
-  Cpu, 
   Globe, 
   Terminal, 
   Lock, 
@@ -71,13 +70,6 @@ export function CyberAttackDashboard({ state, alarmAudio }: CyberAttackDashboard
       return;
     }
 
-    // Set logs for hacking phase
-    setDataPackets([
-      "[INIT] Hacker payload injected successfully.",
-      "[CONN] Secure port opened at card-vault gateway.",
-      "[SESS] Session authorized with leaked credentials."
-    ]);
-
     const logTemplates = [
       "ACCESSING: bank-vault.debit-cards...",
       "EXPLOITING: auth-token bypass vulnerability...",
@@ -90,7 +82,6 @@ export function CyberAttackDashboard({ state, alarmAudio }: CyberAttackDashboard
     ];
 
     let currentProgress = 0;
-    setProgress(0);
 
     const runSimulation = setInterval(() => {
       currentProgress += Math.floor(Math.random() * 4) + 2; // Grow by 2-5%
@@ -143,8 +134,13 @@ export function CyberAttackDashboard({ state, alarmAudio }: CyberAttackDashboard
   // Trigger Exploit
   const startSimulation = () => {
     alarmAudio.stopAlarm();
-    setPhase("hacking");
+    setDataPackets([
+      "[INIT] Hacker payload injected successfully.",
+      "[CONN] Secure port opened at card-vault gateway.",
+      "[SESS] Session authorized with leaked credentials."
+    ]);
     setProgress(0);
+    setPhase("hacking");
   };
 
   // Reset Simulation

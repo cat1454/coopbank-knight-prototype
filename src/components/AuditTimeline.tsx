@@ -1,6 +1,7 @@
 import { Clock3, RotateCcw } from "lucide-react";
 import type { KnightScenarioState } from "../domain/types";
 import { formatTime } from "../domain/format";
+import { getCustomerVisibleAuditEvents } from "../domain/audit";
 import { PrimaryButton } from "./PrimaryButton";
 import { StatusPill } from "./StatusPill";
 
@@ -19,8 +20,7 @@ export function AuditTimeline({ state, onReset }: AuditTimelineProps) {
       <h1 id="audit-title">Mọi bước nhạy cảm đều có dấu vết.</h1>
       <p className="screen-lead">Timeline cho thấy action nào do KNIGHT làm, action nào cần khách hoặc Fraud Ops.</p>
       <div className="timeline" aria-label="Audit timeline">
-        {state.auditEvents
-          .filter((event) => event.customerVisible)
+        {getCustomerVisibleAuditEvents(state.auditEvents)
           .map((event) => (
             <article className="timeline-item" key={event.id}>
               <time>{formatTime(event.timestamp)}</time>

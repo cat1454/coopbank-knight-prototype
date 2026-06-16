@@ -577,12 +577,18 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
 
   // Synchronize alarm sound to alarmEnabled / danger states
   useEffect(() => {
-    if (alarmEnabled && isDanger) {
-      startAlarm();
-    } else {
+    const alarmSyncTimer = window.setTimeout(() => {
+      if (alarmEnabled && isDanger) {
+        void startAlarm();
+      } else {
+        stopAlarm();
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(alarmSyncTimer);
       stopAlarm();
-    }
-    return () => stopAlarm();
+    };
   }, [alarmEnabled, isDanger]);
 
   const toggleAlarm = () => {
