@@ -7,6 +7,7 @@ import readline from "readline";
 import { fileURLToPath } from "url";
 import webPush from "web-push";
 import { DEMO_FLOW_IDS, getDemoFlow, listDemoFlows } from "./demoFlows.js";
+import { buildMockExplanation } from "./explain.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -596,6 +597,16 @@ const server = http.createServer(async (req, res) => {
 
   if (requestUrl.pathname === "/api/push/public-key" && req.method === "GET") {
     sendJson(res, 200, { publicKey: vapidPublicKey });
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/explain" && req.method === "POST") {
+    try {
+      const payload = await readJson(req, 128 * 1024);
+      sendJson(res, 200, buildMockExplanation(payload));
+    } catch (error) {
+      sendJson(res, 400, { error: error.message || "Invalid request" });
+    }
     return;
   }
 
