@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createInitialKnightState } from "../domain/knightStateMachine";
 import { createInitialBankTransactions, initialBankBalance } from "../data/bankingDemo";
 import { BankDashboard } from "./BankDashboard";
@@ -28,6 +28,10 @@ function renderDashboard() {
 }
 
 describe("BankDashboard GuardianFlow Decision Intelligence", () => {
+  afterEach(() => {
+    window.sessionStorage.clear();
+  });
+
   it("shows consent before the Decision Intelligence surfaces", async () => {
     const user = userEvent.setup();
     renderDashboard();
@@ -57,7 +61,7 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
 
     expect(screen.getByRole("heading", { name: /cảnh báo giao dịch/i })).toBeInTheDocument();
     expect(screen.getByText(/42\/100/i)).toBeInTheDocument();
-    expect(screen.getByText(/Số tiền cao hơn/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Số tiền cao hơn/i).length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole("button", { name: /xem chi tiết phân tích/i }));
 

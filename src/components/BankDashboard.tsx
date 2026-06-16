@@ -25,6 +25,8 @@ import { PrimaryButton } from "./PrimaryButton";
 import type { BankTransaction } from "../data/bankingDemo";
 import { KnightAgentVisual } from "./KnightAgentVisual";
 import { disablePushNotifications, enablePushNotifications } from "../services/pushNotifications";
+import { evaluateGuardianScenario } from "../domain/guardianFlow";
+import { GuardianFlowPanel } from "./GuardianFlowPanel";
 
 interface BankDashboardProps {
   state: KnightScenarioState;
@@ -35,6 +37,7 @@ interface BankDashboardProps {
   setBalance: React.Dispatch<React.SetStateAction<number>>;
   transactions: BankTransaction[];
   setTransactions: React.Dispatch<React.SetStateAction<BankTransaction[]>>;
+  guardianDemoEnabled?: boolean;
 }
 
 export function BankDashboard({
@@ -46,6 +49,7 @@ export function BankDashboard({
   setBalance,
   transactions,
   setTransactions,
+  guardianDemoEnabled = false,
 }: BankDashboardProps) {
   const [activeTab, setActiveTab] = useState<"home" | "transfer" | "knight" | "history" | "settings">("home");
   const [balanceVisible, setBalanceVisible] = useState(false);
@@ -93,14 +97,20 @@ export function BankDashboard({
   const handleConfirmTransfer = () => {
     setTransferStep("processing");
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const amountNum = Number(transferAmount);
+      const scenarioId =
+        transferRecipient.toLowerCase().includes("shopmall") || amountNum >= 10_000_000
+          ? "critical_risk"
+          : amountNum >= 3_000_000
+            ? "medium_risk"
+            : "low_risk";
+      const { decision } = await evaluateGuardianScenario(scenarioId);
 
-      // If it is the suspicious transaction (ShopMall Global or 10,000,000 VND)
-      if (transferRecipient.toLowerCase().includes("shopmall") || amountNum === 10000000) {
-        onStartDemo(); // Intercept! Trigger background AI agent risk detection
+      if (decision.action === "block" || decision.action === "review" || decision.action === "delay") {
+        onStartDemo();
+        setActiveTab("knight");
       } else {
-        // Safe Transaction
         setBalance((prev) => prev - amountNum);
         setTransactions((prev) => [
           {
@@ -626,6 +636,9 @@ export function BankDashboard({
             </div>
           );
         })()}
+
+        {/* Protection Levels */}
+        <GuardianFlowPanel enabled={guardianDemoEnabled} onEscalateToKnight={onStartDemo} />
 
         {/* Protection Levels */}
         <div className="settings-section">

@@ -53,6 +53,7 @@ export function App() {
   }, [queryParams]);
 
   const requestedShot = queryParams.get("shot");
+  const guardianDemoEnabled = queryParams.get("demo") === "true";
 
   // Pre-create and unlock alarm audio during normal usage so it auto-plays on iOS
   const alarmAudio = useAlarmAudio();
@@ -392,6 +393,7 @@ export function App() {
         setBalance={setBankBalance}
         transactions={normalTransactions}
         setTransactions={setNormalTransactions}
+        guardianDemoEnabled={guardianDemoEnabled}
       />
     );
 
@@ -504,6 +506,7 @@ export function App() {
     isProcessing,
     isTestMode,
     completeScenarioFlow,
+    guardianDemoEnabled,
   ]);
 
   const renderPhoneFrame = () => {
