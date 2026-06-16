@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   adaptGuardianDecisionToRiskAssessment,
   decideGuardianAction,
+  evaluateGuardianTransaction,
   getGuardianScenario,
   guardianScenarios,
   runGuardianAgents,
@@ -84,5 +85,42 @@ describe("GuardianFlow Decision Intelligence", () => {
     expect(decision.action).toBe("delay");
     expect(decision.requiresStepUp).toBe(true);
     expect(decision.reasonCodes).toContain("repeated_confirm_attempts");
+  });
+
+  it("evaluates live transfer input into an automatic AI level without a scenario selector", async () => {
+    const result = await evaluateGuardianTransaction({
+      amountVnd: 3_000_000,
+      recipientName: "Nguyễn Văn B",
+      recipientAccount: "19038472910",
+      recipientBank: "Ngân hàng liên kết",
+      content: "Chuyen tien sinh hoat",
+      loginMethod: "password",
+    });
+
+    expect(result.decision.source).toBe("transaction");
+    expect(result.decision.scenarioId).toBeUndefined();
+    expect(result.decision.aiLevel).toBe("watch");
+    expect(result.decision.policyLevel).toBe("L1");
+    expect(result.riskAssessment.recommendedAction).toBe("notify");
+  });
+
+  it("keeps critical live transfers in the reversible hold band", async () => {
+    const result = await evaluateGuardianTransaction({
+      amountVnd: 50_000_000,
+      recipientName: "ShopMall Global",
+      recipientAccount: "88884920412",
+      recipientBank: "Co-opBank",
+      content: "Dau tu gap",
+      location: "Singapore",
+      deviceTrust: "new",
+      ipReputation: "bad",
+      loginMethod: "password",
+      priorActions: ["login_password", "add_new_recipient", "increase_limit", "open_transfer"],
+    });
+
+    expect(result.decision.aiLevel).toBe("critical");
+    expect(result.decision.action).toBe("block");
+    expect(result.decision.policyLevel).toBe("L2");
+    expect(result.riskAssessment.recommendedAction).toBe("suspend");
   });
 });
