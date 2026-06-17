@@ -3,6 +3,7 @@ import { CreditCard, FileCheck2, ShieldCheck, Loader2, Copy } from "lucide-react
 import type { KnightScenarioState } from "../../../domain/types";
 import { formatVnd } from "../../../domain/format";
 import { PrimaryButton, StatusPill } from "../../../shared/ui";
+import "./CardProtection.css";
 
 interface VirtualCardScreenProps {
   state: KnightScenarioState;

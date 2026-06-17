@@ -1,0 +1,18 @@
+/* Compact card button updates */
+.compact-card-btn {
+  background: #ffffff !important;
+  border: 1px solid rgba(16, 24, 40, 0.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+  border-radius: 16px !important;
+  padding: 12px 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.compact-card-btn:hover {
+  border-color: rgba(227, 24, 55, 0.2) !important;
+  background: #fffcfc !important;
+}
+
+.compact-card-btn .compact-card-btn__left svg {
+  color: #e31837 !important;
+}

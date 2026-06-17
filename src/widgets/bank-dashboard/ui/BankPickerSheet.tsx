@@ -1,6 +1,7 @@
 
 import { Building2, Search, X } from "lucide-react";
 import type { TransferBank } from "../../../entities/bank/model/transferBanks";
+import "./BankPickerSheet.css";
 
 interface BankPickerSheetProps {
   bankPickerOpen: boolean;

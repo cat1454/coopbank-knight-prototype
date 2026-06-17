@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import { ArrowRightLeft, CreditCard, Home, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
+import "./BottomTabs.css";
 
 export type BankDashboardTab = "home" | "card" | "transfer" | "knight" | "settings";
 

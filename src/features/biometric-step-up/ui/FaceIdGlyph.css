@@ -1,0 +1,181 @@
+/* 1. Frosted Glass Face ID Modal (iOS Style for Login screen) */
+.ios-faceid-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: ios-fade-in 0.3s ease-out forwards;
+}
+
+.ios-faceid-modal {
+  width: 220px;
+  height: 220px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  color: #1c1c1e;
+  text-align: center;
+  animation: ios-scale-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ios-faceid-modal__glyph-wrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.ios-faceid-modal__status {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #1c1c1e;
+  line-height: 1.3;
+  margin: 0;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 2. Premium Face ID Camera Grid, Bracket and Scanner styles */
+.face-scan-preview-camera-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle, transparent 20%, rgba(10, 20, 35, 0.6) 80%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 15px 15px, 15px 15px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* iOS Face Brackets */
+.face-scan-brackets {
+  position: absolute;
+  width: 184px;
+  height: 204px;
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+.face-scan-bracket {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(209, 233, 255, 0.4);
+}
+
+.face-scan-bracket--tl { top: 0; left: 0; border-right: none; border-bottom: none; border-top-left-radius: 12px; }
+.face-scan-bracket--tr { top: 0; right: 0; border-left: none; border-bottom: none; border-top-right-radius: 12px; }
+.face-scan-bracket--bl { bottom: 0; left: 0; border-right: none; border-top: none; border-bottom-left-radius: 12px; }
+.face-scan-bracket--br { bottom: 0; right: 0; border-left: none; border-top: none; border-bottom-right-radius: 12px; }
+
+/* Active & Success states for brackets */
+.face-scan-preview--scanning .face-scan-bracket {
+  border-color: #00d8ff;
+  box-shadow: 0 0 10px rgba(0, 216, 255, 0.3);
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  animation: face-bracket-focus 1.8s ease-in-out infinite alternate;
+}
+.face-scan-preview--success .face-scan-bracket {
+  border-color: #1fd89a;
+  box-shadow: 0 0 15px rgba(31, 216, 154, 0.5);
+  transition: border-color 0.3s ease;
+}
+.face-scan-preview--failed .face-scan-bracket {
+  border-color: #ff3b30;
+  box-shadow: 0 0 15px rgba(255, 59, 48, 0.5);
+  transition: border-color 0.3s ease;
+}
+
+/* Scan line sweep gradient */
+.face-scan-sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 44%;
+  background: linear-gradient(to bottom, transparent, rgba(0, 216, 255, 0.15));
+  border-bottom: 2px solid #00d8ff;
+  top: 0;
+  transform: translateY(-18%);
+  animation: face-scan-sweep-loop 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform;
+}
+
+.face-scan-preview--success .face-scan-sweep {
+  border-color: #1fd89a;
+  background: linear-gradient(to bottom, transparent, rgba(31, 216, 154, 0.15));
+  animation-play-state: paused;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.face-scan-preview--failed .face-scan-sweep {
+  border-color: #ff3b30;
+  background: linear-gradient(to bottom, transparent, rgba(255, 59, 48, 0.15));
+  animation-play-state: paused;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+/* Custom SVG Face ID Glyph Animations */
+.faceid-glyph-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.faceid-path {
+  stroke: #1c1c1e;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke 0.3s ease, opacity 0.3s ease;
+}
+
+/* Light / dark adaptive styling */
+.screen--biometric .faceid-path {
+  stroke: #ffffff;
+}
+
+.face-scan-preview--scanning .faceid-path {
+  stroke: #00d8ff;
+  animation: faceid-pulse-glow 1.5s ease-in-out infinite alternate;
+}
+
+.face-scan-preview--success .faceid-path {
+  stroke: #1fd89a;
+}
+
+.face-scan-preview--failed .faceid-path {
+  stroke: #ff3b30;
+  animation: faceid-shake-glow 0.15s ease-in-out 3;
+}
+
+/* Checkmark draw animation */
+.svg-checkmark-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: draw-checkmark 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

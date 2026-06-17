@@ -21,6 +21,11 @@ import { KnightLogoMini } from "../shared/ui";
 import { useAlarmAudio } from "../shared/lib/audio/useAlarmAudio";
 import { CyberAttackDashboard } from "../widgets/cyber-attack-dashboard/CyberAttackDashboard";
 import { buildBackendUrl } from "../shared/api/backend";
+import "../shared/styles/screen-primitives.css";
+import "../shared/styles/card-effects.css";
+import "./AppTransitions.css";
+import "./AppPlatform.css";
+import "../widgets/bank-dashboard/ConnectionModal.css";
 import {
   createInitialKnightState,
   getVisibleScreen,

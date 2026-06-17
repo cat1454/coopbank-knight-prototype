@@ -5,6 +5,8 @@ import { GuardianFlowPanel } from "../../../features/guardianflow-decision/ui/Gu
 import { KnightAgentVisual } from "../../knight-agent-visual/KnightAgentVisual";
 import type { BankTransferFlow } from "../useBankTransferFlow";
 import { getDeviceName, getGuardianLevelLabel, type GuardianLevelSetting } from "../model/dashboardCopy";
+import "./SettingsTab.css";
+import "./KnightTab.css";
 
 interface KnightTabProps {
   state: KnightScenarioState;

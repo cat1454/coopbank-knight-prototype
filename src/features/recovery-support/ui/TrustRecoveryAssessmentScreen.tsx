@@ -2,6 +2,7 @@ import { ArrowRight, BrainCircuit, ShieldCheck } from "lucide-react";
 import type { KnightScenarioState } from "../../../domain/types";
 import { formatVnd } from "../../../domain/format";
 import { PrimaryButton, StatusPill } from "../../../shared/ui";
+import "./RecoverySupport.css";
 
 interface TrustRecoveryAssessmentScreenProps {
   state: KnightScenarioState;

@@ -3,6 +3,7 @@ import type { KnightScenarioState } from "../../domain/types";
 import { formatTime } from "../../domain/format";
 import { getCustomerVisibleAuditEvents } from "../../domain/audit";
 import { PrimaryButton, StatusPill } from "../../shared/ui";
+import "./AuditTimeline.css";
 
 interface AuditTimelineProps {
   state: KnightScenarioState;

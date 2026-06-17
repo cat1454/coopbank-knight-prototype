@@ -1,0 +1,34 @@
+/* Screen transition effects */
+.screen-exit {
+  animation: screenExitAnim 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.screen-enter {
+  animation: screenEnterAnim 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes screenExitAnim {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
+    filter: blur(4px);
+  }
+}
+
+@keyframes screenEnterAnim {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}

@@ -1,6 +1,7 @@
 import { CheckCircle2, RotateCcw, Loader2 } from "lucide-react";
 import type { KnightScenarioState } from "../../../domain/types";
 import { PrimaryButton, StatusPill } from "../../../shared/ui";
+import "./CardProtection.css";
 
 interface LegitimateResolutionScreenProps {
   state: KnightScenarioState;

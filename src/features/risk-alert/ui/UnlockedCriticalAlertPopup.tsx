@@ -4,6 +4,8 @@ import type { KnightScenarioState } from "../../../domain/types";
 import { formatVnd } from "../../../domain/format";
 import { KnightAgentVisual } from "../../../widgets/knight-agent-visual/KnightAgentVisual";
 import "./CriticalAlertSurface.css";
+import "./CriticalAlertMotion.css";
+import "./CriticalAlertAgent.css";
 
 interface UnlockedCriticalAlertPopupProps {
   state: KnightScenarioState;

@@ -10,7 +10,9 @@ import { GuardianDemoControls } from "./GuardianDemoControls";
 import { OperatorReviewOverlay } from "./OperatorReviewOverlay";
 import { ProtectionLevelSelector } from "./ProtectionLevelSelector";
 import { WithdrawConsentModal } from "./WithdrawConsentModal";
+import "./GuardianFlowExtras.css";
 import "./GuardianFlowPanel.css";
+import "./GuardianFlowConsole.css";
 
 interface GuardianFlowPanelProps {
   demoEnabled?: boolean;

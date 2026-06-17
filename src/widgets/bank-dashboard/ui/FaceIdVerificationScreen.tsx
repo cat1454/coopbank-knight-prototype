@@ -3,6 +3,8 @@ import { CheckCircle2, KeyRound, Loader2, ScanFace, XCircle } from "lucide-react
 import { formatVnd } from "../../../domain/format";
 import { PrimaryButton } from "../../../shared/ui";
 import "./FaceIdVerificationScreen.css";
+import "./FaceIdScanner.css";
+import "./FaceIdPinFallback.css";
 
 interface FaceIdVerificationScreenProps {
   riskScore: number;

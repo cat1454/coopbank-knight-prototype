@@ -1,0 +1,211 @@
+.behavior-signal-list,
+.reasoning-breakdown,
+.essential-context,
+.reassurance-benefit-list,
+.essential-cashback-panel,
+.recovery-observation-panel,
+.trust-score-panel,
+.decision-panel {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: var(--color-card);
+}
+
+.behavior-signal {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.behavior-signal svg {
+  color: var(--color-primary);
+}
+
+.behavior-signal div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.behavior-signal strong,
+.reassurance-benefit-list strong {
+  font-size: var(--text-sm);
+}
+
+.behavior-signal span,
+.behavior-signal time,
+.reassurance-benefit-list span,
+.essential-cashback-panel p,
+.recovery-observation-panel p,
+.recovery-observation-panel span {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.behavior-signal time {
+  white-space: nowrap;
+}
+
+.reasoning-note,
+.security-footnote {
+  margin: 0;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  background: #f5f8ff;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+.security-footnote {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.trust-score-panel {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-color: #b2ddff;
+  background: #eff8ff;
+}
+
+.trust-score-panel > div {
+  display: grid;
+  gap: 2px;
+}
+
+.trust-score-panel span {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.trust-score-panel strong {
+  color: var(--color-primary);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.trust-score-panel .status-pill {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.reasoning-breakdown > div,
+.essential-context > div,
+.essential-cashback-panel__header,
+.recovery-cycle-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.reasoning-breakdown span,
+.essential-context span {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.reasoning-breakdown strong {
+  color: var(--color-primary);
+}
+
+.essential-context {
+  background: #f8fafc;
+}
+
+.essential-context > strong {
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+}
+
+.essential-context > div strong {
+  font-size: var(--text-xs);
+}
+
+.decision-panel {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  border-color: #abefc6;
+  background: #f0fdf4;
+}
+
+.decision-panel p {
+  margin: 0;
+  color: #05603a;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+.reassurance-benefit-list article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+}
+
+.reassurance-benefit-list article > svg {
+  color: var(--color-success);
+}
+
+.reassurance-benefit-list article > div {
+  display: grid;
+  gap: 2px;
+}
+
+.essential-cashback-panel {
+  border-color: #b2ddff;
+  background: #eff8ff;
+}
+
+.essential-cashback-panel__header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.essential-cashback-panel__header span {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.essential-cashback-panel__header strong {
+  color: var(--color-primary);
+  font-size: var(--text-xl);
+}
+
+.essential-cashback-panel p,
+.recovery-observation-panel p {
+  margin: 0;
+}
+
+.recovery-observation-panel {
+  border-color: #abefc6;
+  background: #f0fdf4;
+}
+
+.recovery-observation-panel > strong {
+  color: #05603a;
+}
+
+.recovery-cycle-status {
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  background: #f5fbff;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+@media (max-width: 380px) {
+  .behavior-signal {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .behavior-signal time {
+    display: none;
+  }
+}

@@ -3,10 +3,21 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import type { KnightScenarioState } from "../../domain/types";
 import { particleLabels, phaseColors } from "./model/visualConfig";
 import "./KnightAgentVisual.css";
+import "./KnightAgentAtmosphere.css";
+import "./KnightAgentOverlays.css";
 import "./KnightAgentCharacter.css";
+import "./KnightAgentBody.css";
+import "./KnightAgentLimbs.css";
 import "./KnightAgentPanels.css";
+import "./KnightAgentAlarmControls.css";
 import "./KnightAgentDeck.css";
+import "./KnightAgentDeckControls.css";
+import "./KnightAgentDeckResponsive.css";
+import "./KnightAgentDeckResponsivePanels.css";
+import "./KnightAgentDeckMobile.css";
 import "./KnightAgentGuardEffects.css";
+import "./KnightAgentGuardArmaments.css";
+import "./KnightAgentGuardStates.css";
 
 interface KnightAgentVisualProps {
   state: KnightScenarioState;

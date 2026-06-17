@@ -20,6 +20,7 @@ import "./TransferTab.css";
 import "./TransferFormControls.css";
 import "./TransferReviewStates.css";
 import "./TransferReceiptStates.css";
+import "./TransferReceiptFinal.css";
 import "./TransferReasonSummary.css";
 
 interface TransferTabProps {

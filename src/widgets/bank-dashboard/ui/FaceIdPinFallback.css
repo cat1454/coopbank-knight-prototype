@@ -1,0 +1,228 @@
+/* Step indicators */
+.faceid-verify__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+}
+
+.faceid-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+.faceid-step--done {
+  color: var(--color-success);
+}
+
+.faceid-step--active {
+  color: #1d4ed8;
+}
+
+.faceid-step-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-line);
+  flex-shrink: 0;
+}
+
+/* â”€â”€ Main scan CTA button â”€â”€ */
+.faceid-scan-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 52px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #175cd3 0%, #1e40af 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px rgba(23, 92, 211, 0.4);
+  letter-spacing: 0.2px;
+}
+
+.faceid-scan-trigger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(23, 92, 211, 0.5);
+}
+
+.faceid-scan-trigger:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.faceid-scan-trigger--scanning {
+  background: linear-gradient(135deg, #0f2f6b 0%, #1e3a7a 100%);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.75;
+}
+
+.faceid-scan-trigger--retry {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  box-shadow: 0 4px 16px rgba(180, 83, 9, 0.35);
+}
+
+/* â”€â”€ PIN fallback link â”€â”€ */
+.faceid-pin-fallback-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color 0.15s ease;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.faceid-pin-fallback-link:hover:not(:disabled) {
+  color: var(--color-ink);
+}
+
+.faceid-pin-fallback-link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* â”€â”€ PIN Fallback Screen â”€â”€ */
+.faceid-pin-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding-top: 8px;
+}
+
+.faceid-pin-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(23, 92, 211, 0.1), rgba(23, 92, 211, 0.05));
+  border: 1.5px solid rgba(23, 92, 211, 0.2);
+  display: grid;
+  place-items: center;
+  color: #1d4ed8;
+}
+
+.faceid-pin-fallback h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.faceid-pin-fallback p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+/* â”€â”€ PIN OTP Boxes â”€â”€ */
+.pin-boxes {
+  display: flex;
+  gap: clamp(6px, 2.5vw, 12px);
+  justify-content: center;
+  margin: 4px 0;
+  width: 100%;
+}
+
+.pin-box {
+  flex: 1;
+  min-width: 0;
+  max-width: 52px;
+  height: clamp(48px, 13vw, 56px);
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  border: 2px solid var(--color-line);
+  border-radius: 12px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  padding: 0;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  caret-color: transparent;
+  /* type=password handles masking natively on all browsers */
+}
+
+.pin-box:focus {
+  border-color: #175cd3;
+  box-shadow: 0 0 0 3px rgba(23, 92, 211, 0.15);
+  transform: scale(1.05);
+}
+
+.pin-box:not(:placeholder-shown) {
+  border-color: #175cd3;
+  background: rgba(23, 92, 211, 0.04);
+}
+
+/* Error state */
+.pin-boxes--error .pin-box {
+  border-color: #ff3b30;
+  background: rgba(255, 59, 48, 0.04);
+  animation: pin-box-shake 0.38s ease;
+}
+
+@keyframes pin-box-shake {
+  0%, 100% { transform: translateX(0); }
+  18%  { transform: translateX(-5px); }
+  36%  { transform: translateX(5px); }
+  54%  { transform: translateX(-3px); }
+  72%  { transform: translateX(3px); }
+}
+
+/* Pop-in when digit entered */
+@keyframes pin-box-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.pin-box:not(:placeholder-shown):focus {
+  animation: pin-box-pop 0.18s ease;
+}
+
+.faceid-pin-error {
+  font-size: 12px;
+  color: #ff3b30;
+  font-weight: 600;
+}
+
+.faceid-pin-hint {
+  font-size: 11px;
+  color: var(--color-muted);
+  margin: 0;
+}
+
+
+/* â”€â”€ End FaceID CSS â”€â”€ */
+
+@media (max-width: 440px) {
+  .transfer-ai-grid,
+  .transfer-ai-confirm-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .transfer-ai-signal {
+    min-height: auto;
+  }
+}

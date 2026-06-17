@@ -1,0 +1,61 @@
+.screen-flash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 45, 85, 0.72) 0%,
+    rgba(255, 45, 85, 0.48) 30%,
+    rgba(200, 20, 50, 0.28) 65%,
+    transparent 100%
+  );
+  animation: screen-flash-burst 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+             screen-flash-pulse 1.6s ease-in-out 0.85s infinite;
+}
+
+@keyframes screen-flash-burst {
+  0%   { opacity: 0; transform: scale(0.8); }
+  18%  { opacity: 1; transform: scale(1.06); }
+  55%  { opacity: 0.88; transform: scale(1); }
+  100% { opacity: 0.38; transform: scale(1); }
+}
+
+@keyframes screen-flash-pulse {
+  0%, 100% { opacity: 0.38; }
+  50%       { opacity: 0.62; }
+}
+
+/* Edge vignette red glow around screen edges */
+.screen-flash-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 45, 85, 0.55) 0%,
+    transparent 18%,
+    transparent 82%,
+    rgba(255, 45, 85, 0.55) 100%
+  );
+  animation: screen-flash-edge 1.6s ease-in-out 0.85s infinite;
+}
+
+.screen-flash-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(255, 45, 85, 0.48) 0%,
+    transparent 16%,
+    transparent 84%,
+    rgba(255, 45, 85, 0.48) 100%
+  );
+  animation: screen-flash-edge 1.6s ease-in-out 1.2s infinite;
+}
+
+@keyframes screen-flash-edge {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 1; }
+}

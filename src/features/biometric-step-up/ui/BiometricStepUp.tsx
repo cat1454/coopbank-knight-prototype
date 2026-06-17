@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, RotateCcw, ScanFace, XCircle, Loader2 } from "lucide-react";
 import type { CustomerIntent, KnightScenarioState } from "../../../domain/types";
 import { PrimaryButton, StatusPill } from "../../../shared/ui";
+import "./BiometricStepUp.css";
+import "./FaceIdGlyph.css";
 
 interface BiometricStepUpProps {
   state: KnightScenarioState;

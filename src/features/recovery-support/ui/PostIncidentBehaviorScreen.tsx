@@ -2,6 +2,7 @@ import { Activity, ArrowRight, ShieldCheck } from "lucide-react";
 import type { KnightScenarioState } from "../../../domain/types";
 import { formatTime } from "../../../domain/format";
 import { PrimaryButton, StatusPill } from "../../../shared/ui";
+import "./RecoverySupport.css";
 
 interface PostIncidentBehaviorScreenProps {
   state: KnightScenarioState;

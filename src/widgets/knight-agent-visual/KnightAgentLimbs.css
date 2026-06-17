@@ -1,0 +1,131 @@
+/* Waving Robot Arms */
+.arms {
+  position: absolute;
+  top: 6px;
+  left: -30px;
+  right: -30px;
+  height: 116px;
+  pointer-events: none;
+}
+
+.arm {
+  position: absolute;
+  top: 9px;
+  width: 24px;
+  height: 82px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 30%),
+    linear-gradient(180deg, #1a2545, #091225);
+  border: 1.5px solid color-mix(in srgb, var(--mood-color) 42%, #2a4a8a);
+  border-radius: 4px 4px 7px 7px;
+  transform-origin: 50% 10%;
+  transition: border-color 0.3s ease;
+}
+
+.arm.left {
+  left: 0;
+  animation: arm-left-idle 3.4s ease-in-out infinite;
+}
+
+.arm.right {
+  right: 0;
+  animation: arm-right-idle 3.4s ease-in-out infinite;
+}
+
+.scene[data-mood="alert"] .arm.left,
+.scene[data-mood="protect"] .arm.left {
+  animation-name: arm-left-alert;
+}
+
+.scene[data-mood="verify"] .arm.right,
+.scene[data-mood="resolve"] .arm.right {
+  animation-name: arm-right-guide;
+}
+
+@keyframes arm-left-idle {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(-12deg); }
+}
+
+@keyframes arm-right-idle {
+  0%, 100% { transform: rotate(6deg); }
+  50% { transform: rotate(12deg); }
+}
+
+@keyframes arm-left-alert {
+  0%, 100% { transform: rotate(-10deg) translateY(0); }
+  36% { transform: rotate(-28deg) translateY(-5px); }
+  64% { transform: rotate(-16deg) translateY(-2px); }
+}
+
+@keyframes arm-right-guide {
+  0%, 100% { transform: rotate(8deg) translateY(0); }
+  38% { transform: rotate(25deg) translateY(-4px); }
+  70% { transform: rotate(16deg) translateY(-2px); }
+}
+
+/* Waving Arms Particle Laser Beams */
+.beam {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  width: 3px;
+  height: 0;
+  background: linear-gradient(to bottom, var(--mood-color), transparent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--mood-color);
+  transform: translateX(-50%);
+  animation: beam-fire 4.2s ease-in-out infinite;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.arm.right .beam {
+  animation-delay: 0.9s;
+}
+
+@keyframes beam-fire {
+  0%, 42% { height: 0; opacity: 0; }
+  58% { height: 44px; opacity: 1; }
+  100% { height: 0; opacity: 0; }
+}
+
+/* Leg & Boot glows */
+.legs {
+  display: flex;
+  gap: 9px;
+  margin-top: -28px;
+}
+
+.leg {
+  width: 40px;
+  height: 52px;
+  position: relative;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.07), transparent 30%),
+    linear-gradient(180deg, #1b2744, #081224);
+  border: 1.5px solid color-mix(in srgb, var(--mood-color) 34%, #2a4a8a);
+  border-radius: 4px 4px 8px 8px;
+  transition: border-color 0.3s ease;
+}
+
+.boot {
+  position: absolute;
+  bottom: -8px;
+  left: -4px;
+  right: -4px;
+  height: 14px;
+  background: #111827;
+  border: 1.5px solid color-mix(in srgb, var(--mood-color) 38%, #2a4a8a);
+  border-radius: 4px 4px 7px 7px;
+  animation: boot-glow 2.2s ease-in-out infinite;
+  transition: border-color 0.3s ease;
+}
+
+.leg:nth-child(2) .boot {
+  animation-delay: 0.9s;
+}
+
+@keyframes boot-glow {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 4px 12px color-mix(in srgb, var(--mood-color) 58%, transparent); }
+}

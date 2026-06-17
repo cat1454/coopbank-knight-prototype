@@ -1,5 +1,6 @@
 
 import type { Dispatch, SetStateAction } from "react";
+import "./SettingsTab.css";
 
 interface SettingsTabProps {
   voiceOtt: boolean;

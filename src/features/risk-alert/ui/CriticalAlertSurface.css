@@ -1,4 +1,4 @@
-/* === Critical Emergency Alert Popup — Premium Redesign === */
+/* === Critical Emergency Alert Popup â€” Premium Redesign === */
 
 /* Overlay backdrop */
 .critical-alert-overlay {
@@ -63,7 +63,7 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-/* ── Header row: live badge + mute btn ── */
+/* â”€â”€ Header row: live badge + mute btn â”€â”€ */
 .ca-header {
   display: flex;
   align-items: center;
@@ -125,7 +125,7 @@
   color: #f97066;
 }
 
-/* ── Animated bell icon ── */
+/* â”€â”€ Animated bell icon â”€â”€ */
 .ca-bell-ring {
   display: flex;
   align-items: center;
@@ -147,7 +147,7 @@
   animation: ca-glow-pulse 1.4s ease-in-out infinite alternate;
 }
 
-/* ── Title ── */
+/* â”€â”€ Title â”€â”€ */
 .ca-title {
   margin: 0;
   font-size: 17px;
@@ -158,7 +158,7 @@
   letter-spacing: -0.3px;
 }
 
-/* ── Risk badge ── */
+/* â”€â”€ Risk badge â”€â”€ */
 .ca-risk-badge {
   display: inline-flex;
   align-items: center;
@@ -174,7 +174,7 @@
   font-weight: 700;
 }
 
-/* ── Transaction info card ── */
+/* â”€â”€ Transaction info card â”€â”€ */
 .ca-txn-card {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -214,7 +214,7 @@
   font-size: 13px;
 }
 
-/* ── Protection notice ── */
+/* â”€â”€ Protection notice â”€â”€ */
 .ca-protection {
   display: flex;
   align-items: flex-start;
@@ -232,7 +232,7 @@
   margin-top: 1px;
 }
 
-/* ── Sound hint ── */
+/* â”€â”€ Sound hint â”€â”€ */
 .ca-sound-hint {
   margin: 0;
   text-align: center;
@@ -245,7 +245,7 @@
   animation: none;
 }
 
-/* ── CTA button ── */
+/* â”€â”€ CTA button â”€â”€ */
 .critical-cta-btn {
   width: 100%;
   background: linear-gradient(135deg, #c4251a 0%, #e83c2e 50%, #f04438 100%);
@@ -273,195 +273,3 @@
   box-shadow: 0 2px 8px rgba(217, 45, 32, 0.35);
 }
 
-/* ── Animations ── */
-@keyframes ca-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes ca-popup-in {
-  from { transform: scale(0.88) translateY(8px); opacity: 0; }
-  to   { transform: scale(1) translateY(0);      opacity: 1; }
-}
-@keyframes ca-border-pulse {
-  0%   { border-color: rgba(240, 68, 56, 0.45); box-shadow: 0 0 16px rgba(217, 45, 32, 0.28), inset 0 1px 0 rgba(255,255,255,0.04); }
-  100% { border-color: rgba(240, 68, 56, 0.80); box-shadow: 0 0 32px rgba(240, 68, 56, 0.55), inset 0 1px 0 rgba(255,255,255,0.04); }
-}
-@keyframes ca-dot-pulse {
-  from { opacity: 0.55; transform: scale(0.8); }
-  to   { opacity: 1;    transform: scale(1.15); }
-}
-@keyframes ca-bell-shake {
-  0%   { transform: rotate(-14deg) scale(1); }
-  100% { transform: rotate(14deg)  scale(1.06); }
-}
-@keyframes ca-glow-pulse {
-  from { opacity: 0.5; transform: scale(0.9); }
-  to   { opacity: 1;   transform: scale(1.2); }
-}
-@keyframes ca-btn-pulse {
-  from { box-shadow: none; }
-  to   { box-shadow: 0 0 10px rgba(240, 68, 56, 0.6); }
-}
-@keyframes ca-flash {
-  from { opacity: 0.5; }
-  to   { opacity: 1; }
-}
-
-/* Legacy aliases — kept for any other refs */
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes popup-scale {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-@keyframes pulse-border {
-  0%   { border-color: #d92d20; box-shadow: 0 0 20px rgba(217, 45, 32, 0.3); }
-  100% { border-color: #f04438; box-shadow: 0 0 35px rgba(240, 68, 56, 0.6); }
-}
-@keyframes bell-ring {
-  0% { transform: rotate(-12deg); }
-  100% { transform: rotate(12deg); }
-}
-@keyframes alert-flash {
-  from { opacity: 0.65; }
-  to { opacity: 1; }
-}
-@keyframes dot-glow {
-  from { transform: scale(0.8); opacity: 0.5; box-shadow: 0 0 4px #f04438; }
-  to { transform: scale(1.2); opacity: 1; box-shadow: 0 0 12px #f04438; }
-}
-
-
-/* ── Popup AI Agent container ── */
-.popup-agent-wrap {
-  position: relative;
-  width: 100%;
-  height: 140px;
-  overflow: hidden;
-  border-radius: 14px;
-  background: rgba(0, 0, 0, 0.28);
-  border: 1px solid rgba(240, 68, 56, 0.15);
-}
-
-/* Fit the full visualizer into the compact container */
-.popup-agent-wrap .knight-agent-visualizer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-/* Scale scene to show only the knight character, centered */
-.popup-agent-wrap .knight-agent-visualizer .scene {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.58);
-  transform-origin: center center;
-  width: 100%;
-  height: 290px;
-  min-height: 290px;
-}
-
-/* ── Hide all text panels, keep only the animated character & bg ── */
-.popup-agent-wrap .name-tag,
-.popup-agent-wrap .thought-bubble,
-.popup-agent-wrap .assistant-layer,
-.popup-agent-wrap .status-panel,
-.popup-agent-wrap .alert-popup,
-.popup-agent-wrap .alarm-control,
-.popup-agent-wrap .particles,
-.popup-agent-wrap .badge-title,
-.popup-agent-wrap .badge-sub {
-  display: none !important;
-}
-
-/* ── Popup bell overlay ─────────────────────────────── */
-.popup-bell-overlay {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(240, 68, 56, 0.15);
-  border: 1px solid rgba(240, 68, 56, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #f97066;
-  animation: ca-bell-shake 0.5s ease-in-out infinite alternate,
-             ca-glow-pulse 1.6s ease-in-out infinite alternate;
-  box-shadow: 0 0 12px rgba(240, 68, 56, 0.4);
-  pointer-events: none;
-}
-
-/* ══════════════════════════════════════════════════════
-   FULL-SCREEN FLASH OVERLAY — triggers on danger alert
-   ══════════════════════════════════════════════════════ */
-
-/* Fixed overlay that sits above everything including phone frame */
-.screen-flash-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(255, 45, 85, 0.72) 0%,
-    rgba(255, 45, 85, 0.48) 30%,
-    rgba(200, 20, 50, 0.28) 65%,
-    transparent 100%
-  );
-  animation: screen-flash-burst 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-             screen-flash-pulse 1.6s ease-in-out 0.85s infinite;
-}
-
-@keyframes screen-flash-burst {
-  0%   { opacity: 0; transform: scale(0.8); }
-  18%  { opacity: 1; transform: scale(1.06); }
-  55%  { opacity: 0.88; transform: scale(1); }
-  100% { opacity: 0.38; transform: scale(1); }
-}
-
-@keyframes screen-flash-pulse {
-  0%, 100% { opacity: 0.38; }
-  50%       { opacity: 0.62; }
-}
-
-/* Edge vignette red glow around screen edges */
-.screen-flash-overlay::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 45, 85, 0.55) 0%,
-    transparent 18%,
-    transparent 82%,
-    rgba(255, 45, 85, 0.55) 100%
-  );
-  animation: screen-flash-edge 1.6s ease-in-out 0.85s infinite;
-}
-
-.screen-flash-overlay::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to right,
-    rgba(255, 45, 85, 0.48) 0%,
-    transparent 16%,
-    transparent 84%,
-    rgba(255, 45, 85, 0.48) 100%
-  );
-  animation: screen-flash-edge 1.6s ease-in-out 1.2s infinite;
-}
-
-@keyframes screen-flash-edge {
-  0%, 100% { opacity: 0.55; }
-  50%       { opacity: 1; }
-}

@@ -1,0 +1,40 @@
+/* Upgraded AI status bar */
+.ai-status-bar.upgraded {
+  background: linear-gradient(135deg, #100720 0%, #1c0a37 100%);
+  border-color: rgba(191, 90, 242, 0.45);
+  box-shadow: 0 0 15px rgba(191, 90, 242, 0.22);
+  color: #e9d5ff;
+}
+
+.ai-status-bar.upgraded .ai-pulse-dot {
+  background-color: #bf5af2;
+  box-shadow: 0 0 0 rgba(191, 90, 242, 0.4);
+  animation: pulse-purple 1.5s infinite;
+}
+
+.ai-status-bar.upgraded .ai-shield {
+  color: #bf5af2;
+}
+
+@keyframes pulse-purple {
+  0% { box-shadow: 0 0 0 0px rgba(191, 90, 242, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(191, 90, 242, 0); }
+  100% { box-shadow: 0 0 0 0px rgba(191, 90, 242, 0); }
+}
+
+/* Deactivated AI status bar */
+.ai-status-bar.deactivated {
+  background: var(--color-surface);
+  border-color: var(--color-line);
+  color: var(--color-muted);
+}
+
+.ai-status-bar.deactivated .ai-pulse-dot {
+  background-color: var(--color-muted);
+  box-shadow: none;
+  animation: none;
+}
+
+.ai-status-bar.deactivated .ai-shield {
+  color: var(--color-muted);
+}

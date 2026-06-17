@@ -1,0 +1,137 @@
+/* === Digital Twin Profile Modal & Button Styles === */
+.view-twin-btn {
+  background: linear-gradient(135deg, rgba(0, 216, 255, 0.12) 0%, rgba(0, 216, 255, 0.04) 100%);
+  border: 1px dashed rgba(0, 216, 255, 0.35);
+  color: #00d8ff;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  width: 100%;
+  text-align: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.view-twin-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(0, 216, 255, 0.2) 0%, rgba(0, 216, 255, 0.08) 100%);
+  border-color: rgba(0, 216, 255, 0.6);
+  box-shadow: 0 0 12px rgba(0, 216, 255, 0.15);
+}
+.ai-cockpit.upgraded .view-twin-btn {
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.12) 0%, rgba(191, 90, 242, 0.04) 100%);
+  border-color: rgba(191, 90, 242, 0.35);
+  color: #bf5af2;
+}
+.ai-cockpit.upgraded .view-twin-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.2) 0%, rgba(191, 90, 242, 0.08) 100%);
+  border-color: rgba(191, 90, 242, 0.6);
+  box-shadow: 0 0 12px rgba(191, 90, 242, 0.15);
+}
+.view-twin-btn:disabled {
+  border-color: var(--color-line) !important;
+  color: var(--color-muted) !important;
+  background: transparent !important;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.twin-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 15, 30, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 3000;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.twin-modal-card {
+  width: 100%;
+  max-height: 85%;
+  background: var(--color-card);
+  border-top: 1px solid var(--color-line);
+  border-left: 1px solid var(--color-line);
+  border-right: 1px solid var(--color-line);
+  border-radius: 24px 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.3s cubic-bezier(0.1, 0.76, 0.55, 0.94);
+  overflow: hidden;
+}
+
+.twin-modal-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-surface);
+}
+
+.twin-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.twin-pulse-icon {
+  color: var(--color-primary);
+  animation: heartPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes heartPulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.twin-header-title h3 {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 800;
+  color: var(--color-ink);
+}
+
+.twin-subtitle {
+  font-size: 10px;
+  color: var(--color-muted);
+  display: block;
+}
+
+.twin-close-btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  color: var(--color-muted);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.twin-close-btn:hover {
+  color: var(--color-ink);
+  background: var(--color-line);
+}
+
+.twin-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--color-card);
+}
+

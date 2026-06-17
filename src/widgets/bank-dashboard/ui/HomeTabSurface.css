@@ -1,0 +1,215 @@
+/* ==========================================================================
+   5. Modern Redesign Mockup Integration
+   ========================================================================== */
+
+.dashboard-home {
+  margin: -18px -18px 0 -18px;
+  padding: 18px 18px 80px 18px;
+  min-height: 100%;
+  background: linear-gradient(180deg, #f2faf6 0%, #e6f3ed 50%, #f6fcf9 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Background Vector Hills */
+.bg-illustration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 280px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.55;
+}
+
+/* Make sure items on the homepage render above backdrop */
+.dashboard-header,
+.balance-card,
+.ai-status-bar,
+.quick-actions-bar,
+.dashboard-section,
+.dashboard-section-title {
+  position: relative;
+  z-index: 2;
+}
+
+/* Custom Header Bar */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar-logo-container {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 10px rgba(0, 77, 44, 0.04);
+  display: grid;
+  place-items: center;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.user-info .welcome {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.user-info .name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bell-icon-container {
+  width: 36px;
+  height: 36px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  color: #374151;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.bell-icon-container:hover {
+  transform: scale(1.05);
+}
+
+.bell-badge {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  width: 10px;
+  height: 10px;
+  background: #e31837;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+}
+
+.logout-btn-minimal {
+  background: none;
+  border: none;
+  font-size: 10px;
+  font-weight: 600;
+  color: #e31837;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+/* Clean Floating Balance Card */
+.balance-card {
+  background: #ffffff !important;
+  border-radius: 20px !important;
+  padding: 16px 20px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 77, 44, 0.06), 0 8px 10px -6px rgba(0, 77, 44, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  margin-bottom: 16px !important;
+}
+
+.balance-title {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.balance-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.balance-amount {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #111827;
+  text-align: left;
+}
+
+.eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 2px;
+}
+
+/* Small dynamic badge in card */
+.balance-badge {
+  background: #fff5f5;
+  border: 1px solid #ffe3e3;
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.balance-badge-text {
+  font-size: 10px;
+  color: #c53030;
+  font-weight: 600;
+}
+
+.balance-badge-action {
+  font-size: 10px;
+  color: #111827;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.balance-card__branch-minimal {
+  margin-top: 8px;
+  font-size: 9px;
+  color: #9ca3af;
+  text-align: left;
+}
+
+/* AI status override for cleaner look */
+.dashboard-home .ai-status-bar {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(220, 252, 231, 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 100px;
+  padding: 6px 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.01);
+}
+

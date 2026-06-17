@@ -1,6 +1,7 @@
 import { ClockAlert, Loader2, RotateCcw } from "lucide-react";
 import type { KnightScenarioState } from "../../../domain/types";
 import { PrimaryButton, StatusPill } from "../../../shared/ui";
+import "./CardProtection.css";
 
 interface TimeoutEscalationScreenProps {
   state: KnightScenarioState;

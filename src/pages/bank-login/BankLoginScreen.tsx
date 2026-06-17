@@ -14,6 +14,8 @@ import {
 import { FaceIdGlyph } from "../../features/biometric-step-up/ui/BiometricStepUp";
 import { KnightLogoMini } from "../../shared/ui";
 import "./BankLoginScreen.css";
+import "./BankLoginActions.css";
+import "./BankLoginMotion.css";
 
 interface BankLoginScreenProps {
   onLogin: () => void;

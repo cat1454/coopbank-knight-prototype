@@ -1,6 +1,7 @@
 import { BellRing, CalendarDays, CheckCircle2, Headphones, ShieldCheck } from "lucide-react";
 import type { KnightScenarioState } from "../../../domain/types";
 import { PrimaryButton, StatusPill } from "../../../shared/ui";
+import "./RecoverySupport.css";
 
 interface ReassurancePackageScreenProps {
   state: KnightScenarioState;

@@ -3,7 +3,13 @@ import type { KnightScenarioState } from "../../../domain/types";
 import { formatVnd } from "../../../domain/format";
 import type { BankDashboardTab } from "../BottomTabs";
 import { KnightLogoMini } from "../../../shared/ui/knight-logo-mini/KnightLogoMini";
+import "./HomeTabStatus.css";
+import "./HomeTabSurface.css";
+import "./HomeTabSurfaceActions.css";
+import "./HomeTabActions.css";
 import "./HomeTab.css";
+import "./HomeTabInspireAccount.css";
+import "./HomeTabInspireActions.css";
 
 interface HomeTabProps {
   state: KnightScenarioState;

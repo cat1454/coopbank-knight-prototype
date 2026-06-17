@@ -3,6 +3,8 @@ import { CreditCard } from "lucide-react";
 import type { KnightScenarioState } from "../../../domain/types";
 import { formatVnd } from "../../../domain/format";
 import type { BankTransaction } from "../../../entities/bank-account/model/bankingDemo";
+import "./CardTab.css";
+import "./DashboardUtilityViews.css";
 
 interface CardTabProps {
   state: KnightScenarioState;

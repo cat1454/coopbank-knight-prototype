@@ -19,6 +19,8 @@ import { formatVnd } from "../../domain/format";
 import type { AlarmAudioController } from "../../shared/lib/audio/useAlarmAudio";
 import { KnightAgentVisual } from "../knight-agent-visual/KnightAgentVisual";
 import "./CyberAttackDashboard.css";
+import "./CyberAttackData.css";
+import "./CyberAttackControls.css";
 
 interface CyberAttackDashboardProps {
   state: KnightScenarioState;

@@ -1,0 +1,134 @@
+/* Glassmorphism Quick Actions Grid */
+.quick-actions-bar {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 12px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  box-shadow: 0 8px 25px rgba(0, 77, 44, 0.03);
+  margin-bottom: 16px;
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.action-icon {
+  width: 44px;
+  height: 44px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #1b4d3e;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s;
+}
+
+.action-item:hover .action-icon {
+  transform: scale(1.05);
+}
+
+.action-label {
+  font-size: 8.5px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Section Title */
+.dashboard-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+/* Promo Card Redesign */
+.promo-card {
+  background: linear-gradient(135deg, #fff5f0 0%, #fffbf9 100%) !important;
+  border-radius: 20px !important;
+  border: 1px solid #ffebe0 !important;
+  padding: 14px 18px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  box-shadow: 0 6px 20px rgba(227, 24, 55, 0.02) !important;
+  transition: transform 0.2s ease !important;
+  margin-bottom: 16px !important;
+}
+
+.promo-card:hover {
+  transform: translateY(-2px);
+}
+
+.promo-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 70%;
+}
+
+.promo-tag {
+  font-size: 8px;
+  font-weight: 800;
+  color: #e31837;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.promo-heading {
+  font-size: 11px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.promo-badge-pill {
+  background: #e31837;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* Active tab style update to brand red */
+.tab-btn.active {
+  color: #e31837 !important;
+}
+
+.tab-btn {
+  position: relative;
+}
+
+.tab-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24%;
+  right: 24%;
+  height: 3px;
+  background: #e31837;
+  border-radius: 0 0 3px 3px;
+}

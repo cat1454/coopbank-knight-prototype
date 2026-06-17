@@ -1,0 +1,73 @@
+@media (max-width: 380px) {
+  .screen--login {
+    padding-inline: 14px;
+  }
+
+  .login-hero {
+    padding-top: calc(env(safe-area-inset-top) + 30px);
+    gap: 20px;
+  }
+
+  .login-hero__copy p {
+    font-size: 23px;
+  }
+
+  .login-hero__copy h1 {
+    font-size: 31px;
+  }
+
+  .login-panel {
+    right: 14px;
+    bottom: 112px;
+    left: 14px;
+    gap: 14px;
+    border-radius: 25px;
+    padding: 22px 14px 14px;
+  }
+
+  .login-primary-btn,
+  .login-secondary-btn {
+    min-height: 56px;
+    font-size: 21px;
+  }
+
+  .login-quick-action {
+    min-height: 76px;
+    font-size: 13px;
+  }
+
+  .utility-btn {
+    font-size: 12px;
+  }
+}
+
+@keyframes login-grid-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(28px, 28px, 0); }
+}
+
+@keyframes login-scan-pulse {
+  0%, 100% { opacity: 0.32; transform: scale(0.88); }
+  50% { opacity: 0.72; transform: scale(1.08); }
+}
+
+@keyframes login-runner-bob {
+  0%, 100% { transform: translateY(0) rotate(12deg); }
+  50% { transform: translateY(-6px) rotate(9deg); }
+}
+
+@keyframes login-ai-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes faceid-button-pulse {
+  0%, 100% {
+    transform: scale(0.82);
+    opacity: 0.52;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.9;
+  }
+}

@@ -1,6 +1,7 @@
 import { ArrowRight, Clock3, MoonStar, ShieldCheck, SunMedium } from "lucide-react";
 import type { KnightScenarioState } from "../../../domain/types";
 import { PrimaryButton, StatusPill } from "../../../shared/ui";
+import "./RecoverySupport.css";
 
 interface NextMorningRecoveryScreenProps {
   state: KnightScenarioState;

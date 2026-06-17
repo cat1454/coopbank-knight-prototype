@@ -1,0 +1,65 @@
+/* Space Dust & Signal Particles */
+.stars,
+.particles,
+.signal-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.stars {
+  transform: translate3d(calc(var(--parallax-x) * 0.25), calc(var(--parallax-y) * 0.25), 0);
+  z-index: -1;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #ffffff;
+  border-radius: 50%;
+  opacity: var(--o, 0.5);
+  animation: twinkle var(--d, 3s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: var(--o, 0.5); transform: scale(1); }
+  50% { opacity: 0.12; transform: scale(0.75); }
+}
+
+.signal-field {
+  background:
+    radial-gradient(circle at 22% 22%, color-mix(in srgb, var(--mood-color) 14%, transparent), transparent 18%),
+    radial-gradient(circle at 70% 64%, rgba(53, 119, 255, 0.09), transparent 20%);
+  transform: translate3d(calc(var(--parallax-x) * 0.5), calc(var(--parallax-y) * 0.5), 0);
+  opacity: 0.78;
+  z-index: -1;
+}
+
+.particle {
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 70%);
+  font-size: 10px;
+  color: color-mix(in srgb, var(--mood-color) 70%, var(--green));
+  opacity: 0;
+  white-space: nowrap;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--mood-color) 44%, transparent);
+  animation: float-up var(--dur, 7s) linear var(--del, 0s) infinite;
+}
+
+.scene[data-mood="alert"] .particle:nth-child(odd),
+.scene[data-mood="protect"] .particle:nth-child(3n) {
+  animation-duration: 4.6s;
+  color: var(--amber);
+}
+
+@keyframes float-up {
+  0% { opacity: 0; transform: translate3d(0, 68px, 0) scale(0.92); }
+  18% { opacity: 0.78; }
+  78% { opacity: 0.46; }
+  100% { opacity: 0; transform: translate3d(calc(var(--drift, 0) * 1px), -98px, 0) scale(1.03); }
+}
+
