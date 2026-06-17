@@ -84,8 +84,12 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     await user.click(option);
 
     expect(screen.queryByRole("heading", { name: /bạn muốn chuyển khoản tới ngân hàng nào/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /ngân hàng thụ hưởng vietcombank/i })).toBeInTheDocument();
-    expect(screen.queryByText(/Ngân hàng TMCP Ngoại thương Việt Nam/i)).not.toBeInTheDocument();
+    const selectedBankTrigger = screen.getByRole("button", {
+      name: /ngân hàng thụ hưởng vietcombank ngân hàng tmcp ngoại thương việt nam/i,
+    });
+    expect(within(selectedBankTrigger).getByText("Vietcombank")).toBeInTheDocument();
+    expect(within(selectedBankTrigger).getByText(/Ngân hàng TMCP Ngoại thương Việt Nam/i)).toBeInTheDocument();
+    expect(within(selectedBankTrigger).queryByText(/970436|BIN/i)).not.toBeInTheDocument();
   });
 
   it("shows automatic AI status without customer-facing scenario controls", async () => {
