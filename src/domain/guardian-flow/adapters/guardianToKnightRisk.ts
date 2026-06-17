@@ -1,4 +1,3 @@
-export {
-  adaptGuardianDecisionToRiskAssessment,
-  toKnightRiskScore,
-} from "../scoring/guardianFlow";
+
+export { adaptGuardianDecisionToRiskAssessment } from "../scoring/riskAssessmentAdapter";
+export { toKnightRiskScore } from "../scoring/decisionPolicy";

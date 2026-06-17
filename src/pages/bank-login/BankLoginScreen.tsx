@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { FaceIdGlyph } from "../../features/biometric-step-up/ui/BiometricStepUp";
 import { KnightLogoMini } from "../../shared/ui";
+import "./BankLoginScreen.css";
 
 interface BankLoginScreenProps {
   onLogin: () => void;

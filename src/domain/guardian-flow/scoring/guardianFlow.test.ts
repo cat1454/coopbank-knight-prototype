@@ -18,6 +18,10 @@ describe("GuardianFlow Decision Intelligence", () => {
       "critical_risk",
       "false_positive",
       "feedback_attack",
+      "scam_remote_access",
+      "scam_fake_job",
+      "scam_phishing",
+      "scam_romance",
     ]);
   });
 
@@ -117,7 +121,6 @@ describe("GuardianFlow Decision Intelligence", () => {
       loginMethod: "password",
       priorActions: ["login_password", "add_new_recipient", "increase_limit", "open_transfer"],
     });
-
     expect(result.decision.aiLevel).toBe("critical");
     expect(result.decision.action).toBe("block");
     expect(result.decision.policyLevel).toBe("L2");

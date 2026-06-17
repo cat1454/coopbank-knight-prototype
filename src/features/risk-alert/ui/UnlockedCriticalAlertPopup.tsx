@@ -3,6 +3,7 @@ import { AlertTriangle, Bell, ShieldAlert, ShieldCheck } from "lucide-react";
 import type { KnightScenarioState } from "../../../domain/types";
 import { formatVnd } from "../../../domain/format";
 import { KnightAgentVisual } from "../../../widgets/knight-agent-visual/KnightAgentVisual";
+import "./CriticalAlertSurface.css";
 
 interface UnlockedCriticalAlertPopupProps {
   state: KnightScenarioState;

@@ -88,12 +88,23 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
   });
 
   test("runs GuardianFlow Decision Intelligence demo scenarios", async ({ page }) => {
+    await page.evaluate(() => window.sessionStorage.setItem("knight_guardianflow_consent", "withdrawn"));
     await page.goto("/?env=test&capture=phone&shot=case&demo=true&controls=0");
 
     await page.getByRole("button", { name: /hộ vệ ai/i }).click();
     await expect(page.getByRole("heading", { name: /KNIGHT Decision Intelligence/i })).toBeVisible();
-    await page.getByRole("checkbox", { name: /đồng ý/i }).click();
-    await page.getByRole("button", { name: /bắt đầu/i }).click();
+    await page.evaluate(() => {
+      const toggle = document.querySelector('input[aria-label="Kích hoạt Hộ vệ AI KNIGHT"]') as HTMLInputElement;
+      if (toggle) toggle.click();
+    });
+
+    await page.evaluate(() => {
+      const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]')) as HTMLInputElement[];
+      const consentCheckbox = checkboxes.find(c => c.parentElement?.textContent?.includes("đồng ý"));
+      if (consentCheckbox) consentCheckbox.click();
+    });
+
+    await page.getByRole("button", { name: /đồng ý và kích hoạt/i }).click();
 
     await page.getByLabel(/scenario/i).selectOption("critical_risk");
     await page.getByRole("button", { name: /chạy scenario/i }).click();

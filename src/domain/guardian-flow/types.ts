@@ -8,7 +8,11 @@ export type GuardianScenarioId =
   | "high_risk"
   | "critical_risk"
   | "false_positive"
-  | "feedback_attack";
+  | "feedback_attack"
+  | "scam_remote_access"
+  | "scam_fake_job"
+  | "scam_phishing"
+  | "scam_romance";
 
 export type GuardianAgentName = "transaction" | "device" | "behavioral" | "beneficiary" | "scam";
 export type GuardianAction = "allow" | "warn" | "delay" | "step_up" | "block" | "review";

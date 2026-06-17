@@ -5,6 +5,7 @@ import type { KnightScenarioState } from "../../../domain/types";
 import { formatVnd } from "../../../domain/format";
 import { KnightAgentVisual } from "../../../widgets/knight-agent-visual/KnightAgentVisual";
 import { KnightLogoMini } from "../../../shared/ui";
+import "./CriticalAlertSurface.css";
 
 interface CriticalAlertSurfaceProps {
   state: KnightScenarioState;

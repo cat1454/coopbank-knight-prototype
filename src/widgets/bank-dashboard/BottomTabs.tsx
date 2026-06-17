@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
-import { ArrowRightLeft, History, Home, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
+import { ArrowRightLeft, CreditCard, Home, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
 
-export type BankDashboardTab = "home" | "transfer" | "knight" | "history" | "settings";
+export type BankDashboardTab = "home" | "card" | "transfer" | "knight" | "settings";
 
 interface BottomTabsProps {
   activeTab: BankDashboardTab;
@@ -21,6 +21,14 @@ export function BottomTabs({ activeTab, setActiveTab }: BottomTabsProps) {
       </button>
       <button
         type="button"
+        className={`tab-btn ${activeTab === "card" ? "active" : ""}`}
+        onClick={() => setActiveTab("card")}
+      >
+        <CreditCard size={20} />
+        <span>Thẻ</span>
+      </button>
+      <button
+        type="button"
         className={`tab-btn ${activeTab === "transfer" ? "active" : ""}`}
         onClick={() => setActiveTab("transfer")}
       >
@@ -34,14 +42,6 @@ export function BottomTabs({ activeTab, setActiveTab }: BottomTabsProps) {
       >
         <ShieldCheck size={20} />
         <span>Hộ vệ AI</span>
-      </button>
-      <button
-        type="button"
-        className={`tab-btn ${activeTab === "history" ? "active" : ""}`}
-        onClick={() => setActiveTab("history")}
-      >
-        <History size={20} />
-        <span>Lịch sử</span>
       </button>
       <button
         type="button"

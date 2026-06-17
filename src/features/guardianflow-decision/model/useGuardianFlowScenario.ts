@@ -232,3 +232,5 @@ export function useGuardianFlowScenario(latestDecision: GuardianRiskDecision | n
     completeHumanReview,
   };
 }
+
+export type GuardianFlowScenarioViewModel = ReturnType<typeof useGuardianFlowScenario>;

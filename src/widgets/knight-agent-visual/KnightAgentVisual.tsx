@@ -1,36 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps */
 import { useEffect, useRef, useState, useMemo } from "react";
 import type { KnightScenarioState } from "../../domain/types";
+import { particleLabels, phaseColors } from "./model/visualConfig";
 import "./KnightAgentVisual.css";
+import "./KnightAgentCharacter.css";
+import "./KnightAgentPanels.css";
+import "./KnightAgentDeck.css";
+import "./KnightAgentGuardEffects.css";
 
 interface KnightAgentVisualProps {
   state: KnightScenarioState;
   variant?: "desktop" | "mobile";
 }
-
-const phaseColors = {
-  REASON: "#00d8ff",
-  ACT: "#ef9f27",
-  OBSERVE: "#1fd89a",
-  UPGRADED: "#bf5af2",
-};
-
-const particleLabels = [
-  "risk_score: 847",
-  "device.new",
-  "card.suspend()",
-  "FRAUD_DETECTED",
-  "push.alert()",
-  "biometric: OK",
-  "case.link()",
-  "audit_log: write",
-  "ReAct: REASON",
-  "policy: L2",
-  "trust_score: 82",
-  "threshold: 70",
-  "token.rotate()",
-  "card.issue_new()",
-];
 
 export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVisualProps) {
   const sceneRef = useRef<HTMLDivElement>(null);

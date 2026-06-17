@@ -3,20 +3,22 @@ import type { GuardianRiskDecision } from "../../domain/types";
 import { evaluateGuardianTransaction } from "../../domain/guardianFlow";
 import type { BankTransaction } from "../../entities/bank-account/model/bankingDemo";
 import { defaultTransferBank, transferBanks, type TransferBank } from "../../entities/bank/model/transferBanks";
+import {
+  buildGuardianTransactionInput,
+  countTransferIntakeSignals,
+  getGuardianLevelSetting,
+  getKnownRecipientName,
+  getRecipientSignal,
+  getTransferAmountSignal,
+  getTransferContentSignal,
+  isGuardianConsentOff,
+  markDecisionAllowed,
+  normalizeBankSearchText,
+  transferChecklistItems,
+  type TransferStep,
+} from "./model/transferFormModel";
 
-export const transferChecklistItems = [
-  "Tôi biết rõ người nhận và đã kiểm tra số tài khoản.",
-  "Không ai yêu cầu tôi chuyển tiền gấp hoặc giữ bí mật.",
-  "Nội dung giao dịch không liên quan đầu tư, thưởng hoặc hoàn tiền bất thường.",
-];
-
-const riskyTransferContentPattern = /dau tu|đầu tư|gap|gấp|bi mat|bí mật|hoan tien|hoàn tiền|thuong|thưởng|otp|crypto/i;
-
-function normalizeBankSearchText(value: string) {
-  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
-type TransferStep = "input_recipient" | "input_details" | "confirm" | "processing" | "warning" | "verification" | "held" | "success";
+export { transferChecklistItems } from "./model/transferFormModel";
 
 interface UseBankTransferFlowOptions {
   setBalance: Dispatch<SetStateAction<number>>;
@@ -83,12 +85,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     setIsRecipientVerified(false);
     setTransferRecipient("");
 
-    let expectedName = "TRẦN MINH TUẤN";
-    if (trimmed === "19038472910") {
-      expectedName = "NGUYỄN VĂN B";
-    } else if (trimmed === "88884920412") {
-      expectedName = "SHOPMALL GLOBAL";
-    }
+    const expectedName = getKnownRecipientName(trimmed);
 
     resolveTimerRef.current = setTimeout(() => {
       setTransferRecipient(expectedName);
@@ -110,33 +107,16 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
       );
     })
     .slice(0, 8);
-  const hasRiskyTransferContent = riskyTransferContentPattern.test(normalizedTransferContent);
-  const amountSignal =
-    !hasTransferAmount
-      ? { tone: "neutral", label: "Đang khớp với thói quen chuyển tiền", detail: "Chưa có số tiền để so với nhịp thường ngày." }
-      : transferAmountNumber >= 30_000_000
-        ? { tone: "danger", label: "Vượt nhịp thường ngày", detail: "Cần giữ lại hoặc mở xác minh KNIGHT trước khi tiền rời tài khoản." }
-        : transferAmountNumber >= 10_000_000
-          ? { tone: "warning", label: "Cao hơn giao dịch quen thuộc", detail: "KNIGHT sẽ yêu cầu thêm tín hiệu người nhận và phiên đăng nhập." }
-          : { tone: "success", label: "Trong nhịp thường ngày", detail: "Số tiền gần vùng giao dịch quen thuộc của tài khoản." };
-  const contentSignal =
-    !normalizedTransferContent
-      ? { tone: "neutral", label: "Đang quét nội dung", detail: "Nội dung chuyển khoản sẽ được quét theo dấu hiệu lừa đảo phổ biến." }
-      : hasRiskyTransferContent
-        ? { tone: "danger", label: "Từ khóa cần kiểm tra", detail: "Nội dung giống mẫu gấp, đầu tư, hoàn tiền hoặc yêu cầu giữ bí mật." }
-        : { tone: "success", label: "Nội dung ổn định", detail: "Không thấy cụm từ rủi ro trong note giao dịch." };
-  const recipientSignal = transferAccount
-    ? transferAccount === "88884920412" || transferRecipient.toLowerCase().includes("shopmall")
-      ? "Người nhận cần xác minh"
-      : "Người nhận có thể đối chiếu"
-    : "Chưa có người nhận";
-  const intakeSignalCount = [
+  const amountSignal = getTransferAmountSignal(hasTransferAmount, transferAmountNumber);
+  const contentSignal = getTransferContentSignal(normalizedTransferContent);
+  const recipientSignal = getRecipientSignal(transferAccount, transferRecipient);
+  const intakeSignalCount = countTransferIntakeSignals([
     transferBank,
     transferAccount,
     transferRecipient,
     hasTransferAmount,
     normalizedTransferContent,
-  ].filter(Boolean).length;
+  ]);
 
   const selectTransferBank = (bank: TransferBank) => {
     setTransferBank(bank.displayName);
@@ -178,24 +158,16 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     contentVal: string,
     requestId = guardianDecisionRequestRef.current,
   ) => {
-    const isRiskRecipient = recipientAccountVal === "88884920412" || recipientNameVal.toLowerCase().includes("shopmall");
-    const isCriticalShape = isRiskRecipient && amountVal >= 30_000_000;
-
     try {
-      const { decision } = await evaluateGuardianTransaction({
-        amountVnd: amountVal,
-        recipientName: recipientNameVal,
-        recipientAccount: recipientAccountVal,
-        recipientBank: transferBank,
-        content: contentVal,
-        location: isCriticalShape ? "Singapore" : "Da Nang",
-        deviceTrust: isRiskRecipient || amountVal >= 10_000_000 ? "new" : "trusted",
-        ipReputation: isCriticalShape ? "bad" : isRiskRecipient ? "suspicious" : "normal",
-        loginMethod: "password",
-        priorActions: isRiskRecipient
-          ? ["login_password", "add_new_recipient", ...(isCriticalShape ? ["increase_limit"] : []), "open_transfer"]
-          : ["login_password", "view_balance", "open_transfer"],
-      });
+      const { decision } = await evaluateGuardianTransaction(
+        buildGuardianTransactionInput({
+          amountVal,
+          contentVal,
+          recipientAccountVal,
+          recipientNameVal,
+          transferBank,
+        }),
+      );
       if (requestId === guardianDecisionRequestRef.current) {
         updateCachedGuardianDecision(decision);
       }
@@ -248,9 +220,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   const handleNextToDetails = () => {
     if (transferBank && transferAccount && transferRecipient && isRecipientVerified) {
       setTransferStep("input_details");
-      const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
-      const isConsentOff = stored !== null && stored !== "granted";
-      if (!isConsentOff) {
+      if (!isGuardianConsentOff()) {
         // Kích hoạt AI chạy ngầm với số tiền 0 để phân tích rủi ro người nhận trước
         void beginGuardianDecisionRequest(transferRecipient, transferAccount, 0, transferContent);
       }
@@ -260,9 +230,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   const handleNextStep = () => {
     if (transferBank && transferAccount && transferRecipient && transferAmount && transferContent) {
       setTransferStep("confirm");
-      const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
-      const isConsentOff = stored !== null && stored !== "granted";
-      if (!isConsentOff) {
+      if (!isGuardianConsentOff()) {
         // Cập nhật lại kết quả AI chạy ngầm với số tiền và nội dung thực tế
         void beginGuardianDecisionRequest(transferRecipient, transferAccount, Number(transferAmount), transferContent);
       }
@@ -290,37 +258,24 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
 
   const completeCompanionReviewedTransfer = () => {
     if (latestGuardianDecision?.requiresChecklist) {
-      setLatestGuardianDecision({
-        ...latestGuardianDecision,
-        aiLevel: "safe",
-        policyLevel: "L0",
-        action: "allow",
-        explanation: "Đã xác thực Face ID, giao dịch đã được cho phép sau checklist Đồng hành.",
-        reasonCodes: ["companion_checklist_confirmed", ...latestGuardianDecision.reasonCodes],
-        requiresStepUp: false,
-        requiresChecklist: false,
-        requiresReview: false,
-      });
+      setLatestGuardianDecision(
+        markDecisionAllowed(
+          latestGuardianDecision,
+          "Đã xác thực Face ID, giao dịch đã được cho phép sau checklist Đồng hành.",
+          "companion_checklist_confirmed",
+        ),
+      );
     }
 
     completeTransfer();
   };
 
-  const markDecisionAllowedAfterFaceId = (decision: GuardianRiskDecision): GuardianRiskDecision => ({
-    ...decision,
-    aiLevel: "safe",
-    policyLevel: "L0",
-    action: "allow",
-    explanation: "Đã xác thực Face ID, giao dịch đã được cho phép.",
-    reasonCodes: ["face_id_verified", ...decision.reasonCodes],
-    requiresStepUp: false,
-    requiresChecklist: false,
-    requiresReview: false,
-  });
+  const markDecisionAllowedAfterFaceId = (decision: GuardianRiskDecision) =>
+    markDecisionAllowed(decision, "Đã xác thực Face ID, giao dịch đã được cho phép.", "face_id_verified");
 
   const finalizeDecision = (decision: GuardianRiskDecision, identityVerified = false) => {
     const amountNum = Number(transferAmount);
-    const levelSetting = typeof window !== "undefined" ? (window.sessionStorage.getItem("knight_guardian_level") as "max" | "standard" | "min") || "standard" : "standard";
+    const levelSetting = getGuardianLevelSetting();
 
     // Minimal protection (min)
     if (levelSetting === "min") {
@@ -432,9 +387,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     setHumanReviewStep("idle");
     setIsHumanReviewing(false);
 
-    const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
-    const isConsentOff = stored !== null && stored !== "granted";
-    if (isConsentOff) {
+    if (isGuardianConsentOff()) {
       pendingGuardianDecisionRef.current = null;
       setIsTransferAiPending(false);
       updateCachedGuardianDecision(null);
@@ -445,9 +398,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   };
 
   const handleTransferFaceIdSuccess = async () => {
-    const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
-    const isConsentOff = stored !== null && stored !== "granted";
-    if (isConsentOff) {
+    if (isGuardianConsentOff()) {
       completeTransfer();
       return;
     }
@@ -560,3 +511,5 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     completeHumanReview,
   };
 }
+
+export type BankTransferFlow = ReturnType<typeof useBankTransferFlow>;
