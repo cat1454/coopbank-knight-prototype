@@ -139,7 +139,7 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     const { setBalance, setTransactions } = renderDashboard();
 
     await openTransferTab(user);
-    await user.click(screen.getByRole("button", { name: /ShopMall Global/i }));
+    await user.click(screen.getByRole("button", { name: /Lừa đảo: Mã độc APK/i }));
 
     const recipientCard = screen.getByText(/1\. Thông tin thụ hưởng/i).closest(".transfer-card")!;
     await user.click(within(recipientCard).getByRole("button", { name: /tiếp tục/i }));
@@ -172,7 +172,7 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     renderDashboard();
 
     await openTransferTab(user);
-    await user.click(screen.getByRole("button", { name: /ShopMall Global/i }));
+    await user.click(screen.getByRole("button", { name: /Lừa đảo: Mã độc APK/i }));
 
     const recipientCard = screen.getByText(/1\. Thông tin thụ hưởng/i).closest(".transfer-card")!;
     await user.click(within(recipientCard).getByRole("button", { name: /tiếp tục/i }));
@@ -199,7 +199,7 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     renderDashboard();
 
     await openTransferTab(user);
-    await user.click(screen.getByRole("button", { name: /ShopMall Global/i }));
+    await user.click(screen.getByRole("button", { name: /Lừa đảo: Mã độc APK/i }));
 
     const recipientCard = screen.getByText(/1\. Thông tin thụ hưởng/i).closest(".transfer-card")!;
     await user.click(within(recipientCard).getByRole("button", { name: /tiếp tục/i }));
@@ -223,7 +223,7 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     const { onStartDemo, setBalance, setTransactions } = renderDashboard();
 
     await openTransferTab(user);
-    await user.click(screen.getByRole("button", { name: /ShopMall Global/i }));
+    await user.click(screen.getByRole("button", { name: /Lừa đảo: Mã độc APK/i }));
     await user.clear(screen.getByLabelText(/số tiền chuyển/i));
     await user.type(screen.getByLabelText(/số tiền chuyển/i), "50000000");
     await user.clear(screen.getByLabelText(/nội dung chuyển/i));

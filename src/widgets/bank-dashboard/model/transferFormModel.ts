@@ -42,10 +42,10 @@ export function getGuardianLevelSetting(): GuardianLevelSetting {
 
 export function getKnownRecipientName(account: string) {
   if (account === "19038472910") return "NGUYỄN VĂN B";
-  if (account === "88884920412") return "TÀI KHOẢN MULE RỦI RO";
-  if (account === "99992019482") return "SHOPMALL GLOBAL";
-  if (account === "77771020412") return "TÀI KHOẢN KHUYẾN MÃI LẠ";
-  if (account === "66661902847") return "TÀI KHOẢN ĐẦU TƯ SÀN VÀNG";
+  if (account === "88884920412") return "Lừa đảo: Mã độc APK";
+  if (account === "99992019482") return "Lừa đảo: Tuyển CTV giật đơn";
+  if (account === "77771020412") return "Lừa đảo: SMS Phishing tri ân";
+  if (account === "66661902847") return "Lừa đảo: Sàn đầu tư ảo";
   return "TRẦN MINH TUẤN";
 }
 
@@ -62,7 +62,9 @@ export function isRiskRecipient(recipientAccount: string, recipientName: string)
     name.includes("khuyen mai") ||
     name.includes("dau tu") ||
     name.includes("khuyến mãi") ||
-    name.includes("đầu tư")
+    name.includes("đầu tư") ||
+    name.includes("lừa đảo") ||
+    name.includes("lua dao")
   );
 }
 

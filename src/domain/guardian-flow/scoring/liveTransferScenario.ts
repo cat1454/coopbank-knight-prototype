@@ -18,7 +18,12 @@ function isTrustedTransferRecipient(input: GuardianTransactionEvaluationInput) {
 
 function isKnownRiskRecipient(input: GuardianTransactionEvaluationInput) {
   const normalizedName = normalizeGuardianText(input.recipientName);
-  return input.recipientAccount === "88884920412" || normalizedName.includes("shopmall");
+  return (
+    input.recipientAccount === "88884920412" ||
+    normalizedName.includes("shopmall") ||
+    normalizedName.includes("lừa đảo") ||
+    normalizedName.includes("lua dao")
+  );
 }
 
 function hasScamContent(input: GuardianTransactionEvaluationInput) {

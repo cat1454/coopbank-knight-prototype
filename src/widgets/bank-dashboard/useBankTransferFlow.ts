@@ -12,6 +12,7 @@ import {
   getTransferAmountSignal,
   getTransferContentSignal,
   isGuardianConsentOff,
+  isRiskRecipient,
   markDecisionAllowed,
   normalizeBankSearchText,
   transferChecklistItems,
@@ -143,7 +144,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     } else {
       selectTransferBank(defaultTransferBank);
       setTransferAccount("88884920412");
-      setTransferRecipient("SHOPMALL GLOBAL");
+      setTransferRecipient("Lừa đảo: Mã độc APK");
       setTransferAmount("10000000");
       setTransferContent("Thanh toan don hang");
       setIsRecipientVerified(true);
@@ -501,6 +502,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     transferStep,
     isResolvingName,
     isRecipientVerified,
+    isRecipientRisky: isRiskRecipient(transferAccount, transferRecipient),
     cachedGuardianDecision,
     isTransferAiPending,
     isTransferFaceIdOpen,

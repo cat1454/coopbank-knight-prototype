@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { X, ShieldCheck, ShieldAlert, Activity, Eye, AlertTriangle } from "lucide-react";
+import { X, ShieldCheck, ShieldAlert, Award, Activity, Heart, Eye, Smartphone, AlertTriangle, Home, Laptop, Plane, Utensils } from "lucide-react";
 import { updateTwinPersonality, type TwinExplainResponse } from "../../../shared/api/twin";
+import "./TwinProfileModal.css";
+import "./TwinProfileModalContent.css";
+import "./TwinProfileModalFooter.css";
 
 interface TwinProfileModalProps {
   isOpen: boolean;
@@ -125,7 +128,7 @@ function TwinProfileModalContent({
         role="dialog" 
         aria-modal="true"
         onMouseDown={(e) => e.stopPropagation()}
-        style={{ display: "flex", flexDirection: "column", maxHeight: "85vh", overflow: "hidden" }}
+        style={{ display: "flex", flexDirection: "column", maxHeight: "85%", overflow: "hidden" }}
       >
         {/* Header */}
         <div className="twin-modal-header" style={{ flexShrink: 0 }}>
@@ -197,25 +200,25 @@ function TwinProfileModalContent({
                           id: "frugal",
                           label: "Gia đình Tiết kiệm",
                           desc: "Điện nước, siêu thị. Giao dịch giờ hành chính.",
-                          icon: "🏡"
+                          icon: <Home size={18} style={{ color: activePersonality === "frugal" ? "var(--color-primary)" : "var(--color-muted)", marginTop: "2px", flexShrink: 0 }} />
                         },
                         {
                           id: "tech_geek",
                           label: "Tín đồ Công nghệ",
                           desc: "Mua sắm online Shopee/Lazada, săn sale đêm muộn.",
-                          icon: "💻"
+                          icon: <Laptop size={18} style={{ color: activePersonality === "tech_geek" ? "var(--color-primary)" : "var(--color-muted)", marginTop: "2px", flexShrink: 0 }} />
                         },
                         {
                           id: "traveler",
                           label: "Tín đồ Du lịch",
                           desc: "Vé máy bay, khách sạn ở Hà Nội, Đà Nẵng, Đà Lạt.",
-                          icon: "✈️"
+                          icon: <Plane size={18} style={{ color: activePersonality === "traveler" ? "var(--color-primary)" : "var(--color-muted)", marginTop: "2px", flexShrink: 0 }} />
                         },
                         {
                           id: "foodie",
                           label: "Ẩm thực & Giải trí",
                           desc: "GrabFood, rạp phim CGV, cà phê cuối tuần.",
-                          icon: "🍕"
+                          icon: <Utensils size={18} style={{ color: activePersonality === "foodie" ? "var(--color-primary)" : "var(--color-muted)", marginTop: "2px", flexShrink: 0 }} />
                         }
                       ].map((p) => (
                         <button
@@ -237,7 +240,7 @@ function TwinProfileModalContent({
                             opacity: isLoading ? 0.6 : 1
                           }}
                         >
-                          <span style={{ fontSize: "1.2rem", marginTop: "2px" }}>{p.icon}</span>
+                          {p.icon}
                           <div>
                             <strong style={{ display: "block", fontSize: "var(--text-xs)", color: "var(--color-ink)" }}>{p.label}</strong>
                             <span style={{ display: "block", fontSize: "10px", color: "var(--color-muted)", marginTop: "2px", lineHeight: "1.3" }}>{p.desc}</span>
@@ -394,7 +397,7 @@ function TwinProfileModalContent({
                           actionColor: "var(--color-fraud)",
                           bank: "Co-opBank",
                           account: "88884920412",
-                          name: "TÀI KHOẢN MULE RỦI RO",
+                          name: "Lừa đảo: Mã độc APK",
                           amount: "50000000",
                           content: "Nop phat thue"
                         },
@@ -406,7 +409,7 @@ function TwinProfileModalContent({
                           actionColor: "var(--color-warning)",
                           bank: "BIDV",
                           account: "99992019482",
-                          name: "SHOPMALL GLOBAL",
+                          name: "Lừa đảo: Tuyển CTV giật đơn",
                           amount: "15000000",
                           content: "Thanh toan don hang giat don"
                         },
@@ -418,7 +421,7 @@ function TwinProfileModalContent({
                           actionColor: "var(--color-primary)",
                           bank: "Agribank",
                           account: "77771020412",
-                          name: "TÀI KHOẢN KHUYẾN MÃI LẠ",
+                          name: "Lừa đảo: SMS Phishing tri ân",
                           amount: "10000000",
                           content: "Nhan thuong tri an"
                         },
@@ -430,7 +433,7 @@ function TwinProfileModalContent({
                           actionColor: "var(--color-success)",
                           bank: "Vietcombank",
                           account: "66661902847",
-                          name: "TÀI KHOẢN ĐẦU TƯ SÀN VÀNG",
+                          name: "Lừa đảo: Sàn đầu tư ảo",
                           amount: "8000000",
                           content: "Nap tien dau tu"
                         }

@@ -13,7 +13,14 @@ import {
   type GuardianLevelSetting,
 } from "../model/dashboardCopy";
 import { FaceIdVerificationScreen } from "./FaceIdVerificationScreen";
+import "../../../features/guardianflow-decision/ui/GuardianFlowExtras.css";
+import "../BankDashboardModals.css";
+import "./TransferDependentFlow.css";
 import "./TransferTab.css";
+import "./TransferFormControls.css";
+import "./TransferReviewStates.css";
+import "./TransferReceiptStates.css";
+import "./TransferReasonSummary.css";
 
 interface TransferTabProps {
   flow: BankTransferFlow;
@@ -66,6 +73,8 @@ export function TransferTab({
     transferStep,
     isResolvingName,
     isRecipientVerified,
+    isRecipientRisky,
+    cachedGuardianDecision,
     isTransferAiPending,
     isTransferFaceIdOpen,
     cancelTransferVerification,
@@ -315,7 +324,7 @@ export function TransferTab({
                     className="suggestion-chip fraud"
                     onClick={() => handleSelectSuggestion("fraud")}
                   >
-                    <AlertTriangle size={13} aria-hidden="true" /> ShopMall Global (Rủi ro)
+                    <AlertTriangle size={13} aria-hidden="true" /> Lừa đảo: Mã độc APK (Rủi ro)
                   </button>
                 </div>
               </div>
@@ -338,7 +347,7 @@ export function TransferTab({
                     </div>
 
                     {/* Early risk detection banners */}
-                    {hasGuardianConsent && transferRecipient.toLowerCase().includes("shopmall") && (
+                    {hasGuardianConsent && isRecipientRisky && (
                       <div className="ai-early-warning danger">
                         <AlertTriangle size={18} />
                         <div>
@@ -517,6 +526,48 @@ export function TransferTab({
               <strong>{getGuardianLevelLabel(levelSetting)}</strong>
             </div>
           </div>
+
+          {/* AI Reason Summary Box */}
+          {hasGuardianConsent ? (
+            <div className={`transfer-ai-reason-summary transfer-ai-reason-summary--${
+              isTransferAiPending 
+                ? "pending" 
+                : cachedGuardianDecision?.aiLevel === "safe"
+                  ? "safe"
+                  : cachedGuardianDecision?.aiLevel === "watch"
+                    ? "watch"
+                    : "danger"
+            }`}>
+              <div className={`transfer-ai-reason-header transfer-ai-reason-header--${
+                isTransferAiPending 
+                  ? "pending" 
+                  : cachedGuardianDecision?.aiLevel === "safe"
+                    ? "safe"
+                    : cachedGuardianDecision?.aiLevel === "watch"
+                      ? "watch"
+                      : "danger"
+              }`}>
+                <ShieldCheck size={14} />
+                <span>KNIGHT AI PHÂN TÍCH:</span>
+              </div>
+              {isTransferAiPending ? (
+                <span className="animate-pulse" style={{ color: "var(--color-muted)" }}>
+                  Đang quét dấu hiệu bảo mật & thói quen giao dịch...
+                </span>
+              ) : cachedGuardianDecision ? (
+                <span>{cachedGuardianDecision.explanation}</span>
+              ) : (
+                <span style={{ color: "var(--color-muted)" }}>
+                  KNIGHT AI đang kiểm tra song song: Các chỉ số an toàn hiện tại nằm trong nhịp thói quen của bạn.
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="transfer-ai-reason-summary transfer-ai-reason-summary--pending" style={{ borderStyle: "dashed" }}>
+              <strong>Hộ vệ AI ngoại tuyến:</strong> Giao dịch không được phân tích nhận diện rủi ro hành vi.
+            </div>
+          )}
+
           <div className="confirmation-card">
             <div className="confirm-row">
               <span>Tên người nhận</span>
