@@ -34,7 +34,7 @@ describe("BiometricStepUp", () => {
     act(() => {
       vi.advanceTimersByTime(180);
     });
-    expect(screen.getByText(/kiểm tra liveness/i)).toBeInTheDocument();
+    expect(screen.getByText(/kiểm tra liveness \(nháy mắt\)/i)).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(220);

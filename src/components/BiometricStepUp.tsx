@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, RotateCcw, ScanFace, XCircle, Loader2 } from "lucide-react";
 import type { CustomerIntent, KnightScenarioState } from "../domain/types";
 import { PrimaryButton } from "./PrimaryButton";
@@ -105,6 +105,7 @@ export function BiometricStepUp({ state, onVerify, onFail, isProcessing = false 
   const isFraudIntent = state.customerIntent === "fraud";
   const isVerified = state.biometricStatus === "verified";
   const isFailed = state.biometricStatus === "failed";
+  const scanTimers = useRef<Array<ReturnType<typeof window.setTimeout>>>([]);
 
   // Scan states: "idle" | "detecting" | "liveness" | "matching" | "success" | "failed"
   const [scanState, setScanState] = useState<"idle" | "detecting" | "liveness" | "matching" | "success" | "failed">(() => {
@@ -133,50 +134,55 @@ export function BiometricStepUp({ state, onVerify, onFail, isProcessing = false 
     }
   }, [isVerified, isFailed]);
 
+  useEffect(() => {
+    return () => {
+      scanTimers.current.forEach((timerId) => window.clearTimeout(timerId));
+    };
+  }, []);
+
   const startScanning = (failSim: boolean) => {
     if (scanState !== "idle" && scanState !== "failed") return;
-    
+
+    scanTimers.current.forEach((timerId) => window.clearTimeout(timerId));
+    scanTimers.current = [];
+
     const isTestEnv = import.meta.env.MODE === "test";
-    if (isTestEnv) {
-      if (failSim) {
-        onFail();
-      } else {
-        onVerify(state.customerIntent);
-      }
-      return;
-    }
-    
+    const delays = isTestEnv
+      ? { liveness: 160, matching: 360, outcome: 600, callback: 40 }
+      : { liveness: 700, matching: 1400, outcome: 2100, callback: 650 };
+    const queueScanStep = (callback: () => void, delay: number) => {
+      const timerId = window.setTimeout(callback, delay);
+      scanTimers.current.push(timerId);
+    };
+
     setScanState("detecting");
     setActiveStep(1);
 
-    // Step 2: Liveness Check
-    setTimeout(() => {
+    queueScanStep(() => {
       setScanState("liveness");
       setActiveStep(2);
-    }, 700);
+    }, delays.liveness);
 
-    // Step 3: Database Matching
-    setTimeout(() => {
+    queueScanStep(() => {
       setScanState("matching");
       setActiveStep(3);
-    }, 1400);
+    }, delays.matching);
 
-    // Step 4: Final Outcome
-    setTimeout(() => {
+    queueScanStep(() => {
       if (failSim) {
         setScanState("failed");
         setActiveStep(5);
-        setTimeout(() => {
+        queueScanStep(() => {
           onFail();
-        }, 500);
+        }, delays.callback);
       } else {
         setScanState("success");
         setActiveStep(4);
-        setTimeout(() => {
+        queueScanStep(() => {
           onVerify(state.customerIntent);
-        }, 850);
+        }, delays.callback);
       }
-    }, 2100);
+    }, delays.outcome);
   };
 
   const isScanning = scanState !== "idle" && scanState !== "success" && scanState !== "failed";
@@ -195,6 +201,7 @@ export function BiometricStepUp({ state, onVerify, onFail, isProcessing = false 
         }`}
       >
         <div className="face-scan-preview-camera-overlay" />
+        <div className="face-scan-depth-field" aria-hidden="true" />
         
         {/* iOS Brackets */}
         <div className="face-scan-brackets">
@@ -209,6 +216,10 @@ export function BiometricStepUp({ state, onVerify, onFail, isProcessing = false 
 
         <div className="face-scan-oval" aria-hidden="true" style={{ background: "none", border: "1px dashed rgba(209,233,255,0.15)" }}>
           <FaceIdGlyph state={scanState === "success" ? "success" : scanState === "failed" ? "failed" : isScanning ? "scanning" : "idle"} />
+        </div>
+
+        <div className="face-scan-progress" aria-hidden="true">
+          <span style={{ width: `${activeStep >= 4 ? 100 : Math.max(activeStep, 0) * 30}%` }} />
         </div>
         
         <div className="face-scan-status">

@@ -49,6 +49,8 @@ const transferChecklistItems = [
   "Nội dung giao dịch không liên quan đầu tư, thưởng hoặc hoàn tiền bất thường.",
 ];
 
+const riskyTransferContentPattern = /dau tu|đầu tư|gap|gấp|bi mat|bí mật|hoan tien|hoàn tiền|thuong|thưởng|otp|crypto/i;
+
 export function BankDashboard({
   state,
   selectedQtdnd,
@@ -80,6 +82,37 @@ export function BankDashboard({
   const [pushAlerts, setPushAlerts] = useState(false);
   const [pushStatus, setPushStatus] = useState<"idle" | "saving" | "enabled" | "error">("idle");
   const [pushMessage, setPushMessage] = useState("Thêm vào Màn hình chính, mở từ biểu tượng KNIGHT, rồi bật thông báo.");
+
+  const transferAmountNumber = Number(transferAmount) || 0;
+  const hasTransferAmount = transferAmountNumber > 0;
+  const normalizedTransferContent = transferContent.trim();
+  const hasRiskyTransferContent = riskyTransferContentPattern.test(normalizedTransferContent);
+  const amountSignal =
+    !hasTransferAmount
+      ? { tone: "neutral", label: "Đang khớp với thói quen chuyển tiền", detail: "Chưa có số tiền để so với nhịp thường ngày." }
+      : transferAmountNumber >= 30_000_000
+        ? { tone: "danger", label: "Vượt nhịp thường ngày", detail: "Cần giữ lại hoặc mở xác minh KNIGHT trước khi tiền rời tài khoản." }
+        : transferAmountNumber >= 10_000_000
+          ? { tone: "warning", label: "Cao hơn giao dịch quen thuộc", detail: "KNIGHT sẽ yêu cầu thêm tín hiệu người nhận và phiên đăng nhập." }
+          : { tone: "success", label: "Trong nhịp thường ngày", detail: "Số tiền gần vùng giao dịch quen thuộc của tài khoản." };
+  const contentSignal =
+    !normalizedTransferContent
+      ? { tone: "neutral", label: "Đang quét nội dung", detail: "Nội dung chuyển khoản sẽ được quét theo dấu hiệu lừa đảo phổ biến." }
+      : hasRiskyTransferContent
+        ? { tone: "danger", label: "Từ khóa cần kiểm tra", detail: "Nội dung giống mẫu gấp, đầu tư, hoàn tiền hoặc yêu cầu giữ bí mật." }
+        : { tone: "success", label: "Nội dung ổn định", detail: "Không thấy cụm từ rủi ro trong note giao dịch." };
+  const recipientSignal = transferAccount
+    ? transferAccount === "88884920412" || transferRecipient.toLowerCase().includes("shopmall")
+      ? "Người nhận cần xác minh"
+      : "Người nhận có thể đối chiếu"
+    : "Chưa có người nhận";
+  const intakeSignalCount = [
+    transferBank,
+    transferAccount,
+    transferRecipient,
+    hasTransferAmount,
+    normalizedTransferContent,
+  ].filter(Boolean).length;
 
   // Suggested Beneficiaries
   const handleSelectSuggestion = (type: "safe" | "fraud") => {
@@ -351,6 +384,37 @@ export function BankDashboard({
       return (
         <div className="tab-content dashboard-transfer">
           <h2 className="section-title">Chuyển tiền nhanh 24/7</h2>
+          <section className="transfer-ai-banner" aria-label="KNIGHT transfer intake">
+            <div className="transfer-ai-banner__header">
+              <div>
+                <span className="transfer-ai-kicker">KNIGHT AI Intake</span>
+                <strong>KNIGHT đang nhận diện giao dịch</strong>
+              </div>
+              <span className="transfer-ai-progress">{intakeSignalCount}/5 tín hiệu</span>
+            </div>
+            <p>
+              Đang đối chiếu số tiền, người nhận, nội dung và phiên đăng nhập trước khi xác nhận.
+            </p>
+          </section>
+
+          <div className="transfer-ai-grid" aria-label="Tín hiệu nhận diện chuyển tiền">
+            <article className={`transfer-ai-signal transfer-ai-signal--${amountSignal.tone}`}>
+              <span>Tín hiệu số tiền</span>
+              <strong>{hasTransferAmount ? formatVnd(transferAmountNumber) : "Chưa nhập"}</strong>
+              <small>{amountSignal.label}</small>
+            </article>
+            <article className={`transfer-ai-signal transfer-ai-signal--${contentSignal.tone}`}>
+              <span>Tín hiệu nội dung</span>
+              <strong>{contentSignal.label}</strong>
+              <small>{contentSignal.detail}</small>
+            </article>
+            <article className="transfer-ai-signal">
+              <span>Tín hiệu người nhận</span>
+              <strong>{recipientSignal}</strong>
+              <small>KNIGHT đối chiếu tài khoản, ngân hàng và lịch sử giao dịch.</small>
+            </article>
+          </div>
+
           <div className="transfer-form">
             <div className="form-group">
               <label htmlFor="bank-select" className="form-label">Ngân hàng thụ hưởng</label>
@@ -389,14 +453,14 @@ export function BankDashboard({
                   className="suggestion-chip safe"
                   onClick={() => handleSelectSuggestion("safe")}
                 >
-                  🟢 Nguyễn Văn B (An toàn)
+                  <CheckCircle2 size={13} aria-hidden="true" /> Nguyễn Văn B (An toàn)
                 </button>
                 <button
                   type="button"
                   className="suggestion-chip fraud"
                   onClick={() => handleSelectSuggestion("fraud")}
                 >
-                  🔴 ShopMall Global (Rủi ro)
+                  <AlertTriangle size={13} aria-hidden="true" /> ShopMall Global (Rủi ro)
                 </button>
               </div>
             </div>
@@ -415,26 +479,62 @@ export function BankDashboard({
 
             <div className="form-group">
               <label htmlFor="amount-input" className="form-label">Số tiền chuyển (VND)</label>
-              <input
-                id="amount-input"
-                type="number"
-                className="form-control"
-                placeholder="Nhập số tiền chuyển"
-                value={transferAmount}
-                onChange={(e) => setTransferAmount(e.target.value)}
-              />
+              <div className={`amount-input-shell amount-input-shell--${amountSignal.tone}`}>
+                <span>₫</span>
+                <input
+                  id="amount-input"
+                  type="number"
+                  className="form-control"
+                  placeholder="Nhập số tiền chuyển"
+                  min="1000"
+                  inputMode="numeric"
+                  value={transferAmount}
+                  onChange={(e) => setTransferAmount(e.target.value)}
+                />
+              </div>
+              <div className="transfer-field-signal">
+                <strong>Đánh giá số tiền</strong>
+                <span>{amountSignal.detail}</span>
+              </div>
+              <div className="amount-quick-row" aria-label="Mẫu số tiền nhanh">
+                {[
+                  ["200K", "200000"],
+                  ["1M", "1000000"],
+                  ["10M", "10000000"],
+                  ["50M", "50000000"],
+                ].map(([label, value]) => (
+                  <button type="button" key={value} onClick={() => setTransferAmount(value)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="form-group">
               <label htmlFor="content-input" className="form-label">Nội dung chuyển khoản</label>
-              <input
+              <textarea
                 id="content-input"
-                type="text"
-                className="form-control"
+                className="form-control transfer-note-input"
                 placeholder="Nội dung chuyển khoản"
+                rows={3}
                 value={transferContent}
                 onChange={(e) => setTransferContent(e.target.value)}
               />
+              <div className={`transfer-field-signal transfer-field-signal--${contentSignal.tone}`}>
+                <strong>Đánh giá nội dung</strong>
+                <span>{contentSignal.detail}</span>
+              </div>
+              <div className="note-suggestion-row" aria-label="Mẫu note nhanh">
+                <button type="button" onClick={() => setTransferContent("Chuyen tien sinh hoat")}>
+                  Sinh hoạt
+                </button>
+                <button type="button" onClick={() => setTransferContent("Thanh toan dich vu")}>
+                  Dịch vụ
+                </button>
+                <button type="button" onClick={() => setTransferContent("Ho tro gia dinh")}>
+                  Gia đình
+                </button>
+              </div>
             </div>
 
             <div className="transfer-warning-box">
@@ -452,6 +552,20 @@ export function BankDashboard({
       return (
         <div className="tab-content dashboard-transfer">
           <h2 className="section-title">Xác nhận thông tin giao dịch</h2>
+          <div className="transfer-ai-confirm-panel" aria-label="Tóm tắt nhận diện KNIGHT">
+            <div>
+              <span>Nhận diện số tiền</span>
+              <strong>{amountSignal.label}</strong>
+            </div>
+            <div>
+              <span>Nhận diện nội dung</span>
+              <strong>{contentSignal.label}</strong>
+            </div>
+            <div>
+              <span>Người nhận</span>
+              <strong>{recipientSignal}</strong>
+            </div>
+          </div>
           <div className="confirmation-card">
             <div className="confirm-row">
               <span>Tên người nhận</span>
