@@ -124,6 +124,19 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
 
     expect(logoImageBox?.width ?? 0).toBeGreaterThanOrEqual(34);
     expect(logoShellBox?.width ?? 0).toBeLessThanOrEqual(46);
+
+    await page.getByRole("option", { name: /vietcombank ngân hàng tmcp ngoại thương việt nam/i }).click();
+    await expect(
+      page.getByRole("button", { name: /ngân hàng thụ hưởng vietcombank ngân hàng tmcp ngoại thương việt nam/i }),
+    ).toBeVisible();
+
+    const triggerLogoImageBox = await page.locator(".bank-picker__trigger .bank-picker__logo img").boundingBox();
+    const triggerLogoBox = await page.locator(".bank-picker__trigger .bank-picker__logo").boundingBox();
+    const triggerBox = await page.locator(".bank-picker__trigger").boundingBox();
+
+    expect(triggerLogoImageBox?.width ?? 0).toBeGreaterThanOrEqual(58);
+    expect(triggerLogoBox?.width ?? 0).toBeLessThanOrEqual(78);
+    expect(triggerBox?.height ?? 0).toBeLessThanOrEqual(72);
     await expectNoHorizontalOverflow(page);
   });
 
