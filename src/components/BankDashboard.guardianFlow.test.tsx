@@ -38,6 +38,26 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     window.sessionStorage.clear();
   });
 
+  it("presents the transfer form as an AI-assisted intake for amount and note signals", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await openTransferTab(user);
+
+    expect(screen.getByRole("heading", { name: /chuyển tiền nhanh 24\/7/i })).toBeInTheDocument();
+    expect(screen.getByText(/KNIGHT đang nhận diện giao dịch/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tín hiệu số tiền/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tín hiệu nội dung/i)).toBeInTheDocument();
+    expect(screen.getByText(/Đang khớp với thói quen chuyển tiền/i)).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/số tiền chuyển/i), "50000000");
+    await user.type(screen.getByLabelText(/nội dung chuyển/i), "Dau tu gap");
+
+    expect(screen.getByText(/50\.000\.000/)).toBeInTheDocument();
+    expect(screen.getByText(/Vượt nhịp thường ngày/i)).toBeInTheDocument();
+    expect(screen.getByText(/Từ khóa cần kiểm tra/i)).toBeInTheDocument();
+  });
+
   it("shows automatic AI status without customer-facing scenario controls", async () => {
     const user = userEvent.setup();
     renderDashboard();
