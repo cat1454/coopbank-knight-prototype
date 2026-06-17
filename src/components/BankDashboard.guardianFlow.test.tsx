@@ -58,26 +58,34 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     expect(screen.getByText(/Từ khóa cần kiểm tra/i)).toBeInTheDocument();
   });
 
-  it("lets customers type and choose a real bank with its verified logo", async () => {
+  it("opens a bank picker sheet with screenshot-style copy and verified logos", async () => {
     const user = userEvent.setup();
     renderDashboard();
 
     await openTransferTab(user);
 
-    const bankInput = screen.getByRole("combobox", { name: /ngân hàng thụ hưởng/i });
-    await user.clear(bankInput);
-    await user.type(bankInput, "viet");
+    await user.click(screen.getByRole("button", { name: /ngân hàng thụ hưởng/i }));
 
-    const option = await screen.findByRole("option", { name: /vietcombank/i });
+    expect(screen.getByRole("heading", { name: /bạn muốn chuyển khoản tới ngân hàng nào/i })).toBeInTheDocument();
+    const bankSearch = screen.getByRole("combobox", { name: /tìm ngân hàng/i });
+    expect(bankSearch).toHaveAttribute("placeholder", "ngân hàng nào?");
+
+    await user.type(bankSearch, "viet");
+
+    const option = await screen.findByRole("option", {
+      name: /vietcombank ngân hàng tmcp ngoại thương việt nam/i,
+    });
     expect(within(option).getByRole("img", { name: /logo vietcombank/i })).toHaveAttribute(
       "src",
       "https://cdn.vietqr.io/img/VCB.png",
     );
+    expect(within(option).queryByText(/970436|BIN/i)).not.toBeInTheDocument();
 
     await user.click(option);
 
-    expect(bankInput).toHaveValue("Vietcombank");
-    expect(screen.getByText(/Ngân hàng TMCP Ngoại Thương Việt Nam/i)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /bạn muốn chuyển khoản tới ngân hàng nào/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ngân hàng thụ hưởng vietcombank/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Ngân hàng TMCP Ngoại thương Việt Nam/i)).not.toBeInTheDocument();
   });
 
   it("shows automatic AI status without customer-facing scenario controls", async () => {
