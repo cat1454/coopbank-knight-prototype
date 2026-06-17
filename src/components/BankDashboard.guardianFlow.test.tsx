@@ -58,6 +58,28 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     expect(screen.getByText(/Từ khóa cần kiểm tra/i)).toBeInTheDocument();
   });
 
+  it("lets customers type and choose a real bank with its verified logo", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await openTransferTab(user);
+
+    const bankInput = screen.getByRole("combobox", { name: /ngân hàng thụ hưởng/i });
+    await user.clear(bankInput);
+    await user.type(bankInput, "viet");
+
+    const option = await screen.findByRole("option", { name: /vietcombank/i });
+    expect(within(option).getByRole("img", { name: /logo vietcombank/i })).toHaveAttribute(
+      "src",
+      "https://cdn.vietqr.io/img/VCB.png",
+    );
+
+    await user.click(option);
+
+    expect(bankInput).toHaveValue("Vietcombank");
+    expect(screen.getByText(/Ngân hàng TMCP Ngoại Thương Việt Nam/i)).toBeInTheDocument();
+  });
+
   it("shows automatic AI status without customer-facing scenario controls", async () => {
     const user = userEvent.setup();
     renderDashboard();
