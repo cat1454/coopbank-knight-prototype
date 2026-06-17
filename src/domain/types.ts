@@ -109,7 +109,7 @@ export interface RiskAssessment {
   threshold: number;
   level: "normal" | "elevated" | "high";
   signals: RiskSignal[];
-  recommendedAction: "monitor" | "notify" | "suspend";
+  recommendedAction: "monitor" | "notify" | "verify" | "suspend";
   assessedAt: string;
   intelligence?: GuardianRiskDecision;
 }
@@ -124,6 +124,22 @@ export type GuardianScenarioId =
 
 export type GuardianAgentName = "transaction" | "device" | "behavioral" | "beneficiary" | "scam";
 export type GuardianAction = "allow" | "warn" | "delay" | "step_up" | "block" | "review";
+export type GuardianAiLevel = "safe" | "watch" | "verify" | "hold" | "critical";
+export type GuardianDecisionSource = "scenario" | "transaction";
+
+export interface GuardianTransactionEvaluationInput {
+  amountVnd: number;
+  recipientName: string;
+  recipientAccount: string;
+  recipientBank: string;
+  content: string;
+  timestamp?: string;
+  location?: string;
+  deviceTrust?: "trusted" | "new" | "suspicious";
+  ipReputation?: "normal" | "suspicious" | "bad";
+  loginMethod?: "password" | "face_id" | "otp";
+  priorActions?: string[];
+}
 
 export interface GuardianAgentResult {
   agentName: GuardianAgentName;
@@ -194,7 +210,10 @@ export interface GuardianScenario {
 
 export interface GuardianRiskDecision {
   transactionId: string;
-  scenarioId: GuardianScenarioId;
+  source: GuardianDecisionSource;
+  scenarioId?: GuardianScenarioId;
+  aiLevel: GuardianAiLevel;
+  policyLevel: PolicyLevel;
   riskScore: number;
   knightScore: number;
   action: GuardianAction;

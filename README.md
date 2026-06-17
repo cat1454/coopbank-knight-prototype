@@ -9,7 +9,8 @@ Prototype này phục vụ demo kỹ thuật và nghiên cứu sản phẩm. Cor
 - Tích hợp **GuardianFlow Decision Intelligence** vào KNIGHT, giữ Co-opBank KNIGHT là brand/app chính.
 - Thêm mock scoring engine 5 agents: transaction, device/session, behavioral, beneficiary, scam.
 - Hỗ trợ 6 scenario demo: `low_risk`, `medium_risk`, `high_risk`, `critical_risk`, `false_positive`, `feedback_attack`.
-- Thêm Decision Intelligence panel trong tab **Hộ vệ AI** với consent, scenario selector, fake latency, RiskMeter, AgentConsole, ScamChecklist và ActionCenter.
+- Tích hợp Decision Intelligence vào flow **Chuyển tiền**: user nhập giao dịch bình thường, KNIGHT tự phân mức AI `safe/watch/verify/hold/critical` và chỉ yêu cầu thêm bước khi cần.
+- Giữ scenario selector, fake latency, RiskMeter, AgentConsole, ScamChecklist và ActionCenter trong chế độ demo/test qua `?demo=true`, không hiện như thao tác bắt buộc cho khách hàng.
 - Chuẩn hóa risk score: GuardianFlow tính `0-100`, adapter sang KNIGHT `0-1000` để giữ policy threshold `800`.
 - Thêm mock `POST /api/explain`, không gọi Claude thật.
 
@@ -62,7 +63,15 @@ Chạy app không cần backend:
 http://localhost:5173/?env=test
 ```
 
-Mở demo GuardianFlow Decision Intelligence:
+Mở app và thử GuardianFlow tự phân mức trong flow chuyển tiền:
+
+```text
+http://localhost:5173/?env=test
+```
+
+Sau đó vào **Chuyển tiền**, chọn người nhận gợi ý hoặc nhập giao dịch. KNIGHT sẽ tự đánh giá và đưa giao dịch vào mức an toàn, cảnh báo, xác thực bổ sung hoặc tạm giữ.
+
+Mở demo panel dành cho tester/presenter:
 
 ```text
 http://localhost:5173/?env=test&capture=phone&shot=case&demo=true

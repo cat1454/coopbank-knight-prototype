@@ -83,6 +83,25 @@ Then:
 - App allows retry or fallback.
 - Audit logs failed biometric attempt.
 
+### TC-005 - GuardianFlow Automatic AI Levels
+
+Given:
+
+- Customer opens the normal transfer flow.
+- GuardianFlow demo mode is not enabled.
+
+When:
+
+- Customer enters a safe, warning, verification, or critical transfer.
+
+Then:
+
+- Customer does not see scenario controls.
+- KNIGHT evaluates the transfer from transaction input.
+- Safe transfers complete normally.
+- Warning and verification levels stay inline in the transfer flow.
+- Hold or critical levels do not debit the balance before KNIGHT/Fraud Review confirmation.
+
 ## Viewport QA
 
 Run or manually inspect:

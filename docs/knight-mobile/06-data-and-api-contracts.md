@@ -47,10 +47,49 @@ interface RiskAssessment {
   threshold: number;
   level: "normal" | "elevated" | "high";
   signals: RiskSignal[];
-  recommendedAction: "monitor" | "notify" | "suspend";
+  recommendedAction: "monitor" | "notify" | "verify" | "suspend";
   assessedAt: string;
 }
 ```
+
+## GuardianFlow Decision Intelligence
+
+```ts
+type GuardianAiLevel = "safe" | "watch" | "verify" | "hold" | "critical";
+type GuardianDecisionSource = "scenario" | "transaction";
+
+interface GuardianRiskDecision {
+  transactionId: string;
+  source: GuardianDecisionSource;
+  scenarioId?: GuardianScenarioId;
+  aiLevel: GuardianAiLevel;
+  policyLevel: PolicyLevel;
+  riskScore: number;
+  knightScore: number;
+  action: "allow" | "warn" | "delay" | "step_up" | "block" | "review";
+  reasonCodes: string[];
+  explanation: string;
+  requiresStepUp: boolean;
+  requiresChecklist: boolean;
+  requiresReview: boolean;
+}
+
+interface GuardianTransactionEvaluationInput {
+  amountVnd: number;
+  recipientName: string;
+  recipientAccount: string;
+  recipientBank: string;
+  content: string;
+  timestamp?: string;
+  location?: string;
+  deviceTrust?: "trusted" | "new" | "suspicious";
+  ipReputation?: "normal" | "suspicious" | "bad";
+  loginMethod?: "password" | "face_id" | "otp";
+  priorActions?: string[];
+}
+```
+
+Customer flow must use transaction-based evaluation. Scenario-based evaluation is only for demo/test mode.
 
 ## Card
 

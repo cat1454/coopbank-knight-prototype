@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  AlertTriangle,
   Home,
   QrCode,
   History,
@@ -18,14 +19,16 @@ import {
   CreditCard,
   CheckCircle2,
   ArrowRightLeft,
+  Clock,
+  LockKeyhole,
 } from "lucide-react";
-import type { KnightScenarioState } from "../domain/types";
+import type { GuardianRiskDecision, KnightScenarioState } from "../domain/types";
 import { formatVnd } from "../domain/format";
 import { PrimaryButton } from "./PrimaryButton";
 import type { BankTransaction } from "../data/bankingDemo";
 import { KnightAgentVisual } from "./KnightAgentVisual";
 import { disablePushNotifications, enablePushNotifications } from "../services/pushNotifications";
-import { evaluateGuardianScenario } from "../domain/guardianFlow";
+import { evaluateGuardianTransaction } from "../domain/guardianFlow";
 import { GuardianFlowPanel } from "./GuardianFlowPanel";
 
 interface BankDashboardProps {
@@ -39,6 +42,12 @@ interface BankDashboardProps {
   setTransactions: React.Dispatch<React.SetStateAction<BankTransaction[]>>;
   guardianDemoEnabled?: boolean;
 }
+
+const transferChecklistItems = [
+  "Tôi biết rõ người nhận và đã kiểm tra số tài khoản.",
+  "Không ai yêu cầu tôi chuyển tiền gấp hoặc giữ bí mật.",
+  "Nội dung giao dịch không liên quan đầu tư, thưởng hoặc hoàn tiền bất thường.",
+];
 
 export function BankDashboard({
   state,
@@ -55,18 +64,19 @@ export function BankDashboard({
   const [balanceVisible, setBalanceVisible] = useState(false);
 
   // Transfer Step States
-  const [transferStep, setTransferStep] = useState<"input" | "confirm" | "processing" | "success">("input");
+  const [transferStep, setTransferStep] = useState<"input" | "confirm" | "processing" | "warning" | "verification" | "held" | "success">("input");
   const [transferBank, setTransferBank] = useState("Ngân hàng liên kết");
   const [transferAccount, setTransferAccount] = useState("");
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [transferContent, setTransferContent] = useState("");
+  const [latestGuardianDecision, setLatestGuardianDecision] = useState<GuardianRiskDecision | null>(null);
+  const [transferChecklist, setTransferChecklist] = useState<boolean[]>(() => transferChecklistItems.map(() => false));
 
   // Settings states
   const [voiceOtt, setVoiceOtt] = useState(true);
   const [biometricAuth, setBiometricAuth] = useState(true);
   const [consentBasis, setConsentBasis] = useState(state.customer.personalizationConsent);
-  const [protectionLevel, setProtectionLevel] = useState<"monitor" | "standard" | "maximum">("standard");
   const [pushAlerts, setPushAlerts] = useState(false);
   const [pushStatus, setPushStatus] = useState<"idle" | "saving" | "enabled" | "error">("idle");
   const [pushMessage, setPushMessage] = useState("Thêm vào Màn hình chính, mở từ biểu tượng KNIGHT, rồi bật thông báo.");
@@ -94,37 +104,65 @@ export function BankDashboard({
     }
   };
 
+  const completeTransfer = () => {
+    const amountNum = Number(transferAmount);
+
+    setBalance((prev) => prev - amountNum);
+    setTransactions((prev) => [
+      {
+        id: `TXN-${Date.now()}`,
+        merchantName: transferRecipient,
+        amountVnd: amountNum,
+        time: "Vừa xong",
+        status: "success",
+        type: "transfer",
+      },
+      ...prev,
+    ]);
+    setTransferStep("success");
+  };
+
   const handleConfirmTransfer = () => {
     setTransferStep("processing");
+    setTransferChecklist(transferChecklistItems.map(() => false));
 
     setTimeout(async () => {
       const amountNum = Number(transferAmount);
-      const scenarioId =
-        transferRecipient.toLowerCase().includes("shopmall") || amountNum >= 10_000_000
-          ? "critical_risk"
-          : amountNum >= 3_000_000
-            ? "medium_risk"
-            : "low_risk";
-      const { decision } = await evaluateGuardianScenario(scenarioId);
+      const isRiskRecipient = transferAccount === "88884920412" || transferRecipient.toLowerCase().includes("shopmall");
+      const isCriticalShape = isRiskRecipient && amountNum >= 30_000_000;
+      const { decision } = await evaluateGuardianTransaction({
+        amountVnd: amountNum,
+        recipientName: transferRecipient,
+        recipientAccount: transferAccount,
+        recipientBank: transferBank,
+        content: transferContent,
+        location: isCriticalShape ? "Singapore" : "Da Nang",
+        deviceTrust: isRiskRecipient || amountNum >= 10_000_000 ? "new" : "trusted",
+        ipReputation: isCriticalShape ? "bad" : isRiskRecipient ? "suspicious" : "normal",
+        loginMethod: "password",
+        priorActions: isRiskRecipient
+          ? ["login_password", "add_new_recipient", ...(isCriticalShape ? ["increase_limit"] : []), "open_transfer"]
+          : ["login_password", "view_balance", "open_transfer"],
+      });
 
-      if (decision.action === "block" || decision.action === "review" || decision.action === "delay") {
-        onStartDemo();
-        setActiveTab("knight");
-      } else {
-        setBalance((prev) => prev - amountNum);
-        setTransactions((prev) => [
-          {
-            id: `TXN-${Date.now()}`,
-            merchantName: transferRecipient,
-            amountVnd: amountNum,
-            time: "Vừa xong",
-            status: "success",
-            type: "transfer",
-          },
-          ...prev,
-        ]);
-        setTransferStep("success");
+      setLatestGuardianDecision(decision);
+
+      if (decision.aiLevel === "safe") {
+        completeTransfer();
+        return;
       }
+
+      if (decision.aiLevel === "watch") {
+        setTransferStep("warning");
+        return;
+      }
+
+      if (decision.aiLevel === "verify") {
+        setTransferStep("verification");
+        return;
+      }
+
+      setTransferStep("held");
     }, 1200);
   };
 
@@ -135,6 +173,7 @@ export function BankDashboard({
     setTransferRecipient("");
     setTransferAmount("");
     setTransferContent("");
+    setTransferChecklist(transferChecklistItems.map(() => false));
     setActiveTab("home");
   };
 
@@ -460,6 +499,95 @@ export function BankDashboard({
       );
     }
 
+    if (transferStep === "warning" && latestGuardianDecision) {
+      return (
+        <div className="tab-content dashboard-transfer guardian-transfer-review guardian-transfer-review--warning">
+          <AlertTriangle size={36} />
+          <h2>KNIGHT cảnh báo giao dịch</h2>
+          <div className="guardian-transfer-score">
+            <strong>{latestGuardianDecision.riskScore}/100</strong>
+            <span>AI level: {latestGuardianDecision.aiLevel}</span>
+          </div>
+          <p>{latestGuardianDecision.explanation}</p>
+          <div className="action-stack">
+            <PrimaryButton onClick={completeTransfer}>Tiếp tục chuyển tiền</PrimaryButton>
+            <PrimaryButton variant="secondary" onClick={() => setTransferStep("input")}>
+              Hủy giao dịch
+            </PrimaryButton>
+          </div>
+        </div>
+      );
+    }
+
+    if (transferStep === "verification" && latestGuardianDecision) {
+      const checklistComplete = transferChecklist.every(Boolean);
+
+      return (
+        <div className="tab-content dashboard-transfer guardian-transfer-review guardian-transfer-review--verification">
+          <Clock size={36} />
+          <h2>KNIGHT yêu cầu xác thực bổ sung</h2>
+          <div className="guardian-transfer-score">
+            <strong>{latestGuardianDecision.riskScore}/100</strong>
+            <span>AI level: {latestGuardianDecision.aiLevel}</span>
+          </div>
+          <p>{latestGuardianDecision.explanation}</p>
+          <div className="guardian-checklist">
+            {transferChecklistItems.map((item, index) => (
+              <label key={item}>
+                <input
+                  type="checkbox"
+                  checked={transferChecklist[index]}
+                  onChange={(event) => {
+                    setTransferChecklist((current) =>
+                      current.map((value, itemIndex) => (itemIndex === index ? event.target.checked : value)),
+                    );
+                  }}
+                />
+                <span>{item}</span>
+              </label>
+            ))}
+          </div>
+          <div className="action-stack">
+            <PrimaryButton disabled={!checklistComplete} onClick={completeTransfer}>
+              Xác thực và chuyển tiền
+            </PrimaryButton>
+            <PrimaryButton variant="secondary" onClick={() => setTransferStep("input")}>
+              Quay lại chỉnh sửa
+            </PrimaryButton>
+          </div>
+        </div>
+      );
+    }
+
+    if (transferStep === "held" && latestGuardianDecision) {
+      return (
+        <div className="tab-content dashboard-transfer guardian-transfer-review guardian-transfer-review--held">
+          <LockKeyhole size={36} />
+          <h2>Giao dịch tạm thời bị giữ lại</h2>
+          <div className="guardian-transfer-score">
+            <strong>{latestGuardianDecision.riskScore}/100</strong>
+            <span>AI level: {latestGuardianDecision.aiLevel}</span>
+            <span>Policy: {latestGuardianDecision.policyLevel}</span>
+          </div>
+          <p>{latestGuardianDecision.explanation}</p>
+          <p className="guardian-reference">Mã tham chiếu: {latestGuardianDecision.transactionId}</p>
+          <div className="action-stack">
+            <PrimaryButton
+              onClick={() => {
+                onStartDemo();
+                setActiveTab("knight");
+              }}
+            >
+              Mở luồng xác minh KNIGHT
+            </PrimaryButton>
+            <PrimaryButton variant="secondary" onClick={() => setTransferStep("input")}>
+              Quay lại
+            </PrimaryButton>
+          </div>
+        </div>
+      );
+    }
+
     if (transferStep === "success") {
       return (
         <div className="tab-content dashboard-transfer success-view">
@@ -638,38 +766,11 @@ export function BankDashboard({
         })()}
 
         {/* Protection Levels */}
-        <GuardianFlowPanel enabled={guardianDemoEnabled} onEscalateToKnight={onStartDemo} />
-
-        {/* Protection Levels */}
-        <div className="settings-section">
-          <span className="settings-section-title">Mức độ bảo mật</span>
-          <div className="protection-level-selector">
-            <button
-              type="button"
-              className={`level-btn ${protectionLevel === "monitor" ? "active" : ""}`}
-              onClick={() => setProtectionLevel("monitor")}
-            >
-              <strong>Giám sát</strong>
-              <span>Chỉ gửi cảnh báo</span>
-            </button>
-            <button
-              type="button"
-              className={`level-btn ${protectionLevel === "standard" ? "active" : ""}`}
-              onClick={() => setProtectionLevel("standard")}
-            >
-              <strong>Tiêu chuẩn</strong>
-              <span>Khóa thẻ (L2)</span>
-            </button>
-            <button
-              type="button"
-              className={`level-btn ${protectionLevel === "maximum" ? "active" : ""}`}
-              onClick={() => setProtectionLevel("maximum")}
-            >
-              <strong>Tối đa</strong>
-              <span>Face ID mọi GD</span>
-            </button>
-          </div>
-        </div>
+        <GuardianFlowPanel
+          demoEnabled={guardianDemoEnabled}
+          latestDecision={latestGuardianDecision}
+          onEscalateToKnight={onStartDemo}
+        />
 
         {/* Notification Settings */}
         <div className="settings-section">

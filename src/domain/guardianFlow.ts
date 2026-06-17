@@ -2,9 +2,11 @@ import type {
   GuardianAction,
   GuardianAgentName,
   GuardianAgentResult,
+  GuardianAiLevel,
   GuardianRiskDecision,
   GuardianScenario,
   GuardianScenarioId,
+  GuardianTransactionEvaluationInput,
   RiskAssessment,
   RiskSignal,
 } from "./types";
@@ -536,6 +538,22 @@ function baseActionForScore(score: number): GuardianAction {
   return "block";
 }
 
+export function getGuardianAiLevel(score: number): GuardianAiLevel {
+  const normalizedScore = clampScore(score);
+
+  if (normalizedScore <= 35) return "safe";
+  if (normalizedScore <= 65) return "watch";
+  if (normalizedScore <= 79) return "verify";
+  if (normalizedScore <= 85) return "hold";
+  return "critical";
+}
+
+function policyLevelForAiLevel(aiLevel: GuardianAiLevel): GuardianRiskDecision["policyLevel"] {
+  if (aiLevel === "safe") return "L0";
+  if (aiLevel === "watch" || aiLevel === "verify") return "L1";
+  return "L2";
+}
+
 function buildExplanation(action: GuardianAction, reasonCodes: string[]) {
   const topReasons = reasonCodes
     .slice(0, 3)
@@ -557,7 +575,11 @@ function buildExplanation(action: GuardianAction, reasonCodes: string[]) {
   return `KNIGHT tạm giữ giao dịch để bảo vệ tài sản và chuyển sang luồng xác minh. ${topReasons}`;
 }
 
-export function decideGuardianAction(scenario: GuardianScenario, agentResults: GuardianAgentResult[]): GuardianRiskDecision {
+export function decideGuardianAction(
+  scenario: GuardianScenario,
+  agentResults: GuardianAgentResult[],
+  options: { source?: GuardianRiskDecision["source"]; transactionId?: string } = {},
+): GuardianRiskDecision {
   const transactionScore = scoreFor(agentResults, "transaction");
   const deviceScore = scoreFor(agentResults, "device");
   const behavioralScore = scoreFor(agentResults, "behavioral");
@@ -607,12 +629,17 @@ export function decideGuardianAction(scenario: GuardianScenario, agentResults: G
     action = "warn";
   }
 
+  const aiLevel = getGuardianAiLevel(weightedScore);
+  const source = options.source ?? "scenario";
   const requiresStepUp = action === "delay" || action === "step_up" || action === "block" || action === "review";
   const requiresReview = action === "block" || action === "review" || weightedScore >= 79;
 
   return {
-    transactionId: `GF-${scenario.id.toUpperCase()}-001`,
-    scenarioId: scenario.id,
+    transactionId: options.transactionId ?? `GF-${scenario.id.toUpperCase()}-001`,
+    source,
+    scenarioId: source === "scenario" ? scenario.id : undefined,
+    aiLevel,
+    policyLevel: policyLevelForAiLevel(aiLevel),
     riskScore: weightedScore,
     knightScore: toKnightRiskScore(weightedScore),
     action,
@@ -646,6 +673,92 @@ function signalFromReason(code: string): RiskSignal {
   };
 }
 
+function normalizeGuardianText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
+function isTrustedTransferRecipient(input: GuardianTransactionEvaluationInput) {
+  const normalizedName = normalizeGuardianText(input.recipientName);
+  return input.recipientAccount === "19038472910" || normalizedName.includes("nguyen van b");
+}
+
+function isKnownRiskRecipient(input: GuardianTransactionEvaluationInput) {
+  const normalizedName = normalizeGuardianText(input.recipientName);
+  return input.recipientAccount === "88884920412" || normalizedName.includes("shopmall");
+}
+
+function hasScamContent(input: GuardianTransactionEvaluationInput) {
+  return /(dau tu|đầu tư|gap|gấp|khan|khẩn|thuong|thưởng|hoan thue|hoàn thuế)/i.test(input.content);
+}
+
+function buildLiveTransferScenario(input: GuardianTransactionEvaluationInput): GuardianScenario {
+  const trustedRecipient = isTrustedTransferRecipient(input);
+  const knownRiskRecipient = isKnownRiskRecipient(input);
+  const scamContent = hasScamContent(input);
+  const criticalShape = input.amountVnd >= 30_000_000 || input.ipReputation === "bad";
+  const newRecipient = !trustedRecipient;
+  const timestamp = input.timestamp ?? (criticalShape ? isoAt(2, 13) : isoAt(15, 10));
+  const location = input.location ?? "Da Nang";
+  const priorActions =
+    input.priorActions ??
+    (newRecipient ? ["login_password", "add_new_recipient", "open_transfer"] : ["login_password", "view_balance", "open_transfer"]);
+  const deviceTrust = input.deviceTrust ?? (newRecipient && input.amountVnd >= 10_000_000 ? "new" : "trusted");
+  const ipReputation = input.ipReputation ?? (knownRiskRecipient ? "suspicious" : "normal");
+  const recipientId = trustedRecipient ? "trusted_nguyen_van_b" : knownRiskRecipient ? "mule_cluster_042" : "new_transfer_recipient";
+
+  return {
+    id: "high_risk",
+    label: "Live transfer evaluation",
+    summary: "KNIGHT chấm giao dịch chuyển tiền từ dữ liệu người dùng vừa nhập.",
+    expectedAction: "warn",
+    transaction: {
+      userId: "user_low_activity",
+      amountVnd: input.amountVnd,
+      recipientId,
+      recipientName: input.recipientName,
+      recipientAccount: input.recipientAccount,
+      recipientBank: input.recipientBank,
+      content: input.content,
+      timestamp,
+      location,
+      priorActions,
+      deviceInfo: {
+        deviceId: deviceTrust === "trusted" ? "iphone-known-001" : "iphone-new-transfer",
+        isNew: deviceTrust !== "trusted",
+        hasVPN: ipReputation === "bad",
+        isEmulator: false,
+        isRooted: false,
+        ipReputation,
+      },
+      sessionInfo: {
+        sessionId: "sess-live-transfer",
+        ageSeconds: newRecipient ? 80 : 260,
+        loginMethod: input.loginMethod ?? "password",
+      },
+    },
+    userProfile: {
+      userId: "user_low_activity",
+      label: "Ít giao dịch",
+      knownRecipients: trustedRecipient ? ["trusted_nguyen_van_b"] : ["trusted_nguyen_van_b"],
+      verifiedLocations: ["Da Nang"],
+      typicalLocations: ["Da Nang"],
+      typicalHours: [9, 10, 11, 14, 15, 16],
+      typicalAmounts: { median: 300_000, p75: 800_000, p95: 2_000_000 },
+      recentTransferCount1h: criticalShape ? 4 : 1,
+    },
+    beneficiary: {
+      recipientId,
+      isNewRecipient: newRecipient,
+      hasBeenReported: knownRiskRecipient && (input.amountVnd >= 10_000_000 || scamContent),
+      isMuleCluster: knownRiskRecipient && (criticalShape || input.ipReputation === "bad"),
+      isTrusted: trustedRecipient,
+    },
+  };
+}
+
 export function adaptGuardianDecisionToRiskAssessment(
   decision: GuardianRiskDecision,
   scenario: GuardianScenario,
@@ -653,8 +766,10 @@ export function adaptGuardianDecisionToRiskAssessment(
   const score = toKnightRiskScore(decision.riskScore);
   const level: RiskAssessment["level"] = score >= KNIGHT_RISK_THRESHOLD ? "high" : score >= 360 ? "elevated" : "normal";
   const recommendedAction: RiskAssessment["recommendedAction"] =
-    decision.action === "block" || decision.action === "review" || decision.action === "delay"
+    decision.aiLevel === "hold" || decision.aiLevel === "critical" || decision.action === "block" || decision.action === "review"
       ? "suspend"
+      : decision.aiLevel === "verify" || decision.action === "delay" || decision.action === "step_up"
+        ? "verify"
       : decision.action === "warn"
         ? "notify"
         : "monitor";
@@ -678,6 +793,25 @@ export async function evaluateGuardianScenario(
   const scenario = getGuardianScenario(scenarioId);
   const agentResults = await runGuardianAgents(scenario, options);
   const decision = decideGuardianAction(scenario, agentResults);
+
+  return {
+    scenario,
+    agentResults,
+    decision,
+    riskAssessment: adaptGuardianDecisionToRiskAssessment(decision, scenario),
+  };
+}
+
+export async function evaluateGuardianTransaction(
+  input: GuardianTransactionEvaluationInput,
+  options: { fakeLatencyMs?: number; onAgentComplete?: (agent: GuardianAgentResult) => void } = {},
+) {
+  const scenario = buildLiveTransferScenario(input);
+  const agentResults = await runGuardianAgents(scenario, options);
+  const decision = decideGuardianAction(scenario, agentResults, {
+    source: "transaction",
+    transactionId: "GF-LIVE-TRANSFER-001",
+  });
 
   return {
     scenario,
