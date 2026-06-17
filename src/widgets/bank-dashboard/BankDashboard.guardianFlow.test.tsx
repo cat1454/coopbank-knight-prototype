@@ -110,7 +110,15 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
 
     await openTransferTab(user);
     await user.click(screen.getByRole("button", { name: /Nguyễn Văn B/i }));
-    await user.click(screen.getByRole("button", { name: /tiếp tục/i }));
+    
+    // Step 1: Recipient info -> click Next
+    const recipientCard = screen.getByText(/1\. Thông tin thụ hưởng/i).closest(".transfer-card")!;
+    await user.click(within(recipientCard).getByRole("button", { name: /tiếp tục/i }));
+
+    // Step 2: Transaction details -> click Next
+    const detailsCard = screen.getByText(/2\. Chi tiết giao dịch/i).closest(".transfer-card")!;
+    await user.click(within(detailsCard).getByRole("button", { name: /tiếp tục/i }));
+
     await user.click(screen.getByRole("button", { name: /xác nhận chuyển tiền/i }));
 
     expect(await screen.findByRole("heading", { name: /giao dịch thành công/i }, { timeout: 2500 })).toBeInTheDocument();
@@ -128,13 +136,21 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     await user.type(screen.getByLabelText(/số tiền chuyển/i), "50000000");
     await user.clear(screen.getByLabelText(/nội dung chuyển/i));
     await user.type(screen.getByLabelText(/nội dung chuyển/i), "Dau tu gap");
-    await user.click(screen.getByRole("button", { name: /tiếp tục/i }));
+
+    // Step 1: Recipient info -> click Next
+    const recipientCard = screen.getByText(/1\. Thông tin thụ hưởng/i).closest(".transfer-card")!;
+    await user.click(within(recipientCard).getByRole("button", { name: /tiếp tục/i }));
+
+    // Step 2: Transaction details -> click Next
+    const detailsCard = screen.getByText(/2\. Chi tiết giao dịch/i).closest(".transfer-card")!;
+    await user.click(within(detailsCard).getByRole("button", { name: /tiếp tục/i }));
+
     await user.click(screen.getByRole("button", { name: /xác nhận chuyển tiền/i }));
 
     expect(
       await screen.findByRole("heading", { name: /giao dịch tạm thời bị giữ lại/i }, { timeout: 2500 }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/critical/i)).toBeInTheDocument();
+    expect(screen.getByText(/cảnh báo cao/i)).toBeInTheDocument();
     expect(setBalance).not.toHaveBeenCalled();
     expect(setTransactions).not.toHaveBeenCalled();
 
@@ -143,12 +159,14 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
   });
 
   it("keeps scenario controls available only in explicit demo mode", async () => {
+    window.sessionStorage.setItem("knight_guardianflow_consent", "withdrawn");
     const user = userEvent.setup();
     renderDashboard({ guardianDemoEnabled: true });
 
     await user.click(screen.getByRole("button", { name: /hộ vệ ai/i }));
-    await user.click(screen.getByRole("checkbox", { name: /đồng ý/i }));
-    await user.click(screen.getByRole("button", { name: /bắt đầu/i }));
+    await user.click(screen.getByRole("checkbox", { name: /kích hoạt hộ vệ ai/i }));
+    await user.click(screen.getByRole("checkbox", { name: /tôi xác nhận đã đọc kỹ và đồng ý kích hoạt/i }));
+    await user.click(screen.getByRole("button", { name: /đồng ý và kích hoạt/i }));
 
     expect(screen.getByLabelText(/scenario/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /chạy scenario/i })).toBeInTheDocument();

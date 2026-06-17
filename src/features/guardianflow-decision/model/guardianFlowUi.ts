@@ -29,15 +29,17 @@ export function actionLabel(action: GuardianRiskDecision["action"]) {
 export function aiLevelLabel(level: GuardianRiskDecision["aiLevel"]) {
   switch (level) {
     case "safe":
-      return "safe";
+      return "An toàn";
     case "watch":
-      return "watch";
+      return "Cần giám sát";
     case "verify":
-      return "verify";
+      return "Cần xác thực";
     case "hold":
-      return "hold";
+      return "Tạm giữ";
     case "critical":
-      return "critical";
+      return "Cảnh báo cao";
+    default:
+      return level;
   }
 }
 

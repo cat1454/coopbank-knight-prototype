@@ -20,6 +20,7 @@
   --color-warning-soft: #fef0c7;
   --color-danger: #d92d20;
   --color-danger-soft: #fee4e2;
+  --color-fraud: var(--color-danger);
   --color-info-soft: #d1e9ff;
 
   --text-xs: 11px;

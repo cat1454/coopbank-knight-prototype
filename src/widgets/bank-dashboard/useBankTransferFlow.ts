@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useState, useRef, type Dispatch, type SetStateAction } from "react";
 import type { GuardianRiskDecision } from "../../domain/types";
 import { evaluateGuardianTransaction } from "../../domain/guardianFlow";
 import type { BankTransaction } from "../../entities/bank-account/model/bankingDemo";
@@ -16,7 +16,7 @@ function normalizeBankSearchText(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-type TransferStep = "input" | "confirm" | "processing" | "warning" | "verification" | "held" | "success";
+type TransferStep = "input_recipient" | "input_details" | "confirm" | "processing" | "warning" | "verification" | "held" | "success";
 
 interface UseBankTransferFlowOptions {
   setBalance: Dispatch<SetStateAction<number>>;
@@ -24,7 +24,7 @@ interface UseBankTransferFlowOptions {
 }
 
 export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTransferFlowOptions) {
-  const [transferStep, setTransferStep] = useState<TransferStep>("input");
+  const [transferStep, setTransferStep] = useState<TransferStep>("input_recipient");
   const [transferBank, setTransferBank] = useState(defaultTransferBank.displayName);
   const [bankSearch, setBankSearch] = useState("");
   const [bankPickerOpen, setBankPickerOpen] = useState(false);
@@ -34,6 +34,51 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   const [transferContent, setTransferContent] = useState("");
   const [latestGuardianDecision, setLatestGuardianDecision] = useState<GuardianRiskDecision | null>(null);
   const [transferChecklist, setTransferChecklist] = useState<boolean[]>(() => transferChecklistItems.map(() => false));
+  const [isResolvingName, setIsResolvingName] = useState(false);
+  const [isRecipientVerified, setIsRecipientVerified] = useState(false);
+  const [cachedGuardianDecision, setCachedGuardianDecision] = useState<GuardianRiskDecision | null>(null);
+
+  // Human Review Simulator states
+  const [isHumanReviewing, setIsHumanReviewing] = useState(false);
+  const [humanReviewStep, setHumanReviewStep] = useState<"idle" | "connecting" | "chatting" | "approved" | "rejected">("idle");
+
+
+  const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAccountChange = (val: string) => {
+    setTransferAccount(val);
+    setLatestGuardianDecision(null);
+    setCachedGuardianDecision(null);
+
+    if (resolveTimerRef.current) {
+      clearTimeout(resolveTimerRef.current);
+    }
+
+    const trimmed = val.trim();
+    if (trimmed.length < 6) {
+      setIsRecipientVerified(false);
+      setTransferRecipient("");
+      setIsResolvingName(false);
+      return;
+    }
+
+    setIsResolvingName(true);
+    setIsRecipientVerified(false);
+    setTransferRecipient("");
+
+    let expectedName = "TRẦN MINH TUẤN";
+    if (trimmed === "19038472910") {
+      expectedName = "NGUYỄN VĂN B";
+    } else if (trimmed === "88884920412") {
+      expectedName = "SHOPMALL GLOBAL";
+    }
+
+    resolveTimerRef.current = setTimeout(() => {
+      setTransferRecipient(expectedName);
+      setIsRecipientVerified(true);
+      setIsResolvingName(false);
+    }, 800);
+  };
 
   const transferAmountNumber = Number(transferAmount) || 0;
   const hasTransferAmount = transferAmountNumber > 0;
@@ -80,27 +125,88 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     setTransferBank(bank.displayName);
     setBankSearch("");
     setBankPickerOpen(false);
+    setLatestGuardianDecision(null);
+    setCachedGuardianDecision(null);
+    if (transferAccount.trim().length >= 6) {
+      handleAccountChange(transferAccount);
+    }
   };
 
   const handleSelectSuggestion = (type: "safe" | "fraud") => {
+    setLatestGuardianDecision(null);
+    setCachedGuardianDecision(null);
     if (type === "safe") {
       selectTransferBank(defaultTransferBank);
       setTransferAccount("19038472910");
-      setTransferRecipient("Nguyễn Văn B");
+      setTransferRecipient("NGUYỄN VĂN B");
       setTransferAmount("200000");
       setTransferContent("Huynh Phuoc Phu chuyen tien");
+      setIsRecipientVerified(true);
+      setIsResolvingName(false);
     } else {
       selectTransferBank(defaultTransferBank);
       setTransferAccount("88884920412");
-      setTransferRecipient("ShopMall Global");
+      setTransferRecipient("SHOPMALL GLOBAL");
       setTransferAmount("10000000");
       setTransferContent("Thanh toan don hang");
+      setIsRecipientVerified(true);
+      setIsResolvingName(false);
+    }
+  };
+
+  const triggerBackgroundAiScoring = async (
+    recipientNameVal: string,
+    recipientAccountVal: string,
+    amountVal: number,
+    contentVal: string,
+  ) => {
+    const isRiskRecipient = recipientAccountVal === "88884920412" || recipientNameVal.toLowerCase().includes("shopmall");
+    const isCriticalShape = isRiskRecipient && amountVal >= 30_000_000;
+
+    try {
+      const { decision } = await evaluateGuardianTransaction({
+        amountVnd: amountVal,
+        recipientName: recipientNameVal,
+        recipientAccount: recipientAccountVal,
+        recipientBank: transferBank,
+        content: contentVal,
+        location: isCriticalShape ? "Singapore" : "Da Nang",
+        deviceTrust: isRiskRecipient || amountVal >= 10_000_000 ? "new" : "trusted",
+        ipReputation: isCriticalShape ? "bad" : isRiskRecipient ? "suspicious" : "normal",
+        loginMethod: "password",
+        priorActions: isRiskRecipient
+          ? ["login_password", "add_new_recipient", ...(isCriticalShape ? ["increase_limit"] : []), "open_transfer"]
+          : ["login_password", "view_balance", "open_transfer"],
+      });
+      setCachedGuardianDecision(decision);
+      return decision;
+    } catch (e) {
+      console.error("Early background scoring error", e);
+      return null;
+    }
+  };
+
+  const handleNextToDetails = () => {
+    if (transferBank && transferAccount && transferRecipient && isRecipientVerified) {
+      setTransferStep("input_details");
+      const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
+      const isConsentOff = stored !== null && stored !== "granted";
+      if (!isConsentOff) {
+        // Kích hoạt AI chạy ngầm với số tiền 0 để phân tích rủi ro người nhận trước
+        void triggerBackgroundAiScoring(transferRecipient, transferAccount, 0, transferContent);
+      }
     }
   };
 
   const handleNextStep = () => {
     if (transferBank && transferAccount && transferRecipient && transferAmount && transferContent) {
       setTransferStep("confirm");
+      const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
+      const isConsentOff = stored !== null && stored !== "granted";
+      if (!isConsentOff) {
+        // Cập nhật lại kết quả AI chạy ngầm với số tiền và nội dung thực tế
+        void triggerBackgroundAiScoring(transferRecipient, transferAccount, Number(transferAmount), transferContent);
+      }
     }
   };
 
@@ -125,26 +231,79 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   const handleConfirmTransfer = () => {
     setTransferStep("processing");
     setTransferChecklist(transferChecklistItems.map(() => false));
+    setHumanReviewStep("idle");
+    setIsHumanReviewing(false);
 
-    setTimeout(async () => {
+    const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
+    const isConsentOff = stored !== null && stored !== "granted";
+    if (isConsentOff) {
+      setTimeout(() => {
+        completeTransfer();
+      }, 800); // Standard processing delay for a normal bank
+      return;
+    }
+
+    const finalizeDecision = (decision: GuardianRiskDecision) => {
       const amountNum = Number(transferAmount);
-      const isRiskRecipient = transferAccount === "88884920412" || transferRecipient.toLowerCase().includes("shopmall");
-      const isCriticalShape = isRiskRecipient && amountNum >= 30_000_000;
-      const { decision } = await evaluateGuardianTransaction({
-        amountVnd: amountNum,
-        recipientName: transferRecipient,
-        recipientAccount: transferAccount,
-        recipientBank: transferBank,
-        content: transferContent,
-        location: isCriticalShape ? "Singapore" : "Da Nang",
-        deviceTrust: isRiskRecipient || amountNum >= 10_000_000 ? "new" : "trusted",
-        ipReputation: isCriticalShape ? "bad" : isRiskRecipient ? "suspicious" : "normal",
-        loginMethod: "password",
-        priorActions: isRiskRecipient
-          ? ["login_password", "add_new_recipient", ...(isCriticalShape ? ["increase_limit"] : []), "open_transfer"]
-          : ["login_password", "view_balance", "open_transfer"],
-      });
+      const levelSetting = typeof window !== "undefined" ? (window.sessionStorage.getItem("knight_guardian_level") as "max" | "standard" | "min") || "standard" : "standard";
 
+      // Minimal protection (min)
+      if (levelSetting === "min") {
+        if (amountNum >= 10_000_000) {
+          // Still mandatory by state law
+          const adjustedDecision = {
+            ...decision,
+            aiLevel: "verify" as const,
+            action: "step_up" as const,
+            explanation: "Hệ thống phát hiện rủi ro. Vì giao dịch từ 10 triệu đồng trở lên, quy định Quyết định 2345/QĐ-NHNN bắt buộc thực hiện xác thực sinh trắc học khuôn mặt.",
+          };
+          setLatestGuardianDecision(adjustedDecision);
+          setTransferStep("verification");
+        } else {
+          // Below 10M: downgrade locks/blocks to soft warnings, allowing instant bypass
+          if (decision.aiLevel !== "safe") {
+            const adjustedDecision = {
+              ...decision,
+              aiLevel: "watch" as const,
+              action: "warn" as const,
+              explanation: "Hộ vệ AI phát hiện điểm rủi ro cao (" + decision.riskScore + "/100). Do bạn cài đặt cấu hình bảo vệ Giám sát tối thiểu, bạn có thể tự xác nhận để chuyển tiền ngay mà không cần xác minh.",
+            };
+            setLatestGuardianDecision(adjustedDecision);
+            setTransferStep("warning");
+          } else {
+            completeTransfer();
+          }
+        }
+        return;
+      }
+
+      // Maximum protection (max)
+      if (levelSetting === "max") {
+        if (decision.aiLevel === "watch") {
+          const adjustedDecision = {
+            ...decision,
+            aiLevel: "verify" as const,
+            action: "step_up" as const,
+            explanation: "[Chế độ bảo vệ Tối đa] Phát hiện giao dịch lệch thói quen chi tiêu thông thường. Yêu cầu xác thực checklist và Face ID bổ sung để đảm bảo an toàn.",
+          };
+          setLatestGuardianDecision(adjustedDecision);
+          setTransferStep("verification");
+          return;
+        }
+        if (decision.aiLevel === "verify" || decision.aiLevel === "hold" || decision.aiLevel === "critical") {
+          const adjustedDecision = {
+            ...decision,
+            aiLevel: "hold" as const,
+            action: "block" as const,
+            explanation: "[Chế độ bảo vệ Tối đa] Phát hiện rủi ro cao lệch baseline. Giao dịch bị tạm giữ ngay lập tức để bảo vệ tài sản của bạn.",
+          };
+          setLatestGuardianDecision(adjustedDecision);
+          setTransferStep("held");
+          return;
+        }
+      }
+
+      // Standard protection
       setLatestGuardianDecision(decision);
 
       if (decision.aiLevel === "safe") {
@@ -163,17 +322,65 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
       }
 
       setTransferStep("held");
-    }, 1200);
+    };
+
+    const amountNum = Number(transferAmount);
+
+    if (cachedGuardianDecision) {
+      setTimeout(() => {
+        finalizeDecision(cachedGuardianDecision);
+      }, 300);
+    } else {
+      setTimeout(async () => {
+        const decision = await triggerBackgroundAiScoring(transferRecipient, transferAccount, amountNum, transferContent);
+        if (decision) {
+          finalizeDecision(decision);
+        } else {
+          setTransferStep("input_recipient");
+        }
+      }, 1200);
+    }
   };
 
+  const startHumanReview = () => {
+    setIsHumanReviewing(true);
+    setHumanReviewStep("connecting");
+    setTimeout(() => {
+      setHumanReviewStep("chatting");
+    }, 1500);
+  };
+
+  const completeHumanReview = (approved: boolean) => {
+    if (approved) {
+      setHumanReviewStep("approved");
+      setTimeout(() => {
+        setIsHumanReviewing(false);
+        setHumanReviewStep("idle");
+        completeTransfer();
+      }, 2000);
+    } else {
+      setHumanReviewStep("rejected");
+      setTimeout(() => {
+        setIsHumanReviewing(false);
+        setHumanReviewStep("idle");
+        setTransferStep("input_details");
+      }, 2000);
+    }
+  };
+
+
   const resetTransferFields = () => {
-    setTransferStep("input");
+    setTransferStep("input_recipient");
     selectTransferBank(defaultTransferBank);
     setTransferAccount("");
     setTransferRecipient("");
     setTransferAmount("");
     setTransferContent("");
     setTransferChecklist(transferChecklistItems.map(() => false));
+    setIsRecipientVerified(false);
+    setIsResolvingName(false);
+    setCachedGuardianDecision(null);
+    setLatestGuardianDecision(null);
   };
 
   return {
@@ -185,6 +392,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     filteredTransferBanks,
     handleConfirmTransfer,
     handleNextStep,
+    handleNextToDetails,
     handleSelectSuggestion,
     hasTransferAmount,
     intakeSignalCount,
@@ -195,7 +403,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     selectedBank,
     setBankPickerOpen,
     setBankSearch,
-    setTransferAccount,
+    handleAccountChange,
     setTransferAmount,
     setTransferChecklist,
     setTransferContent,
@@ -209,5 +417,12 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     transferContent,
     transferRecipient,
     transferStep,
+    isResolvingName,
+    isRecipientVerified,
+    cachedGuardianDecision,
+    isHumanReviewing,
+    humanReviewStep,
+    startHumanReview,
+    completeHumanReview,
   };
 }

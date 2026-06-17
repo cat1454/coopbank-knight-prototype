@@ -44,8 +44,42 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
   const [alarmEnabled, setAlarmEnabled] = useState(false);
   const [alarmActive, setAlarmActive] = useState(false);
 
+  // Sync consent state to show sleeping mood when deactivated
+  const [hasConsent, setHasConsent] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const stored = window.sessionStorage.getItem("knight_guardianflow_consent");
+    return stored === null ? true : stored === "granted";
+  });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const stored = window.sessionStorage.getItem("knight_guardianflow_consent");
+      setHasConsent(stored === null ? true : stored === "granted");
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   // Map state to scenario visual properties
   const step = useMemo(() => {
+    if (!hasConsent && state.currentState === "idle_monitoring") {
+      return {
+        phase: "OBSERVE" as const,
+        mood: "sleeping" as const,
+        riskScore: 0,
+        cardStatus: "OFFLINE",
+        response: "--",
+        audit: "DISABLED",
+        badgeTitle: "NGOẠI TUYẾN",
+        badgeSubtitle: "Đang ngủ...",
+        thought: "Hộ vệ AI đang ngủ. Hệ thống đã ngừng thu thập dữ liệu cá nhân nhạy cảm và ngắt kết nối giám sát nền.",
+        assistantMessage: "",
+        alert: "Hộ vệ AI đã tắt. Hệ thống không hoạt động.",
+        action: "sleeping()",
+        hot: "phase" as const,
+      };
+    }
+
     // default step
     const defaultStep = {
       phase: "REASON" as const,

@@ -2369,3 +2369,71 @@
   width: 120px;
   height: 120px;
 }
+
+/* Sleeping/Offline state styles for KNIGHT AI */
+.scene[data-mood="sleeping"] {
+  --mood-color: #475569;
+  --phase-color: #475569;
+  background:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(71, 85, 105, 0.08), transparent 28%),
+    linear-gradient(145deg, #05060c 0%, #060a12 44%, #04090e 100%) !important;
+  border-color: rgba(71, 85, 105, 0.2) !important;
+}
+
+.scene[data-mood="sleeping"]::before {
+  opacity: 0.12 !important;
+  background:
+    linear-gradient(rgba(71, 85, 105, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(71, 85, 105, 0.05) 1px, transparent 1px) !important;
+}
+
+.scene[data-mood="sleeping"] .eye {
+  animation: none !important;
+  height: 2px !important;
+  background: #475569 !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+  transform: scaleY(0.2) !important;
+}
+
+.scene[data-mood="sleeping"] .shield,
+.scene[data-mood="sleeping"] .sword,
+.scene[data-mood="sleeping"] .orbit-ring,
+.scene[data-mood="sleeping"] .orbit-ring2,
+.scene[data-mood="sleeping"] .orbit-ring3,
+.scene[data-mood="sleeping"] .scan-beam,
+.scene[data-mood="sleeping"] .radar-sweep,
+.scene[data-mood="sleeping"] .crest {
+  display: none !important;
+}
+
+.scene[data-mood="sleeping"] .dot {
+  background: #1e293b !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.scene[data-mood="sleeping"] .badge-icon {
+  border-color: #334155 !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.scene[data-mood="sleeping"] .badge-icon::before,
+.scene[data-mood="sleeping"] .badge-icon::after {
+  border-color: #334155 !important;
+}
+
+.scene[data-mood="sleeping"] .panel-line {
+  animation: none !important;
+  display: none !important;
+}
+
+.scene[data-mood="sleeping"] .agent-wrap {
+  animation: sleeping-breathe 6s ease-in-out infinite !important;
+}
+
+@keyframes sleeping-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
