@@ -33,6 +33,14 @@ async function openTransferTab(user: ReturnType<typeof userEvent.setup>) {
   await user.click(within(nav).getByRole("button", { name: /chuyển tiền/i }));
 }
 
+async function completeCompanionChecklist(user: ReturnType<typeof userEvent.setup>) {
+  const checklist = await screen.findByRole("group", { name: /Checklist Đồng hành/i });
+  for (const checkbox of within(checklist).getAllByRole("checkbox")) {
+    await user.click(checkbox);
+  }
+  await user.click(screen.getByRole("button", { name: /Hoàn tất checklist và tiếp tục/i }));
+}
+
 describe("BankDashboard GuardianFlow Decision Intelligence", () => {
   afterEach(() => {
     window.sessionStorage.clear();
@@ -124,6 +132,90 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     expect(await screen.findByRole("heading", { name: /giao dịch thành công/i }, { timeout: 2500 })).toBeInTheDocument();
     expect(setBalance).toHaveBeenCalled();
     expect(setTransactions).toHaveBeenCalled();
+  });
+
+  it("opens one shared Face ID popup from transfer confirmation and hides PIN until Face ID fails", async () => {
+    const user = userEvent.setup();
+    const { setBalance, setTransactions } = renderDashboard();
+
+    await openTransferTab(user);
+    await user.click(screen.getByRole("button", { name: /ShopMall Global/i }));
+
+    const recipientCard = screen.getByText(/1\. Thông tin thụ hưởng/i).closest(".transfer-card")!;
+    await user.click(within(recipientCard).getByRole("button", { name: /tiếp tục/i }));
+
+    const detailsCard = screen.getByText(/2\. Chi tiết giao dịch/i).closest(".transfer-card")!;
+    await user.click(within(detailsCard).getByRole("button", { name: /tiếp tục/i }));
+
+    expect(screen.getByRole("heading", { name: /xác nhận thông tin giao dịch/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /xác nhận chuyển tiền/i }));
+
+    expect(screen.getByRole("heading", { name: /xác nhận thông tin giao dịch/i })).toBeInTheDocument();
+    const faceIdDialog = await screen.findByRole("dialog", { name: /xác thực face id chuyển tiền/i });
+    expect(within(faceIdDialog).getByText(/đang xác thực/i)).toBeInTheDocument();
+    expect(within(faceIdDialog).queryByRole("button", { name: /dùng mã PIN thay thế/i })).not.toBeInTheDocument();
+
+    expect(await screen.findByRole("heading", { name: /KNIGHT cảnh báo giao dịch/i }, { timeout: 2500 })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: /Checklist Đồng hành/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Yêu cầu Tổng đài viên xác minh/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Hoàn tất checklist và tiếp tục/i })).toBeDisabled();
+
+    await completeCompanionChecklist(user);
+    expect(await screen.findByRole("heading", { name: /giao dịch thành công/i }, { timeout: 2500 })).toBeInTheDocument();
+    expect(setBalance).toHaveBeenCalled();
+    expect(setTransactions).toHaveBeenCalled();
+  });
+
+  it("shows the Face ID verified approval in the AI guard panel after a protected transfer completes", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await openTransferTab(user);
+    await user.click(screen.getByRole("button", { name: /ShopMall Global/i }));
+
+    const recipientCard = screen.getByText(/1\. Thông tin thụ hưởng/i).closest(".transfer-card")!;
+    await user.click(within(recipientCard).getByRole("button", { name: /tiếp tục/i }));
+
+    const detailsCard = screen.getByText(/2\. Chi tiết giao dịch/i).closest(".transfer-card")!;
+    await user.click(within(detailsCard).getByRole("button", { name: /tiếp tục/i }));
+
+    await user.click(screen.getByRole("button", { name: /xác nhận chuyển tiền/i }));
+
+    expect(await screen.findByRole("heading", { name: /KNIGHT cảnh báo giao dịch/i }, { timeout: 2500 })).toBeInTheDocument();
+    await completeCompanionChecklist(user);
+
+    expect(await screen.findByRole("heading", { name: /giao dịch thành công/i }, { timeout: 2500 })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /hộ vệ ai/i }));
+
+    expect(screen.getByText(/Đã xác thực Face ID, giao dịch đã được cho phép/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /tiếp tục xác thực face id/i })).not.toBeInTheDocument();
+  });
+
+  it("reveals PIN fallback choices only after automatic Face ID recognition fails", async () => {
+    window.sessionStorage.setItem("knight_transfer_faceid_result", "fail_once");
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await openTransferTab(user);
+    await user.click(screen.getByRole("button", { name: /ShopMall Global/i }));
+
+    const recipientCard = screen.getByText(/1\. Thông tin thụ hưởng/i).closest(".transfer-card")!;
+    await user.click(within(recipientCard).getByRole("button", { name: /tiếp tục/i }));
+
+    const detailsCard = screen.getByText(/2\. Chi tiết giao dịch/i).closest(".transfer-card")!;
+    await user.click(within(detailsCard).getByRole("button", { name: /tiếp tục/i }));
+    await user.click(screen.getByRole("button", { name: /xác nhận chuyển tiền/i }));
+
+    const faceIdDialog = await screen.findByRole("dialog", { name: /xác thực face id chuyển tiền/i });
+    expect(within(faceIdDialog).queryByRole("button", { name: /dùng mã PIN thay thế/i })).not.toBeInTheDocument();
+
+    expect(await within(faceIdDialog).findByText(/không nhận dạng được/i, {}, { timeout: 2500 })).toBeInTheDocument();
+    expect(within(faceIdDialog).getByRole("button", { name: /thử lại Face ID/i })).toBeInTheDocument();
+
+    await user.click(within(faceIdDialog).getByRole("button", { name: /dùng mã PIN thay thế/i }));
+    expect(within(faceIdDialog).getByRole("heading", { name: /nhập mã PIN giao dịch/i })).toBeInTheDocument();
   });
 
   it("holds a critical transfer inline before money leaves the account", async () => {

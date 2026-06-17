@@ -1,4 +1,4 @@
-import { RotateCcw, ShieldCheck, Scale, Info, Check, ShieldAlert, Video } from "lucide-react";
+import { RotateCcw, ShieldCheck, Scale, Check, ShieldAlert, Video } from "lucide-react";
 import { useState } from "react";
 import { guardianScenarios } from "../../../domain/guardianFlow";
 import type { GuardianRiskDecision, GuardianScenarioId } from "../../../domain/types";

@@ -37,6 +37,8 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   const [isResolvingName, setIsResolvingName] = useState(false);
   const [isRecipientVerified, setIsRecipientVerified] = useState(false);
   const [cachedGuardianDecision, setCachedGuardianDecision] = useState<GuardianRiskDecision | null>(null);
+  const [isTransferAiPending, setIsTransferAiPending] = useState(false);
+  const [isTransferFaceIdOpen, setIsTransferFaceIdOpen] = useState(false);
 
   // Human Review Simulator states
   const [isHumanReviewing, setIsHumanReviewing] = useState(false);
@@ -44,11 +46,26 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
 
 
   const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cachedGuardianDecisionRef = useRef<GuardianRiskDecision | null>(null);
+  const pendingGuardianDecisionRef = useRef<Promise<GuardianRiskDecision | null> | null>(null);
+  const guardianDecisionRequestRef = useRef(0);
+
+  const updateCachedGuardianDecision = (decision: GuardianRiskDecision | null) => {
+    cachedGuardianDecisionRef.current = decision;
+    setCachedGuardianDecision(decision);
+  };
+
+  const clearGuardianDecision = () => {
+    guardianDecisionRequestRef.current += 1;
+    pendingGuardianDecisionRef.current = null;
+    setIsTransferAiPending(false);
+    updateCachedGuardianDecision(null);
+  };
 
   const handleAccountChange = (val: string) => {
     setTransferAccount(val);
     setLatestGuardianDecision(null);
-    setCachedGuardianDecision(null);
+    clearGuardianDecision();
 
     if (resolveTimerRef.current) {
       clearTimeout(resolveTimerRef.current);
@@ -126,7 +143,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     setBankSearch("");
     setBankPickerOpen(false);
     setLatestGuardianDecision(null);
-    setCachedGuardianDecision(null);
+    clearGuardianDecision();
     if (transferAccount.trim().length >= 6) {
       handleAccountChange(transferAccount);
     }
@@ -134,7 +151,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
 
   const handleSelectSuggestion = (type: "safe" | "fraud") => {
     setLatestGuardianDecision(null);
-    setCachedGuardianDecision(null);
+    clearGuardianDecision();
     if (type === "safe") {
       selectTransferBank(defaultTransferBank);
       setTransferAccount("19038472910");
@@ -159,6 +176,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     recipientAccountVal: string,
     amountVal: number,
     contentVal: string,
+    requestId = guardianDecisionRequestRef.current,
   ) => {
     const isRiskRecipient = recipientAccountVal === "88884920412" || recipientNameVal.toLowerCase().includes("shopmall");
     const isCriticalShape = isRiskRecipient && amountVal >= 30_000_000;
@@ -178,12 +196,53 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
           ? ["login_password", "add_new_recipient", ...(isCriticalShape ? ["increase_limit"] : []), "open_transfer"]
           : ["login_password", "view_balance", "open_transfer"],
       });
-      setCachedGuardianDecision(decision);
+      if (requestId === guardianDecisionRequestRef.current) {
+        updateCachedGuardianDecision(decision);
+      }
       return decision;
     } catch (e) {
       console.error("Early background scoring error", e);
       return null;
     }
+  };
+
+  const beginGuardianDecisionRequest = (
+    recipientNameVal: string,
+    recipientAccountVal: string,
+    amountVal: number,
+    contentVal: string,
+  ) => {
+    const requestId = guardianDecisionRequestRef.current + 1;
+    guardianDecisionRequestRef.current = requestId;
+    updateCachedGuardianDecision(null);
+    setIsTransferAiPending(true);
+
+    const decisionPromise = triggerBackgroundAiScoring(
+      recipientNameVal,
+      recipientAccountVal,
+      amountVal,
+      contentVal,
+      requestId,
+    ).finally(() => {
+      if (requestId === guardianDecisionRequestRef.current) {
+        setIsTransferAiPending(false);
+      }
+    });
+
+    pendingGuardianDecisionRef.current = decisionPromise;
+    return decisionPromise;
+  };
+
+  const resolveGuardianDecisionForConfirmation = async () => {
+    if (cachedGuardianDecisionRef.current) {
+      return cachedGuardianDecisionRef.current;
+    }
+
+    if (pendingGuardianDecisionRef.current) {
+      return pendingGuardianDecisionRef.current;
+    }
+
+    return beginGuardianDecisionRequest(transferRecipient, transferAccount, Number(transferAmount), transferContent);
   };
 
   const handleNextToDetails = () => {
@@ -193,7 +252,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
       const isConsentOff = stored !== null && stored !== "granted";
       if (!isConsentOff) {
         // Kích hoạt AI chạy ngầm với số tiền 0 để phân tích rủi ro người nhận trước
-        void triggerBackgroundAiScoring(transferRecipient, transferAccount, 0, transferContent);
+        void beginGuardianDecisionRequest(transferRecipient, transferAccount, 0, transferContent);
       }
     }
   };
@@ -205,7 +264,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
       const isConsentOff = stored !== null && stored !== "granted";
       if (!isConsentOff) {
         // Cập nhật lại kết quả AI chạy ngầm với số tiền và nội dung thực tế
-        void triggerBackgroundAiScoring(transferRecipient, transferAccount, Number(transferAmount), transferContent);
+        void beginGuardianDecisionRequest(transferRecipient, transferAccount, Number(transferAmount), transferContent);
       }
     }
   };
@@ -213,6 +272,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   const completeTransfer = () => {
     const amountNum = Number(transferAmount);
 
+    setIsTransferFaceIdOpen(false);
     setBalance((prev) => prev - amountNum);
     setTransactions((prev) => [
       {
@@ -228,69 +288,97 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     setTransferStep("success");
   };
 
-  const handleConfirmTransfer = () => {
-    setTransferStep("processing");
-    setTransferChecklist(transferChecklistItems.map(() => false));
-    setHumanReviewStep("idle");
-    setIsHumanReviewing(false);
-
-    const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
-    const isConsentOff = stored !== null && stored !== "granted";
-    if (isConsentOff) {
-      setTimeout(() => {
-        completeTransfer();
-      }, 800); // Standard processing delay for a normal bank
-      return;
+  const completeCompanionReviewedTransfer = () => {
+    if (latestGuardianDecision?.requiresChecklist) {
+      setLatestGuardianDecision({
+        ...latestGuardianDecision,
+        aiLevel: "safe",
+        policyLevel: "L0",
+        action: "allow",
+        explanation: "Đã xác thực Face ID, giao dịch đã được cho phép sau checklist Đồng hành.",
+        reasonCodes: ["companion_checklist_confirmed", ...latestGuardianDecision.reasonCodes],
+        requiresStepUp: false,
+        requiresChecklist: false,
+        requiresReview: false,
+      });
     }
 
-    const finalizeDecision = (decision: GuardianRiskDecision) => {
-      const amountNum = Number(transferAmount);
-      const levelSetting = typeof window !== "undefined" ? (window.sessionStorage.getItem("knight_guardian_level") as "max" | "standard" | "min") || "standard" : "standard";
+    completeTransfer();
+  };
 
-      // Minimal protection (min)
-      if (levelSetting === "min") {
-        if (amountNum >= 10_000_000) {
-          // Still mandatory by state law
-          const adjustedDecision = {
-            ...decision,
-            aiLevel: "verify" as const,
-            action: "step_up" as const,
-            explanation: "Hệ thống phát hiện rủi ro. Vì giao dịch từ 10 triệu đồng trở lên, quy định Quyết định 2345/QĐ-NHNN bắt buộc thực hiện xác thực sinh trắc học khuôn mặt.",
-          };
-          setLatestGuardianDecision(adjustedDecision);
-          setTransferStep("verification");
+  const markDecisionAllowedAfterFaceId = (decision: GuardianRiskDecision): GuardianRiskDecision => ({
+    ...decision,
+    aiLevel: "safe",
+    policyLevel: "L0",
+    action: "allow",
+    explanation: "Đã xác thực Face ID, giao dịch đã được cho phép.",
+    reasonCodes: ["face_id_verified", ...decision.reasonCodes],
+    requiresStepUp: false,
+    requiresChecklist: false,
+    requiresReview: false,
+  });
+
+  const finalizeDecision = (decision: GuardianRiskDecision, identityVerified = false) => {
+    const amountNum = Number(transferAmount);
+    const levelSetting = typeof window !== "undefined" ? (window.sessionStorage.getItem("knight_guardian_level") as "max" | "standard" | "min") || "standard" : "standard";
+
+    // Minimal protection (min)
+    if (levelSetting === "min") {
+      if (amountNum >= 10_000_000) {
+        // Still mandatory by state law
+        const adjustedDecision = {
+          ...decision,
+          aiLevel: "verify" as const,
+          action: "step_up" as const,
+          explanation: "Hệ thống phát hiện rủi ro. Vì giao dịch từ 10 triệu đồng trở lên, quy định Quyết định 2345/QĐ-NHNN bắt buộc thực hiện xác thực sinh trắc học khuôn mặt.",
+        };
+        setLatestGuardianDecision(adjustedDecision);
+        if (identityVerified) {
+          setLatestGuardianDecision(markDecisionAllowedAfterFaceId(adjustedDecision));
+          completeTransfer();
         } else {
-          // Below 10M: downgrade locks/blocks to soft warnings, allowing instant bypass
-          if (decision.aiLevel !== "safe") {
-            const adjustedDecision = {
-              ...decision,
-              aiLevel: "watch" as const,
-              action: "warn" as const,
-              explanation: "Hộ vệ AI phát hiện điểm rủi ro cao (" + decision.riskScore + "/100). Do bạn cài đặt cấu hình bảo vệ Giám sát tối thiểu, bạn có thể tự xác nhận để chuyển tiền ngay mà không cần xác minh.",
-            };
-            setLatestGuardianDecision(adjustedDecision);
-            setTransferStep("warning");
-          } else {
-            completeTransfer();
-          }
+          setTransferStep("confirm");
+          setIsTransferFaceIdOpen(true);
         }
         return;
       }
 
-      // Maximum protection (max)
-      if (levelSetting === "max") {
-        if (decision.aiLevel === "watch") {
-          const adjustedDecision = {
-            ...decision,
-            aiLevel: "verify" as const,
-            action: "step_up" as const,
-            explanation: "[Chế độ bảo vệ Tối đa] Phát hiện giao dịch lệch thói quen chi tiêu thông thường. Yêu cầu xác thực checklist và Face ID bổ sung để đảm bảo an toàn.",
-          };
-          setLatestGuardianDecision(adjustedDecision);
-          setTransferStep("verification");
-          return;
+      // Below 10M: downgrade locks/blocks to soft warnings, allowing instant bypass
+      if (decision.aiLevel !== "safe") {
+        const adjustedDecision = {
+          ...decision,
+          aiLevel: "watch" as const,
+          action: "warn" as const,
+          explanation: "Hộ vệ AI phát hiện điểm rủi ro cao (" + decision.riskScore + "/100). Do bạn cài đặt cấu hình bảo vệ Giám sát tối thiểu, bạn có thể tự xác nhận để chuyển tiền ngay mà không cần xác minh.",
+        };
+        setLatestGuardianDecision(adjustedDecision);
+        setTransferStep("warning");
+      } else {
+        completeTransfer();
+      }
+      return;
+    }
+
+    // Maximum protection (max)
+    if (levelSetting === "max") {
+      if (decision.aiLevel === "watch") {
+        const adjustedDecision = {
+          ...decision,
+          aiLevel: "verify" as const,
+          action: "step_up" as const,
+          explanation: "[Chế độ bảo vệ Tối đa] Phát hiện giao dịch lệch thói quen chi tiêu thông thường. Yêu cầu xác thực checklist và Face ID bổ sung để đảm bảo an toàn.",
+        };
+        setLatestGuardianDecision(adjustedDecision);
+        if (identityVerified) {
+          setLatestGuardianDecision(markDecisionAllowedAfterFaceId(adjustedDecision));
+          completeTransfer();
+        } else {
+          setTransferStep("confirm");
+          setIsTransferFaceIdOpen(true);
         }
-        if (decision.aiLevel === "verify" || decision.aiLevel === "hold" || decision.aiLevel === "critical") {
+        return;
+      }
+      if (decision.aiLevel === "verify" || decision.aiLevel === "hold" || decision.aiLevel === "critical") {
           const adjustedDecision = {
             ...decision,
             aiLevel: "hold" as const,
@@ -301,45 +389,85 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
           setTransferStep("held");
           return;
         }
-      }
-
-      // Standard protection
-      setLatestGuardianDecision(decision);
-
-      if (decision.aiLevel === "safe") {
-        completeTransfer();
-        return;
-      }
-
-      if (decision.aiLevel === "watch") {
-        setTransferStep("warning");
-        return;
-      }
-
-      if (decision.aiLevel === "verify") {
-        setTransferStep("verification");
-        return;
-      }
-
-      setTransferStep("held");
-    };
-
-    const amountNum = Number(transferAmount);
-
-    if (cachedGuardianDecision) {
-      setTimeout(() => {
-        finalizeDecision(cachedGuardianDecision);
-      }, 300);
-    } else {
-      setTimeout(async () => {
-        const decision = await triggerBackgroundAiScoring(transferRecipient, transferAccount, amountNum, transferContent);
-        if (decision) {
-          finalizeDecision(decision);
-        } else {
-          setTransferStep("input_recipient");
-        }
-      }, 1200);
     }
+
+    if (decision.aiLevel === "safe") {
+      setLatestGuardianDecision(decision);
+      completeTransfer();
+      return;
+    }
+
+    // Standard protection ("Dong hanh"): keep the customer in control, but require
+    // a guided checklist or operator support before money leaves the account.
+    if (decision.aiLevel === "watch" || decision.aiLevel === "verify") {
+      if (decision.aiLevel === "verify" && !identityVerified) {
+        setLatestGuardianDecision(decision);
+        setTransferStep("confirm");
+        setIsTransferFaceIdOpen(true);
+        return;
+      }
+
+      const adjustedDecision = {
+        ...decision,
+        action: (decision.aiLevel === "verify" ? "step_up" : "warn") as GuardianRiskDecision["action"],
+        requiresStepUp: decision.aiLevel === "verify" || decision.requiresStepUp,
+        requiresChecklist: true,
+        explanation:
+          decision.aiLevel === "verify"
+            ? `Chế độ Đồng hành: Face ID đã xác thực, nhưng KNIGHT vẫn cần bạn hoàn tất checklist trước khi tiền rời tài khoản. ${decision.explanation}`
+            : `Chế độ Đồng hành: KNIGHT không tự khóa giao dịch này, nhưng yêu cầu bạn rà lại checklist an toàn hoặc gọi Tổng đài nếu còn nghi ngờ. ${decision.explanation}`,
+      };
+      setLatestGuardianDecision(adjustedDecision);
+      setTransferStep("warning");
+      return;
+    }
+
+    setLatestGuardianDecision(decision);
+    setTransferStep("held");
+  };
+
+  const handleConfirmTransfer = () => {
+    setIsTransferFaceIdOpen(true);
+    setTransferChecklist(transferChecklistItems.map(() => false));
+    setHumanReviewStep("idle");
+    setIsHumanReviewing(false);
+
+    const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
+    const isConsentOff = stored !== null && stored !== "granted";
+    if (isConsentOff) {
+      pendingGuardianDecisionRef.current = null;
+      setIsTransferAiPending(false);
+      updateCachedGuardianDecision(null);
+      return;
+    }
+
+    void resolveGuardianDecisionForConfirmation();
+  };
+
+  const handleTransferFaceIdSuccess = async () => {
+    const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
+    const isConsentOff = stored !== null && stored !== "granted";
+    if (isConsentOff) {
+      completeTransfer();
+      return;
+    }
+
+    setIsTransferAiPending(true);
+    const decision = await resolveGuardianDecisionForConfirmation();
+    setIsTransferAiPending(false);
+    setIsTransferFaceIdOpen(false);
+
+    if (decision) {
+      finalizeDecision(decision, true);
+    } else {
+      setTransferStep("input_recipient");
+    }
+  };
+
+  const cancelTransferVerification = () => {
+    setIsTransferFaceIdOpen(false);
+    setTransferStep("input_details");
+    setIsTransferAiPending(false);
   };
 
   const startHumanReview = () => {
@@ -379,7 +507,8 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     setTransferChecklist(transferChecklistItems.map(() => false));
     setIsRecipientVerified(false);
     setIsResolvingName(false);
-    setCachedGuardianDecision(null);
+    setIsTransferFaceIdOpen(false);
+    clearGuardianDecision();
     setLatestGuardianDecision(null);
   };
 
@@ -387,10 +516,12 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     amountSignal,
     bankPickerOpen,
     bankSearch,
+    completeCompanionReviewedTransfer,
     completeTransfer,
     contentSignal,
     filteredTransferBanks,
     handleConfirmTransfer,
+    handleTransferFaceIdSuccess,
     handleNextStep,
     handleNextToDetails,
     handleSelectSuggestion,
@@ -420,6 +551,9 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     isResolvingName,
     isRecipientVerified,
     cachedGuardianDecision,
+    isTransferAiPending,
+    isTransferFaceIdOpen,
+    cancelTransferVerification,
     isHumanReviewing,
     humanReviewStep,
     startHumanReview,

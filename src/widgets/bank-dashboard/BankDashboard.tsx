@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   AlertTriangle,
   Building2,
@@ -23,6 +23,10 @@ import {
   LockKeyhole,
   Video,
   ShieldAlert,
+  ScanFace,
+  Loader2,
+  XCircle,
+  KeyRound,
 } from "lucide-react";
 import type { KnightScenarioState } from "../../domain/types";
 import { formatVnd } from "../../domain/format";
@@ -33,6 +37,8 @@ import { disablePushNotifications, enablePushNotifications } from "../../shared/
 import { GuardianFlowPanel } from "../../features/guardianflow-decision/ui/GuardianFlowPanel";
 import { BottomTabs, type BankDashboardTab } from "./BottomTabs";
 import { transferChecklistItems, useBankTransferFlow } from "./useBankTransferFlow";
+
+type GuardianLevelSetting = "max" | "standard" | "min";
 
 const getFriendlyAiLevel = (level: string) => {
   switch (level) {
@@ -50,6 +56,24 @@ const getFriendlyPolicy = (policy: string) => {
   if (lower.includes("l2")) return "Tự động khóa thẻ";
   if (lower.includes("l3")) return "Khóa thẻ & Chặn GD lạ";
   return policy;
+};
+
+const getGuardianLevelLabel = (level: GuardianLevelSetting) => {
+  if (level === "min") return "Tối thiểu";
+  if (level === "max") return "Tối đa";
+  return "Đồng hành";
+};
+
+const getGuardianLevelTransferCopy = (level: GuardianLevelSetting) => {
+  if (level === "min") {
+    return "chỉ cảnh báo mềm, bạn phải tự xác nhận trách nhiệm nếu vẫn muốn chuyển.";
+  }
+
+  if (level === "max") {
+    return "nâng cảnh báo thành xác thực tăng cường và có thể tạm giữ giao dịch.";
+  }
+
+  return "phân tích rủi ro, yêu cầu checklist an toàn và mở Tổng đài khi còn nghi ngờ.";
 };
 
 const getDeviceName = () => {
@@ -88,6 +112,373 @@ const getDeviceName = () => {
   return "Thiết bị này";
 };
 
+// ─── Face ID Verification Screen ────────────────────────────────────────────
+interface FaceIdVerificationScreenProps {
+  riskScore: number;
+  aiLevel: string;
+  explanation: string;
+  recipientName: string;
+  amount: number;
+  onSuccess: () => void;
+  onBack: () => void;
+  /** When true: pre-confirm Face ID (no risk info shown), when false: triggered by AI risk detection */
+  isPreCheck?: boolean;
+  isAiPending?: boolean;
+  autoStart?: boolean;
+  isPopup?: boolean;
+}
+
+type FaceScanStep = "idle" | "detecting" | "liveness" | "matching" | "success" | "failed";
+
+function FaceIdVerificationScreen({
+  riskScore,
+  aiLevel,
+  explanation,
+  recipientName,
+  amount,
+  onSuccess,
+  onBack,
+  isPreCheck = false,
+  isAiPending = false,
+  autoStart = false,
+  isPopup = false,
+}: FaceIdVerificationScreenProps) {
+  const [scanStep, setScanStep] = useState<FaceScanStep>("idle");
+  const [showPinFallback, setShowPinFallback] = useState(false);
+  const [pinDigits, setPinDigits] = useState<string[]>(["" ,"", "", "", "", ""]);
+  const [pinError, setPinError] = useState(false);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const pinBoxRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const autoStartedRef = useRef(false);
+  const startScanRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    return () => { timersRef.current.forEach(clearTimeout); };
+  }, []);
+
+  const scheduleStep = (fn: () => void, delay: number) => {
+    const t = setTimeout(fn, delay);
+    timersRef.current.push(t);
+  };
+
+  const consumeForcedFaceIdFailure = () => {
+    if (typeof window === "undefined") return false;
+    if (window.sessionStorage.getItem("knight_transfer_faceid_result") !== "fail_once") return false;
+    window.sessionStorage.removeItem("knight_transfer_faceid_result");
+    return true;
+  };
+
+  const startScan = () => {
+    if (scanStep !== "idle" && scanStep !== "failed") return;
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    setPinError(false);
+    setScanStep("detecting");
+    const delays = import.meta.env.MODE === "test"
+      ? { liveness: 90, matching: 180, outcome: 300, callback: 40 }
+      : { liveness: 900, matching: 1900, outcome: 2900, callback: 700 };
+    scheduleStep(() => setScanStep("liveness"), delays.liveness);
+    scheduleStep(() => setScanStep("matching"), delays.matching);
+    scheduleStep(() => {
+      if (consumeForcedFaceIdFailure()) {
+        setScanStep("failed");
+        return;
+      }
+      setScanStep("success");
+      scheduleStep(() => onSuccess(), delays.callback);
+    }, delays.outcome);
+  };
+  useEffect(() => {
+    startScanRef.current = startScan;
+  });
+
+  useEffect(() => {
+    if (!autoStart || autoStartedRef.current) return;
+    autoStartedRef.current = true;
+    const timerId = setTimeout(() => startScanRef.current(), 0);
+    return () => clearTimeout(timerId);
+  }, [autoStart]);
+
+  const handlePinSubmit = () => {
+    const pin = pinDigits.join("");
+    if (pin === "123456") {
+      setScanStep("success");
+      setTimeout(() => onSuccess(), 700);
+    } else {
+      setPinError(true);
+      setPinDigits(["", "", "", "", "", ""]);
+      setTimeout(() => {
+        setPinError(false);
+        pinBoxRefs.current[0]?.focus();
+      }, 1200);
+    }
+  };
+
+  const handlePinDigitChange = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const next = [...pinDigits];
+    next[index] = digit;
+    setPinDigits(next);
+    setPinError(false);
+    if (digit && index < 5) {
+      pinBoxRefs.current[index + 1]?.focus();
+    }
+    // Auto-submit when last digit filled
+    if (digit && index === 5) {
+      const full = next.join("");
+      if (full.length === 6) setTimeout(() => {
+        if (full === "123456") {
+          setScanStep("success");
+          setTimeout(() => onSuccess(), 700);
+        } else {
+          setPinError(true);
+          setPinDigits(["", "", "", "", "", ""]);
+          setTimeout(() => {
+            setPinError(false);
+            pinBoxRefs.current[0]?.focus();
+          }, 1200);
+        }
+      }, 80);
+    }
+  };
+
+  const handlePinKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      if (pinDigits[index]) {
+        const next = [...pinDigits];
+        next[index] = "";
+        setPinDigits(next);
+      } else if (index > 0) {
+        pinBoxRefs.current[index - 1]?.focus();
+        const next = [...pinDigits];
+        next[index - 1] = "";
+        setPinDigits(next);
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      pinBoxRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      pinBoxRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePinPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const next = [...pinDigits];
+    text.split("").forEach((ch, i) => { next[i] = ch; });
+    setPinDigits(next);
+    const focusIdx = Math.min(text.length, 5);
+    pinBoxRefs.current[focusIdx]?.focus();
+  };
+
+  const isScanning = scanStep === "detecting" || scanStep === "liveness" || scanStep === "matching";
+  const isSuccess = scanStep === "success";
+  const isFailed = scanStep === "failed";
+
+  const stepLabels = [
+    { key: "detecting" as FaceScanStep, label: "Phát hiện khuôn mặt" },
+    { key: "liveness" as FaceScanStep, label: "Kiểm tra liveness" },
+    { key: "matching" as FaceScanStep, label: "Đối chiếu dữ liệu" },
+  ];
+  const stepOrder: FaceScanStep[] = ["detecting", "liveness", "matching", "success"];
+  const currentStepIdx = stepOrder.indexOf(scanStep);
+
+  return (
+    <div className={isPopup ? "faceid-verify-screen faceid-verify-screen--popup" : "tab-content dashboard-transfer faceid-verify-screen"}>
+      {/* Header — pre-check: clean title; post-check: risk info */}
+      {isPreCheck ? (
+        <div className="faceid-verify__precheck-header">
+          <div className="faceid-verify__precheck-icon">
+            <ScanFace size={28} />
+          </div>
+          <div>
+            <h2 className="faceid-verify__precheck-title">Xác thực danh tính</h2>
+            <p className="faceid-verify__explanation">Quét khuôn mặt để xác nhận chính bạn đang thực hiện giao dịch này.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="faceid-verify__header">
+          <div className="faceid-verify__risk-badge">
+            <span>Rủi ro: {riskScore}/100</span>
+            <span className="faceid-verify__ai-level">{aiLevel}</span>
+          </div>
+          <p className="faceid-verify__explanation">{explanation}</p>
+        </div>
+      )}
+
+      {/* Transaction Summary — always visible */}
+      <div className="faceid-verify__txn-summary">
+        <div className="faceid-verify__txn-row">
+          <span>Người nhận</span>
+          <strong>{recipientName}</strong>
+        </div>
+        <div className="faceid-verify__txn-row faceid-verify__txn-amount">
+          <span>Số tiền</span>
+          <strong className="faceid-verify__amount-value">{formatVnd(amount)}</strong>
+        </div>
+      </div>
+
+      {!showPinFallback ? (
+        <>
+          {/* Face Scanner */}
+          <div
+            className={`faceid-verify__scanner ${isScanning ? "faceid-verify__scanner--scanning" : ""} ${isSuccess ? "faceid-verify__scanner--success" : ""} ${isFailed ? "faceid-verify__scanner--failed" : ""}`}
+          >
+            {/* Corner brackets */}
+            <div className="faceid-scan-brackets">
+              <span className="fsc-bracket fsc-bracket--tl" />
+              <span className="fsc-bracket fsc-bracket--tr" />
+              <span className="fsc-bracket fsc-bracket--bl" />
+              <span className="fsc-bracket fsc-bracket--br" />
+            </div>
+
+            {/* Sweep line */}
+            {isScanning && <div className="faceid-scan-sweep" />}
+
+            {/* Oval + icon */}
+            <div className="faceid-scan-oval">
+              {isSuccess ? (
+                <div className="faceid-scan-icon faceid-scan-icon--success">
+                  <CheckCircle2 size={52} />
+                </div>
+              ) : isFailed ? (
+                <div className="faceid-scan-icon faceid-scan-icon--failed">
+                  <XCircle size={52} />
+                </div>
+              ) : (
+                <div className={`faceid-scan-icon ${isScanning ? "faceid-scan-icon--scanning" : "faceid-scan-icon--idle"}`}>
+                  <ScanFace size={52} />
+                </div>
+              )}
+            </div>
+
+            {/* Status label */}
+            <div className="faceid-scan-status">
+              {isSuccess && <><CheckCircle2 size={14} /><span>Xác thực thành công</span></>}
+              {isFailed && <><XCircle size={14} /><span>Không nhận dạng được</span></>}
+              {scanStep === "idle" && <><ScanFace size={14} /><span>Nhìn thẳng vào camera</span></>}
+              {scanStep === "detecting" && <><Loader2 size={14} className="spin" /><span>Đang phát hiện khuôn mặt...</span></>}
+              {scanStep === "liveness" && <><Loader2 size={14} className="spin" /><span>Kiểm tra liveness...</span></>}
+              {scanStep === "matching" && <><Loader2 size={14} className="spin" /><span>Đang đối chiếu eKYC...</span></>}
+            </div>
+          </div>
+
+          {/* Step indicators */}
+          {(isScanning || isSuccess) && (
+            <div className="faceid-verify__steps">
+              {stepLabels.map((step, i) => {
+                const done = currentStepIdx > i || isSuccess;
+                const active = stepOrder[currentStepIdx] === step.key;
+                return (
+                  <div key={step.key} className={`faceid-step ${done ? "faceid-step--done" : active ? "faceid-step--active" : ""}`}>
+                    {done
+                      ? <CheckCircle2 size={13} />
+                      : active
+                        ? <Loader2 size={13} className="spin" />
+                        : <div className="faceid-step-dot" />
+                    }
+                    <span>{step.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* CTA */}
+          <div className="action-stack" style={{ marginTop: "20px" }}>
+            {scanStep === "idle" && (
+              <button type="button" className="faceid-scan-trigger" onClick={startScan} id="faceid-scan-btn">
+                <ScanFace size={20} />
+                Xác thực Face ID
+              </button>
+            )}
+            {isScanning && (
+              <button type="button" className="faceid-scan-trigger faceid-scan-trigger--scanning" disabled>
+                <Loader2 size={20} className="spin" />
+                Đang xác thực...
+              </button>
+            )}
+            {isFailed && (
+              <button type="button" className="faceid-scan-trigger faceid-scan-trigger--retry" onClick={startScan}>
+                <ScanFace size={20} />
+                Thử lại Face ID
+              </button>
+            )}
+            {isFailed && (
+              <button
+                type="button"
+                className="faceid-pin-fallback-link"
+                onClick={() => { setShowPinFallback(true); setScanStep("idle"); }}
+              >
+                <KeyRound size={14} />
+                Dùng mã PIN thay thế
+              </button>
+            )}
+            {isSuccess && isAiPending && (
+              <p className="faceid-pin-hint" role="status">
+                KNIGHT AI đang hoàn tất xác thực giao dịch...
+              </p>
+            )}
+            <PrimaryButton variant="secondary" onClick={onBack} disabled={isScanning || isSuccess}>
+              Quay lại chỉnh sửa
+            </PrimaryButton>
+          </div>
+        </>
+      ) : (
+        /* PIN Fallback */
+        <div className="faceid-pin-fallback">
+          <div className="faceid-pin-icon">
+            <KeyRound size={36} />
+          </div>
+          <h3>Nhập mã PIN giao dịch</h3>
+          <p>Nhập 6 số mã PIN để xác nhận chuyển tiền</p>
+
+          <div className={`pin-boxes ${pinError ? "pin-boxes--error" : ""}`}>
+            {pinDigits.map((digit, i) => (
+              <input
+                key={i}
+                ref={(el) => { pinBoxRefs.current[i] = el; }}
+                className="pin-box"
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={1}
+                value={digit}
+                autoFocus={i === 0}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                aria-label={`Số thứ ${i + 1}`}
+                onChange={(e) => handlePinDigitChange(i, e.target.value)}
+                onKeyDown={(e) => handlePinKeyDown(i, e)}
+                onPaste={i === 0 ? handlePinPaste : undefined}
+                onFocus={(e) => e.target.select()}
+              />
+            ))}
+          </div>
+
+          {pinError && <span className="faceid-pin-error">Mã PIN không đúng. Vui lòng thử lại.</span>}
+          <p className="faceid-pin-hint">Gợi ý demo: nhập <strong>123456</strong></p>
+
+          <div className="action-stack" style={{ marginTop: "16px" }}>
+            <PrimaryButton disabled={pinDigits.join("").length < 6 || isSuccess} onClick={handlePinSubmit}>
+              {isSuccess ? "Đã xác thực" : "Xác nhận PIN"}
+            </PrimaryButton>
+            <button type="button" className="faceid-pin-fallback-link" onClick={() => { setShowPinFallback(false); setPinDigits(["", "", "", "", "", ""]); }}>
+              <ScanFace size={14} />
+              Quay lại dùng Face ID
+            </button>
+            <PrimaryButton variant="secondary" onClick={onBack}>
+              Quay lại chỉnh sửa
+            </PrimaryButton>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ─── End FaceIdVerificationScreen ───────────────────────────────────────────
+
 interface BankDashboardProps {
   state: KnightScenarioState;
   selectedQtdnd: string;
@@ -117,10 +508,12 @@ export function BankDashboard({
     amountSignal,
     bankPickerOpen,
     bankSearch,
+    completeCompanionReviewedTransfer,
     completeTransfer,
     contentSignal,
     filteredTransferBanks,
     handleConfirmTransfer,
+    handleTransferFaceIdSuccess,
     handleNextStep,
     handleSelectSuggestion,
     hasTransferAmount,
@@ -147,6 +540,9 @@ export function BankDashboard({
     transferStep,
     isResolvingName,
     isRecipientVerified,
+    isTransferAiPending,
+    isTransferFaceIdOpen,
+    cancelTransferVerification,
     handleNextToDetails,
     isHumanReviewing,
     humanReviewStep,
@@ -171,9 +567,9 @@ export function BankDashboard({
     return stored === null ? true : stored === "granted";
   });
 
-  const [guardianLevelSetting, setGuardianLevelSetting] = useState<"max" | "standard" | "min">(() => {
+  const [guardianLevelSetting, setGuardianLevelSetting] = useState<GuardianLevelSetting>(() => {
     if (typeof window === "undefined") return "standard";
-    return (window.sessionStorage.getItem("knight_guardian_level") as "max" | "standard" | "min") || "standard";
+    return (window.sessionStorage.getItem("knight_guardian_level") as GuardianLevelSetting) || "standard";
   });
 
   useEffect(() => {
@@ -182,7 +578,7 @@ export function BankDashboard({
       setHasGuardianConsent(stored === null ? true : stored === "granted");
 
       const level = window.sessionStorage.getItem("knight_guardian_level");
-      setGuardianLevelSetting((level as "max" | "standard" | "min") || "standard");
+      setGuardianLevelSetting((level as GuardianLevelSetting) || "standard");
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
@@ -369,7 +765,7 @@ export function BankDashboard({
   };
 
   const renderTransfer = () => {
-    const levelSetting = typeof window !== "undefined" ? (window.sessionStorage.getItem("knight_guardian_level") as "max" | "standard" | "min") || "standard" : "standard";
+    const levelSetting = typeof window !== "undefined" ? (window.sessionStorage.getItem("knight_guardian_level") as GuardianLevelSetting) || "standard" : "standard";
 
     if (isHumanReviewing) {
       return (
@@ -758,7 +1154,9 @@ export function BankDashboard({
               {hasGuardianConsent ? (
                 <div className="transfer-warning-box">
                   <ShieldCheck size={16} />
-                  <span>Hệ thống bảo vệ KNIGHT AI sẽ kiểm tra giao dịch này.</span>
+                  <span>
+                    <strong>{getGuardianLevelLabel(levelSetting)}:</strong> KNIGHT {getGuardianLevelTransferCopy(levelSetting)}
+                  </span>
                 </div>
               ) : (
                 <div className="transfer-warning-box" style={{ background: "rgba(100, 116, 139, 0.06)", borderColor: "var(--color-line)", color: "var(--color-muted)" }}>
@@ -804,6 +1202,10 @@ export function BankDashboard({
               <span>Người nhận</span>
               <strong>{recipientSignal}</strong>
             </div>
+            <div>
+              <span>Cấp bảo vệ</span>
+              <strong>{getGuardianLevelLabel(levelSetting)}</strong>
+            </div>
           </div>
           <div className="confirmation-card">
             <div className="confirm-row">
@@ -838,6 +1240,31 @@ export function BankDashboard({
               Quay lại
             </PrimaryButton>
           </div>
+
+          {isTransferFaceIdOpen && (
+            <div className="transfer-faceid-backdrop" role="presentation">
+              <section
+                className="transfer-faceid-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Xác thực Face ID chuyển tiền"
+              >
+                <FaceIdVerificationScreen
+                  riskScore={latestGuardianDecision?.riskScore ?? 0}
+                  aiLevel={latestGuardianDecision ? getFriendlyAiLevel(latestGuardianDecision.aiLevel) : "Đang kiểm tra"}
+                  explanation={latestGuardianDecision?.explanation ?? "KNIGHT AI đang hoàn tất xác thực giao dịch song song với Face ID."}
+                  recipientName={transferRecipient}
+                  amount={Number(transferAmount)}
+                  onSuccess={handleTransferFaceIdSuccess}
+                  onBack={cancelTransferVerification}
+                  isPreCheck
+                  isAiPending={isTransferAiPending}
+                  autoStart
+                  isPopup
+                />
+              </section>
+            </div>
+          )}
         </div>
       );
     }
@@ -854,7 +1281,10 @@ export function BankDashboard({
 
     if (transferStep === "warning" && latestGuardianDecision) {
       const isMinLevel = levelSetting === "min";
-      const canProceed = !isMinLevel || liabilityAccepted;
+      const isCompanionLevel = levelSetting === "standard";
+      const shouldUseCompanionChecklist = isCompanionLevel && latestGuardianDecision.requiresChecklist;
+      const companionChecklistComplete = transferChecklist.every(Boolean);
+      const canProceed = isMinLevel ? liabilityAccepted : shouldUseCompanionChecklist ? companionChecklistComplete : true;
 
       return (
         <div className="tab-content dashboard-transfer guardian-transfer-review guardian-transfer-review--warning">
@@ -865,6 +1295,37 @@ export function BankDashboard({
             <span>Hệ thống AI: {getFriendlyAiLevel(latestGuardianDecision.aiLevel)}</span>
           </div>
           <p>{latestGuardianDecision.explanation}</p>
+
+          {isCompanionLevel && (
+            <div className="companion-policy-note">
+              <strong>Đồng hành đang hỗ trợ quyết định</strong>
+              <span>
+                KNIGHT chưa tự khóa tiền ở mức này. Hệ thống giữ bạn trong flow kiểm tra, đưa checklist ngắn và cho phép gọi Tổng đài nếu cần xác minh thủ công.
+              </span>
+            </div>
+          )}
+
+          {shouldUseCompanionChecklist && (
+            <div className="guardian-checklist transfer-companion-checklist" role="group" aria-label="Checklist Đồng hành">
+              {transferChecklistItems.map((item, index) => (
+                <label key={item}>
+                  <input
+                    type="checkbox"
+                    checked={transferChecklist[index]}
+                    onChange={() =>
+                      setTransferChecklist((current) =>
+                        current.map((checked, currentIndex) => (currentIndex === index ? !checked : checked)),
+                      )
+                    }
+                  />
+                  <span>{item}</span>
+                </label>
+              ))}
+              <p className="guardian-progress">
+                Đã xác nhận {transferChecklist.filter(Boolean).length}/{transferChecklistItems.length} mục
+              </p>
+            </div>
+          )}
 
           {isMinLevel && (
             <label className="liability-check" style={{
@@ -893,8 +1354,18 @@ export function BankDashboard({
           )}
 
           <div className="action-stack">
-            <PrimaryButton disabled={!canProceed} onClick={completeTransfer}>Tiếp tục chuyển tiền</PrimaryButton>
-            <PrimaryButton variant="secondary" onClick={() => {
+            <PrimaryButton
+              disabled={!canProceed}
+              onClick={shouldUseCompanionChecklist ? completeCompanionReviewedTransfer : completeTransfer}
+            >
+              {shouldUseCompanionChecklist ? "Hoàn tất checklist và tiếp tục" : "Tiếp tục chuyển tiền"}
+            </PrimaryButton>
+            {isCompanionLevel && (
+              <PrimaryButton variant="secondary" onClick={startHumanReview}>
+                Yêu cầu Tổng đài viên xác minh
+              </PrimaryButton>
+            )}
+            <PrimaryButton variant={isCompanionLevel ? "ghost" : "secondary"} onClick={() => {
               setLiabilityAccepted(false);
               setTransferStep("input_recipient");
             }}>
@@ -905,43 +1376,20 @@ export function BankDashboard({
       );
     }
 
-    if (transferStep === "verification" && latestGuardianDecision) {
-      const checklistComplete = transferChecklist.every(Boolean);
-
+    if (transferStep === "verification") {
       return (
-        <div className="tab-content dashboard-transfer guardian-transfer-review guardian-transfer-review--verification">
-          <Clock size={36} />
-          <h2>KNIGHT yêu cầu xác thực bổ sung</h2>
-          <div className="guardian-transfer-score">
-            <strong>Rủi ro: {latestGuardianDecision.riskScore}/100</strong>
-            <span>Hệ thống AI: {getFriendlyAiLevel(latestGuardianDecision.aiLevel)}</span>
-          </div>
-          <p>{latestGuardianDecision.explanation}</p>
-          <div className="guardian-checklist">
-            {transferChecklistItems.map((item, index) => (
-              <label key={item}>
-                <input
-                  type="checkbox"
-                  checked={transferChecklist[index]}
-                  onChange={(event) => {
-                    setTransferChecklist((current) =>
-                      current.map((value, itemIndex) => (itemIndex === index ? event.target.checked : value)),
-                    );
-                  }}
-                />
-                <span>{item}</span>
-              </label>
-            ))}
-          </div>
-          <div className="action-stack">
-            <PrimaryButton disabled={!checklistComplete} onClick={completeTransfer}>
-              Xác thực và chuyển tiền
-            </PrimaryButton>
-            <PrimaryButton variant="secondary" onClick={() => setTransferStep("input_details")}>
-              Quay lại chỉnh sửa
-            </PrimaryButton>
-          </div>
-        </div>
+        <FaceIdVerificationScreen
+          riskScore={latestGuardianDecision?.riskScore ?? 0}
+          aiLevel={latestGuardianDecision ? getFriendlyAiLevel(latestGuardianDecision.aiLevel) : "Đang kiểm tra"}
+          explanation={latestGuardianDecision?.explanation ?? "KNIGHT AI đang hoàn tất xác thực giao dịch song song với Face ID."}
+          recipientName={transferRecipient}
+          amount={Number(transferAmount)}
+          onSuccess={handleTransferFaceIdSuccess}
+          onBack={cancelTransferVerification}
+          isPreCheck
+          isAiPending={isTransferAiPending}
+          autoStart
+        />
       );
     }
 
@@ -1134,7 +1582,7 @@ export function BankDashboard({
           const cockpitClass = !hasGuardianConsent ? "ai-cockpit deactivated" : isUpgraded ? "ai-cockpit upgraded" : "ai-cockpit";
           const coreStatus = !hasGuardianConsent ? "Đã tắt" : isUpgraded ? "Bảo vệ tối đa" : "Đang bảo vệ";
           const responseVal = !hasGuardianConsent ? "--" : "Tức thì (< 0.25s)";
-          const policyLevel = !hasGuardianConsent ? "Bị tắt" : guardianLevelSetting === "min" ? "Tối thiểu" : guardianLevelSetting === "max" ? "Tối đa" : "Đồng hành";
+          const policyLevel = !hasGuardianConsent ? "Bị tắt" : getGuardianLevelLabel(guardianLevelSetting);
           const devicesVal = !hasGuardianConsent ? "--" : `${getDeviceName()} (Chính chủ)`;
           const logsVal = !hasGuardianConsent ? "--" : `Đã quét ${state.auditEvents.length} lần`;
           const networkVal = !hasGuardianConsent ? "--" : "Đường truyền an toàn";

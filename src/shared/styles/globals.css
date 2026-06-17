@@ -2939,7 +2939,7 @@ input:checked + .slider:before {
 
 .transfer-ai-confirm-panel {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
   border: 1px solid rgba(23, 92, 211, 0.16);
   border-radius: var(--radius-md);
@@ -3114,6 +3114,604 @@ input:checked + .slider:before {
   font-weight: 700;
 }
 
+.companion-policy-note {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  background: #eff6ff;
+}
+
+.companion-policy-note strong {
+  color: #1d4ed8;
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.companion-policy-note span {
+  color: #334155;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+.transfer-companion-checklist {
+  padding: 10px 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+}
+
+.transfer-companion-checklist label {
+  grid-template-columns: 18px 1fr;
+}
+
+.transfer-companion-checklist .guardian-progress {
+  margin: 2px 0 0;
+  font-size: var(--text-xs);
+}
+
+
+/* ── Face ID Verification Screen ──────────────────────────────────────────── */
+.faceid-verify-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px 28px;
+  align-items: stretch;
+}
+
+.transfer-faceid-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: ios-fade-in 0.22s ease-out both;
+}
+
+.transfer-faceid-dialog {
+  width: min(328px, calc(100vw - 44px));
+  max-height: min(720px, calc(100vh - 56px));
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+  color: var(--color-ink);
+  animation: ios-scale-up 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.faceid-verify-screen--popup {
+  gap: 13px;
+  padding: 18px;
+}
+
+.faceid-verify-screen--popup .faceid-verify__precheck-header {
+  justify-content: center;
+  text-align: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.faceid-verify-screen--popup .faceid-verify__precheck-icon {
+  display: none;
+}
+
+.faceid-verify-screen--popup .faceid-verify__precheck-title {
+  font-size: 18px;
+}
+
+.faceid-verify-screen--popup .faceid-verify__txn-summary,
+.faceid-verify-screen--popup .faceid-verify__steps {
+  display: none;
+}
+
+.faceid-verify-screen--popup .faceid-verify__scanner {
+  width: 168px;
+  height: 168px;
+}
+
+.faceid-verify-screen--popup .action-stack {
+  gap: 10px;
+}
+
+/* Pre-check header (standard flow — no risk info) */
+.faceid-verify__precheck-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+}
+
+.faceid-verify__precheck-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(23, 92, 211, 0.12), rgba(23, 92, 211, 0.06));
+  border: 1px solid rgba(23, 92, 211, 0.2);
+  display: grid;
+  place-items: center;
+  color: #1d4ed8;
+}
+
+.faceid-verify__precheck-title {
+  margin: 0 0 3px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+/* Risk header (AI-triggered flow) */
+.faceid-verify__header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faceid-verify__risk-badge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.faceid-verify__risk-badge span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.faceid-verify__ai-level {
+  color: #1d4ed8 !important;
+  border-color: rgba(29, 78, 216, 0.25) !important;
+  background: rgba(29, 78, 216, 0.06) !important;
+}
+
+.faceid-verify__explanation {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+/* Transaction summary card */
+.faceid-verify__txn-summary {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.25);
+}
+
+.faceid-verify__txn-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.faceid-verify__txn-row span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.faceid-verify__txn-row strong {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 700;
+  text-align: right;
+}
+
+.faceid-verify__txn-amount .faceid-verify__amount-value {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.3px;
+}
+
+/* ── Camera Scanner Box ── */
+.faceid-verify__scanner {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  background: #0a0e1a;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.faceid-verify__scanner--scanning {
+  border-color: rgba(0, 216, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 216, 255, 0.12), 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.faceid-verify__scanner--success {
+  border-color: rgba(31, 216, 154, 0.6);
+  box-shadow: 0 0 0 3px rgba(31, 216, 154, 0.15), 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.faceid-verify__scanner--failed {
+  border-color: rgba(255, 59, 48, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.1);
+}
+
+/* Corner brackets */
+.faceid-scan-brackets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.fsc-bracket {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+}
+
+.fsc-bracket--tl {
+  top: 10px; left: 10px;
+  border-top: 3px solid #00d8ff;
+  border-left: 3px solid #00d8ff;
+  border-radius: 4px 0 0 0;
+}
+
+.fsc-bracket--tr {
+  top: 10px; right: 10px;
+  border-top: 3px solid #00d8ff;
+  border-right: 3px solid #00d8ff;
+  border-radius: 0 4px 0 0;
+}
+
+.fsc-bracket--bl {
+  bottom: 10px; left: 10px;
+  border-bottom: 3px solid #00d8ff;
+  border-left: 3px solid #00d8ff;
+  border-radius: 0 0 0 4px;
+}
+
+.fsc-bracket--br {
+  bottom: 10px; right: 10px;
+  border-bottom: 3px solid #00d8ff;
+  border-right: 3px solid #00d8ff;
+  border-radius: 0 0 4px 0;
+}
+
+.faceid-verify__scanner--success .fsc-bracket {
+  border-color: #1fd89a;
+}
+
+/* Sweep animation */
+@keyframes faceid-sweep {
+  0% { top: 12%; opacity: 1; }
+  48% { opacity: 0.7; }
+  50% { top: 88%; }
+  51% { opacity: 0; }
+  52% { top: 12%; opacity: 0; }
+  53% { opacity: 1; }
+  100% { top: 88%; }
+}
+
+.faceid-scan-sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #00d8ff 40%, #00d8ff 60%, transparent 100%);
+  box-shadow: 0 0 10px 2px rgba(0, 216, 255, 0.5);
+  animation: faceid-sweep 1.4s ease-in-out infinite;
+  z-index: 2;
+}
+
+/* Oval area with face icon */
+.faceid-scan-oval {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.faceid-scan-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.faceid-scan-icon--idle {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.faceid-scan-icon--scanning {
+  color: #00d8ff;
+  filter: drop-shadow(0 0 8px rgba(0, 216, 255, 0.6));
+  animation: faceid-pulse-icon 1.2s ease-in-out infinite;
+}
+
+.faceid-scan-icon--success {
+  color: #1fd89a;
+  filter: drop-shadow(0 0 10px rgba(31, 216, 154, 0.7));
+  animation: faceid-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.faceid-scan-icon--failed {
+  color: #ff3b30;
+}
+
+@keyframes faceid-pulse-icon {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.85; }
+}
+
+@keyframes faceid-pop-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Status label at bottom of scanner */
+.faceid-scan-status {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.75);
+  z-index: 4;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 4px 10px;
+  margin: 0 10px;
+  border-radius: 99px;
+  backdrop-filter: blur(4px);
+}
+
+/* Step indicators */
+.faceid-verify__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+}
+
+.faceid-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+.faceid-step--done {
+  color: var(--color-success);
+}
+
+.faceid-step--active {
+  color: #1d4ed8;
+}
+
+.faceid-step-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-line);
+  flex-shrink: 0;
+}
+
+/* ── Main scan CTA button ── */
+.faceid-scan-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 52px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #175cd3 0%, #1e40af 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px rgba(23, 92, 211, 0.4);
+  letter-spacing: 0.2px;
+}
+
+.faceid-scan-trigger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(23, 92, 211, 0.5);
+}
+
+.faceid-scan-trigger:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.faceid-scan-trigger--scanning {
+  background: linear-gradient(135deg, #0f2f6b 0%, #1e3a7a 100%);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.75;
+}
+
+.faceid-scan-trigger--retry {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  box-shadow: 0 4px 16px rgba(180, 83, 9, 0.35);
+}
+
+/* ── PIN fallback link ── */
+.faceid-pin-fallback-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color 0.15s ease;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.faceid-pin-fallback-link:hover:not(:disabled) {
+  color: var(--color-ink);
+}
+
+.faceid-pin-fallback-link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── PIN Fallback Screen ── */
+.faceid-pin-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding-top: 8px;
+}
+
+.faceid-pin-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(23, 92, 211, 0.1), rgba(23, 92, 211, 0.05));
+  border: 1.5px solid rgba(23, 92, 211, 0.2);
+  display: grid;
+  place-items: center;
+  color: #1d4ed8;
+}
+
+.faceid-pin-fallback h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.faceid-pin-fallback p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+/* ── PIN OTP Boxes ── */
+.pin-boxes {
+  display: flex;
+  gap: clamp(6px, 2.5vw, 12px);
+  justify-content: center;
+  margin: 4px 0;
+  width: 100%;
+}
+
+.pin-box {
+  flex: 1;
+  min-width: 0;
+  max-width: 52px;
+  height: clamp(48px, 13vw, 56px);
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  border: 2px solid var(--color-line);
+  border-radius: 12px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  padding: 0;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  caret-color: transparent;
+  /* type=password handles masking natively on all browsers */
+}
+
+.pin-box:focus {
+  border-color: #175cd3;
+  box-shadow: 0 0 0 3px rgba(23, 92, 211, 0.15);
+  transform: scale(1.05);
+}
+
+.pin-box:not(:placeholder-shown) {
+  border-color: #175cd3;
+  background: rgba(23, 92, 211, 0.04);
+}
+
+/* Error state */
+.pin-boxes--error .pin-box {
+  border-color: #ff3b30;
+  background: rgba(255, 59, 48, 0.04);
+  animation: pin-box-shake 0.38s ease;
+}
+
+@keyframes pin-box-shake {
+  0%, 100% { transform: translateX(0); }
+  18%  { transform: translateX(-5px); }
+  36%  { transform: translateX(5px); }
+  54%  { transform: translateX(-3px); }
+  72%  { transform: translateX(3px); }
+}
+
+/* Pop-in when digit entered */
+@keyframes pin-box-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.pin-box:not(:placeholder-shown):focus {
+  animation: pin-box-pop 0.18s ease;
+}
+
+.faceid-pin-error {
+  font-size: 12px;
+  color: #ff3b30;
+  font-weight: 600;
+}
+
+.faceid-pin-hint {
+  font-size: 11px;
+  color: var(--color-muted);
+  margin: 0;
+}
+
+
+/* ── End FaceID CSS ── */
+
 @media (max-width: 440px) {
   .transfer-ai-grid,
   .transfer-ai-confirm-panel {
@@ -3124,6 +3722,7 @@ input:checked + .slider:before {
     min-height: auto;
   }
 }
+
 
 /* Success view receipt */
 .success-view {
