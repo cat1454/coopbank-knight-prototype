@@ -105,6 +105,28 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test("keeps bank logos legible in the compact transfer picker", async ({ page }) => {
+    await page.goto("/?env=test&capture=phone&shot=case&controls=0");
+
+    await page
+      .getByRole("navigation", { name: /thanh điều hướng chính/i })
+      .getByRole("button", { name: /chuyển tiền/i })
+      .click();
+    await page.getByRole("button", { name: /ngân hàng thụ hưởng/i }).click();
+    await page.getByRole("combobox", { name: /tìm ngân hàng/i }).fill("viet");
+
+    await expect(
+      page.getByRole("option", { name: /vietcombank ngân hàng tmcp ngoại thương việt nam/i }),
+    ).toBeVisible();
+
+    const logoImageBox = await page.locator(".bank-sheet__option .bank-sheet__logo img").first().boundingBox();
+    const logoShellBox = await page.locator(".bank-sheet__option .bank-sheet__logo").first().boundingBox();
+
+    expect(logoImageBox?.width ?? 0).toBeGreaterThanOrEqual(34);
+    expect(logoShellBox?.width ?? 0).toBeLessThanOrEqual(46);
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("renders required video shots across iPhone viewports", async ({ page }, testInfo) => {
     const shots = [
       { name: "alert", url: "/?env=test&capture=phone&shot=reason&controls=0", text: /giao dịch bất thường vừa bị chặn/i },

@@ -77,7 +77,7 @@ describe("BankDashboard GuardianFlow Decision Intelligence", () => {
     });
     expect(within(option).getByRole("img", { name: /logo vietcombank/i })).toHaveAttribute(
       "src",
-      "https://cdn.vietqr.io/img/VCB.png",
+      "/bank-logos/VCB.png",
     );
     expect(within(option).queryByText(/970436|BIN/i)).not.toBeInTheDocument();
 

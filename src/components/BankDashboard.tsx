@@ -3,6 +3,8 @@ import {
   AlertTriangle,
   Building2,
   ChevronDown,
+  Search,
+  X,
   Home,
   QrCode,
   History,
@@ -54,6 +56,10 @@ const transferChecklistItems = [
 
 const riskyTransferContentPattern = /dau tu|đầu tư|gap|gấp|bi mat|bí mật|hoan tien|hoàn tiền|thuong|thưởng|otp|crypto/i;
 
+function normalizeBankSearchText(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 export function BankDashboard({
   state,
   selectedQtdnd,
@@ -71,7 +77,7 @@ export function BankDashboard({
   // Transfer Step States
   const [transferStep, setTransferStep] = useState<"input" | "confirm" | "processing" | "warning" | "verification" | "held" | "success">("input");
   const [transferBank, setTransferBank] = useState(defaultTransferBank.displayName);
-  const [bankQuery, setBankQuery] = useState(defaultTransferBank.displayName);
+  const [bankSearch, setBankSearch] = useState("");
   const [bankPickerOpen, setBankPickerOpen] = useState(false);
   const [transferAccount, setTransferAccount] = useState("");
   const [transferRecipient, setTransferRecipient] = useState("");
@@ -91,13 +97,13 @@ export function BankDashboard({
   const transferAmountNumber = Number(transferAmount) || 0;
   const hasTransferAmount = transferAmountNumber > 0;
   const normalizedTransferContent = transferContent.trim();
-  const normalizedBankQuery = bankQuery.trim().toLowerCase();
+  const normalizedBankSearch = normalizeBankSearchText(bankSearch.trim());
   const selectedBank = transferBanks.find((bank) => bank.displayName === transferBank);
   const filteredTransferBanks = transferBanks
     .filter((bank) => {
-      if (!normalizedBankQuery) return true;
-      return [bank.displayName, bank.legalName, bank.code, bank.bin].some((value) =>
-        value.toLowerCase().includes(normalizedBankQuery),
+      if (!normalizedBankSearch) return true;
+      return [bank.displayName, bank.listTitle, bank.legalName, bank.code].some((value) =>
+        normalizeBankSearchText(value).includes(normalizedBankSearch),
       );
     })
     .slice(0, 8);
@@ -132,7 +138,7 @@ export function BankDashboard({
   // Suggested Beneficiaries
   const selectTransferBank = (bank: TransferBank) => {
     setTransferBank(bank.displayName);
-    setBankQuery(bank.displayName);
+    setBankSearch("");
     setBankPickerOpen(false);
   };
 
@@ -153,8 +159,7 @@ export function BankDashboard({
   };
 
   const handleNextStep = () => {
-    if (bankQuery.trim() && transferAccount && transferRecipient && transferAmount && transferContent) {
-      setTransferBank(bankQuery.trim());
+    if (transferBank && transferAccount && transferRecipient && transferAmount && transferContent) {
       setTransferStep("confirm");
     }
   };
@@ -189,7 +194,7 @@ export function BankDashboard({
         amountVnd: amountNum,
         recipientName: transferRecipient,
         recipientAccount: transferAccount,
-        recipientBank: bankQuery.trim() || transferBank,
+        recipientBank: transferBank,
         content: transferContent,
         location: isCriticalShape ? "Singapore" : "Da Nang",
         deviceTrust: isRiskRecipient || amountNum >= 10_000_000 ? "new" : "trusted",
@@ -439,9 +444,17 @@ export function BankDashboard({
 
           <div className="transfer-form">
             <div className="form-group">
-              <label htmlFor="bank-input" className="form-label">Ngân hàng thụ hưởng</label>
+              <span className="form-label">Ngân hàng thụ hưởng</span>
               <div className="bank-picker">
-                <div className="bank-picker__control">
+                <button
+                  type="button"
+                  className="bank-picker__trigger"
+                  aria-label={`Ngân hàng thụ hưởng ${transferBank}`}
+                  onClick={() => {
+                    setBankSearch("");
+                    setBankPickerOpen(true);
+                  }}
+                >
                   <span className="bank-picker__logo" aria-hidden="true">
                     {selectedBank ? (
                       <img src={selectedBank.logoUrl} alt="" referrerPolicy="no-referrer" />
@@ -449,88 +462,11 @@ export function BankDashboard({
                       <Building2 size={18} />
                     )}
                   </span>
-                  <input
-                    id="bank-input"
-                    role="combobox"
-                    aria-autocomplete="list"
-                    aria-expanded={bankPickerOpen}
-                    aria-controls="bank-options"
-                    aria-activedescendant={filteredTransferBanks[0] ? `bank-option-${filteredTransferBanks[0].code}` : undefined}
-                    className="bank-picker__input"
-                    placeholder="Nhập tên ngân hàng"
-                    value={bankQuery}
-                    onChange={(event) => {
-                      const nextValue = event.target.value;
-                      setBankQuery(nextValue);
-                      setTransferBank(nextValue);
-                      setBankPickerOpen(true);
-                    }}
-                    onFocus={() => setBankPickerOpen(true)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        setBankPickerOpen(false);
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="bank-picker__toggle"
-                    aria-label="Mở danh sách ngân hàng"
-                    onClick={() => setBankPickerOpen((current) => !current)}
-                  >
+                  <span className="bank-picker__trigger-text">{transferBank}</span>
+                  <span className="bank-picker__toggle" aria-hidden="true">
                     <ChevronDown size={17} aria-hidden="true" />
-                  </button>
-                </div>
-
-                {selectedBank && bankQuery === selectedBank.displayName ? (
-                  <div className="bank-picker__selected">
-                    <strong>{selectedBank.legalName}</strong>
-                    <span>BIN {selectedBank.bin} · {selectedBank.code}</span>
-                  </div>
-                ) : null}
-
-                {bankPickerOpen ? (
-                  <div className="bank-picker__options" role="listbox" id="bank-options" aria-label="Danh sách ngân hàng">
-                    {filteredTransferBanks.map((bank) => (
-                      <button
-                        type="button"
-                        role="option"
-                        id={`bank-option-${bank.code}`}
-                        aria-selected={bank.displayName === transferBank}
-                        className="bank-picker__option"
-                        key={bank.code}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => selectTransferBank(bank)}
-                      >
-                        <img src={bank.logoUrl} alt={`Logo ${bank.displayName}`} referrerPolicy="no-referrer" />
-                        <span>
-                          <strong>{bank.displayName}</strong>
-                          <small>{bank.legalName} · BIN {bank.bin}</small>
-                        </span>
-                      </button>
-                    ))}
-
-                    {filteredTransferBanks.length === 0 ? (
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected="false"
-                        className="bank-picker__option bank-picker__option--manual"
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => {
-                          setTransferBank(bankQuery.trim());
-                          setBankPickerOpen(false);
-                        }}
-                      >
-                        <Building2 size={18} aria-hidden="true" />
-                        <span>
-                          <strong>Dùng "{bankQuery.trim()}"</strong>
-                          <small>Không có logo xác thực từ VietQR, chỉ lưu tên nhập tay.</small>
-                        </span>
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -679,7 +615,7 @@ export function BankDashboard({
             </div>
             <div className="confirm-row">
               <span>Ngân hàng nhận</span>
-              <strong>{bankQuery.trim() || transferBank}</strong>
+              <strong>{transferBank}</strong>
             </div>
             <div className="confirm-row">
               <span>Số tiền chuyển</span>
@@ -824,7 +760,7 @@ export function BankDashboard({
             </div>
             <div className="receipt-row">
               <span>Ngân hàng nhận:</span>
-              <strong>{bankQuery.trim() || transferBank}</strong>
+              <strong>{transferBank}</strong>
             </div>
             <div className="receipt-row">
               <span>Mã giao dịch:</span>
@@ -1045,6 +981,94 @@ export function BankDashboard({
     );
   };
 
+  const renderBankPickerSheet = () => {
+    if (!bankPickerOpen) return null;
+
+    return (
+      <div
+        className="bank-sheet-backdrop"
+        role="presentation"
+        onMouseDown={() => {
+          setBankSearch("");
+          setBankPickerOpen(false);
+        }}
+      >
+        <section
+          className="bank-sheet"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bank-sheet-title"
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="bank-sheet__close"
+            aria-label="Đóng chọn ngân hàng"
+            onClick={() => {
+              setBankSearch("");
+              setBankPickerOpen(false);
+            }}
+          >
+            <X size={24} aria-hidden="true" />
+          </button>
+
+          <h2 id="bank-sheet-title">Bạn muốn chuyển khoản tới ngân hàng nào?</h2>
+
+          <div className="bank-sheet__search">
+            <span className="bank-sheet__search-icon" aria-hidden="true">
+              <Building2 size={18} />
+            </span>
+            <input
+              type="text"
+              role="combobox"
+              aria-label="Tìm ngân hàng"
+              aria-autocomplete="list"
+              aria-expanded="true"
+              aria-controls="bank-sheet-options"
+              placeholder="ngân hàng nào?"
+              value={bankSearch}
+              autoFocus
+              onChange={(event) => setBankSearch(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setBankSearch("");
+                  setBankPickerOpen(false);
+                }
+              }}
+            />
+            <Search size={19} aria-hidden="true" />
+          </div>
+
+          <div className="bank-sheet__list" role="listbox" id="bank-sheet-options" aria-label="Danh sách ngân hàng">
+            {filteredTransferBanks.map((bank) => (
+              <button
+                type="button"
+                role="option"
+                aria-label={`${bank.listTitle} ${bank.legalName}`}
+                aria-selected={bank.displayName === transferBank}
+                className="bank-sheet__option"
+                key={bank.code}
+                onClick={() => selectTransferBank(bank)}
+              >
+                <span className="bank-sheet__logo">
+                  <img src={bank.logoUrl} alt={`Logo ${bank.displayName}`} referrerPolicy="no-referrer" />
+                </span>
+                <span className="bank-sheet__copy">
+                  <strong>{bank.listTitle}</strong>
+                  <small>{bank.legalName}</small>
+                </span>
+              </button>
+            ))}
+
+            {filteredTransferBanks.length === 0 ? (
+              <p className="bank-sheet__empty">Không tìm thấy ngân hàng có logo xác thực.</p>
+            ) : null}
+          </div>
+        </section>
+      </div>
+    );
+  };
+
   return (
     <div className="dashboard-layout">
       <div className="dashboard-body">
@@ -1054,6 +1078,8 @@ export function BankDashboard({
         {activeTab === "history" && renderHistory()}
         {activeTab === "settings" && renderSettings()}
       </div>
+
+      {renderBankPickerSheet()}
 
       {/* Bottom Tab Bar */}
       <nav className="bottom-tabs" aria-label="Thanh điều hướng chính">
