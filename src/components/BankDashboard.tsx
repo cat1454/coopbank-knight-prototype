@@ -449,7 +449,11 @@ export function BankDashboard({
                 <button
                   type="button"
                   className="bank-picker__trigger"
-                  aria-label={`Ngân hàng thụ hưởng ${transferBank}`}
+                  aria-label={
+                    selectedBank
+                      ? `Ngân hàng thụ hưởng ${selectedBank.displayName} ${selectedBank.legalName}`
+                      : `Ngân hàng thụ hưởng ${transferBank}`
+                  }
                   onClick={() => {
                     setBankSearch("");
                     setBankPickerOpen(true);
@@ -462,7 +466,10 @@ export function BankDashboard({
                       <Building2 size={18} />
                     )}
                   </span>
-                  <span className="bank-picker__trigger-text">{transferBank}</span>
+                  <span className="bank-picker__trigger-text">
+                    <strong>{selectedBank?.listTitle ?? transferBank}</strong>
+                    {selectedBank ? <small>{selectedBank.legalName}</small> : null}
+                  </span>
                   <span className="bank-picker__toggle" aria-hidden="true">
                     <ChevronDown size={17} aria-hidden="true" />
                   </span>
