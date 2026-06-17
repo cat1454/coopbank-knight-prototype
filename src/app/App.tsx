@@ -449,7 +449,7 @@ export function App() {
       <div className="platform-content">
         <div className="workspace-layout">{renderDemoContent()}</div>
       </div>
-      {!isTestMode && queryParams.get("capture") !== "cyber-attack" && queryParams.get("shot") !== "cyber-attack" && (
+      {!isTestMode && queryParams.get("capture") !== "cyber-attack" && queryParams.get("shot") !== "cyber-attack" && queryParams.get("controls") !== "0" && captureMode !== "phone" && (
         <button
           className="cyber-toggle-btn"
           onClick={() => setShowCyberSimulation((prev) => !prev)}

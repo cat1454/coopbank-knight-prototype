@@ -562,6 +562,12 @@
   transition: all 0.3s ease;
 }
 
+@media (max-width: 768px) {
+  .cyber-toggle-btn {
+    display: none !important;
+  }
+}
+
 .cyber-toggle-btn:hover {
   background: var(--cyber-neon-cyan);
   color: #000;
