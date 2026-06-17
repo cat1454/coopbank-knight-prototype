@@ -2493,6 +2493,165 @@ input:checked + .slider:before {
   gap: var(--space-3);
 }
 
+.bank-picker {
+  position: relative;
+  display: grid;
+  gap: 8px;
+}
+
+.bank-picker__control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 50px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.bank-picker__control:focus-within {
+  border-color: #84caff;
+  box-shadow: 0 0 0 3px rgba(178, 221, 255, 0.55);
+}
+
+.bank-picker__logo {
+  display: grid;
+  width: 56px;
+  height: 36px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  margin-left: 8px;
+  background: #ffffff;
+  color: var(--color-muted);
+}
+
+.bank-picker__logo img,
+.bank-picker__option img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.bank-picker__input {
+  min-width: 0;
+  height: 48px;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  padding: 0 10px;
+  outline: 0;
+}
+
+.bank-picker__toggle {
+  display: grid;
+  width: 42px;
+  height: 48px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.bank-picker__selected {
+  display: grid;
+  gap: 2px;
+  border: 1px solid #d1e9ff;
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  background: #f5fbff;
+}
+
+.bank-picker__selected strong {
+  color: var(--color-ink);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.bank-picker__selected span {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 680;
+}
+
+.bank-picker__options {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 20;
+  display: grid;
+  max-height: 288px;
+  overflow-y: auto;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  box-shadow: 0 18px 44px rgba(16, 24, 40, 0.16);
+}
+
+.bank-picker__option {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid var(--color-line);
+  padding: 10px 12px;
+  background: #ffffff;
+  color: var(--color-ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.bank-picker__option:last-child {
+  border-bottom: 0;
+}
+
+.bank-picker__option:hover,
+.bank-picker__option[aria-selected="true"] {
+  background: #f5f8ff;
+}
+
+.bank-picker__option img {
+  width: 68px;
+  height: 42px;
+  padding: 4px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+}
+
+.bank-picker__option > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bank-picker__option strong {
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  line-height: 1.25;
+}
+
+.bank-picker__option small {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.bank-picker__option--manual {
+  grid-template-columns: 68px minmax(0, 1fr);
+}
+
+.bank-picker__option--manual > svg {
+  justify-self: center;
+  color: var(--color-muted);
+}
+
 .suggestion-box {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   AlertTriangle,
+  Building2,
+  ChevronDown,
   Home,
   QrCode,
   History,
@@ -26,6 +28,7 @@ import type { GuardianRiskDecision, KnightScenarioState } from "../domain/types"
 import { formatVnd } from "../domain/format";
 import { PrimaryButton } from "./PrimaryButton";
 import type { BankTransaction } from "../data/bankingDemo";
+import { defaultTransferBank, transferBanks, type TransferBank } from "../data/transferBanks";
 import { KnightAgentVisual } from "./KnightAgentVisual";
 import { disablePushNotifications, enablePushNotifications } from "../services/pushNotifications";
 import { evaluateGuardianTransaction } from "../domain/guardianFlow";
@@ -67,7 +70,9 @@ export function BankDashboard({
 
   // Transfer Step States
   const [transferStep, setTransferStep] = useState<"input" | "confirm" | "processing" | "warning" | "verification" | "held" | "success">("input");
-  const [transferBank, setTransferBank] = useState("Ngân hàng liên kết");
+  const [transferBank, setTransferBank] = useState(defaultTransferBank.displayName);
+  const [bankQuery, setBankQuery] = useState(defaultTransferBank.displayName);
+  const [bankPickerOpen, setBankPickerOpen] = useState(false);
   const [transferAccount, setTransferAccount] = useState("");
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
@@ -86,6 +91,16 @@ export function BankDashboard({
   const transferAmountNumber = Number(transferAmount) || 0;
   const hasTransferAmount = transferAmountNumber > 0;
   const normalizedTransferContent = transferContent.trim();
+  const normalizedBankQuery = bankQuery.trim().toLowerCase();
+  const selectedBank = transferBanks.find((bank) => bank.displayName === transferBank);
+  const filteredTransferBanks = transferBanks
+    .filter((bank) => {
+      if (!normalizedBankQuery) return true;
+      return [bank.displayName, bank.legalName, bank.code, bank.bin].some((value) =>
+        value.toLowerCase().includes(normalizedBankQuery),
+      );
+    })
+    .slice(0, 8);
   const hasRiskyTransferContent = riskyTransferContentPattern.test(normalizedTransferContent);
   const amountSignal =
     !hasTransferAmount
@@ -115,15 +130,21 @@ export function BankDashboard({
   ].filter(Boolean).length;
 
   // Suggested Beneficiaries
+  const selectTransferBank = (bank: TransferBank) => {
+    setTransferBank(bank.displayName);
+    setBankQuery(bank.displayName);
+    setBankPickerOpen(false);
+  };
+
   const handleSelectSuggestion = (type: "safe" | "fraud") => {
     if (type === "safe") {
-      setTransferBank("Ngân hàng liên kết");
+      selectTransferBank(defaultTransferBank);
       setTransferAccount("19038472910");
       setTransferRecipient("Nguyễn Văn B");
       setTransferAmount("200000");
       setTransferContent("Huynh Phuoc Phu chuyen tien");
     } else {
-      setTransferBank("Co-opBank");
+      selectTransferBank(defaultTransferBank);
       setTransferAccount("88884920412");
       setTransferRecipient("ShopMall Global");
       setTransferAmount("10000000");
@@ -132,7 +153,8 @@ export function BankDashboard({
   };
 
   const handleNextStep = () => {
-    if (transferBank && transferAccount && transferRecipient && transferAmount && transferContent) {
+    if (bankQuery.trim() && transferAccount && transferRecipient && transferAmount && transferContent) {
+      setTransferBank(bankQuery.trim());
       setTransferStep("confirm");
     }
   };
@@ -167,7 +189,7 @@ export function BankDashboard({
         amountVnd: amountNum,
         recipientName: transferRecipient,
         recipientAccount: transferAccount,
-        recipientBank: transferBank,
+        recipientBank: bankQuery.trim() || transferBank,
         content: transferContent,
         location: isCriticalShape ? "Singapore" : "Da Nang",
         deviceTrust: isRiskRecipient || amountNum >= 10_000_000 ? "new" : "trusted",
@@ -201,7 +223,7 @@ export function BankDashboard({
 
   const resetTransferForm = () => {
     setTransferStep("input");
-    setTransferBank("Ngân hàng liên kết");
+    selectTransferBank(defaultTransferBank);
     setTransferAccount("");
     setTransferRecipient("");
     setTransferAmount("");
@@ -417,19 +439,99 @@ export function BankDashboard({
 
           <div className="transfer-form">
             <div className="form-group">
-              <label htmlFor="bank-select" className="form-label">Ngân hàng thụ hưởng</label>
-              <select
-                id="bank-select"
-                className="form-control"
-                value={transferBank}
-                onChange={(e) => setTransferBank(e.target.value)}
-              >
-                <option value="Ngân hàng liên kết">Ngân hàng liên kết</option>
-                <option value="Vietcombank">Vietcombank</option>
-                <option value="Co-opBank">Co-opBank</option>
-                <option value="BIDV">BIDV</option>
-                <option value="Agribank">Agribank</option>
-              </select>
+              <label htmlFor="bank-input" className="form-label">Ngân hàng thụ hưởng</label>
+              <div className="bank-picker">
+                <div className="bank-picker__control">
+                  <span className="bank-picker__logo" aria-hidden="true">
+                    {selectedBank ? (
+                      <img src={selectedBank.logoUrl} alt="" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Building2 size={18} />
+                    )}
+                  </span>
+                  <input
+                    id="bank-input"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={bankPickerOpen}
+                    aria-controls="bank-options"
+                    aria-activedescendant={filteredTransferBanks[0] ? `bank-option-${filteredTransferBanks[0].code}` : undefined}
+                    className="bank-picker__input"
+                    placeholder="Nhập tên ngân hàng"
+                    value={bankQuery}
+                    onChange={(event) => {
+                      const nextValue = event.target.value;
+                      setBankQuery(nextValue);
+                      setTransferBank(nextValue);
+                      setBankPickerOpen(true);
+                    }}
+                    onFocus={() => setBankPickerOpen(true)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setBankPickerOpen(false);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="bank-picker__toggle"
+                    aria-label="Mở danh sách ngân hàng"
+                    onClick={() => setBankPickerOpen((current) => !current)}
+                  >
+                    <ChevronDown size={17} aria-hidden="true" />
+                  </button>
+                </div>
+
+                {selectedBank && bankQuery === selectedBank.displayName ? (
+                  <div className="bank-picker__selected">
+                    <strong>{selectedBank.legalName}</strong>
+                    <span>BIN {selectedBank.bin} · {selectedBank.code}</span>
+                  </div>
+                ) : null}
+
+                {bankPickerOpen ? (
+                  <div className="bank-picker__options" role="listbox" id="bank-options" aria-label="Danh sách ngân hàng">
+                    {filteredTransferBanks.map((bank) => (
+                      <button
+                        type="button"
+                        role="option"
+                        id={`bank-option-${bank.code}`}
+                        aria-selected={bank.displayName === transferBank}
+                        className="bank-picker__option"
+                        key={bank.code}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => selectTransferBank(bank)}
+                      >
+                        <img src={bank.logoUrl} alt={`Logo ${bank.displayName}`} referrerPolicy="no-referrer" />
+                        <span>
+                          <strong>{bank.displayName}</strong>
+                          <small>{bank.legalName} · BIN {bank.bin}</small>
+                        </span>
+                      </button>
+                    ))}
+
+                    {filteredTransferBanks.length === 0 ? (
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected="false"
+                        className="bank-picker__option bank-picker__option--manual"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setTransferBank(bankQuery.trim());
+                          setBankPickerOpen(false);
+                        }}
+                      >
+                        <Building2 size={18} aria-hidden="true" />
+                        <span>
+                          <strong>Dùng "{bankQuery.trim()}"</strong>
+                          <small>Không có logo xác thực từ VietQR, chỉ lưu tên nhập tay.</small>
+                        </span>
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <div className="form-group">
@@ -577,7 +679,7 @@ export function BankDashboard({
             </div>
             <div className="confirm-row">
               <span>Ngân hàng nhận</span>
-              <strong>{transferBank}</strong>
+              <strong>{bankQuery.trim() || transferBank}</strong>
             </div>
             <div className="confirm-row">
               <span>Số tiền chuyển</span>
@@ -722,7 +824,7 @@ export function BankDashboard({
             </div>
             <div className="receipt-row">
               <span>Ngân hàng nhận:</span>
-              <strong>{transferBank}</strong>
+              <strong>{bankQuery.trim() || transferBank}</strong>
             </div>
             <div className="receipt-row">
               <span>Mã giao dịch:</span>
