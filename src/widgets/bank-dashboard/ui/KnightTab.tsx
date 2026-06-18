@@ -1,20 +1,20 @@
 import { type Dispatch, type SetStateAction } from "react";
 import { CheckCircle2, Clock, LockKeyhole, ShieldCheck, Smartphone, Wifi } from "lucide-react";
 import type { KnightScenarioState } from "../../../domain/types";
-import { GuardianFlowPanel } from "../../../features/guardianflow-decision/ui/GuardianFlowPanel";
+import { ThreatLensPanel } from "../../../features/threatlens-decision/ui/ThreatLensPanel";
 import { KnightAgentVisual } from "../../knight-agent-visual/KnightAgentVisual";
 import type { BankTransferFlow } from "../useBankTransferFlow";
-import { getDeviceName, getGuardianLevelLabel, type GuardianLevelSetting } from "../model/dashboardCopy";
+import { getDeviceName, getThreatLensLevelLabel, type ThreatLensLevelSetting } from "../model/dashboardCopy";
 import "./SettingsTab.css";
 import "./KnightTab.css";
 
 interface KnightTabProps {
   state: KnightScenarioState;
-  hasGuardianConsent: boolean;
-  guardianLevelSetting: GuardianLevelSetting;
-  latestGuardianDecision: BankTransferFlow["latestGuardianDecision"];
+  hasThreatLensConsent: boolean;
+  threatLensLevelSetting: ThreatLensLevelSetting;
+  latestThreatLensDecision: BankTransferFlow["latestThreatLensDecision"];
   onStartDemo: () => void;
-  guardianDemoEnabled: boolean;
+  threatLensDemoEnabled: boolean;
   pushAlerts: boolean;
   pushStatus: "idle" | "saving" | "enabled" | "error";
   handlePushAlertsChange: (checked: boolean) => Promise<void>;
@@ -28,11 +28,11 @@ interface KnightTabProps {
 
 export function KnightTab({
   state,
-  hasGuardianConsent,
-  guardianLevelSetting,
-  latestGuardianDecision,
+  hasThreatLensConsent,
+  threatLensLevelSetting,
+  latestThreatLensDecision,
   onStartDemo,
-  guardianDemoEnabled,
+  threatLensDemoEnabled,
   pushAlerts,
   pushStatus,
   handlePushAlertsChange,
@@ -54,13 +54,13 @@ export function KnightTab({
       {/* Bảng điều khiển bảo mật AI Security Cockpit */}
       {(() => {
         const isUpgraded = state.currentState === "audit_complete";
-        const cockpitClass = !hasGuardianConsent ? "ai-cockpit deactivated" : isUpgraded ? "ai-cockpit upgraded" : "ai-cockpit";
-        const coreStatus = !hasGuardianConsent ? "Đã tắt" : isUpgraded ? "Bảo vệ tối đa" : "Đang bảo vệ";
-        const responseVal = !hasGuardianConsent ? "--" : "Tức thì (< 0.25s)";
-        const policyLevel = !hasGuardianConsent ? "Bị tắt" : getGuardianLevelLabel(guardianLevelSetting);
-        const devicesVal = !hasGuardianConsent ? "--" : `${getDeviceName()} (Chính chủ)`;
-        const logsVal = !hasGuardianConsent ? "--" : `Đã quét ${state.auditEvents.length} lần`;
-        const networkVal = !hasGuardianConsent ? "--" : "Đường truyền an toàn";
+        const cockpitClass = !hasThreatLensConsent ? "ai-cockpit deactivated" : isUpgraded ? "ai-cockpit upgraded" : "ai-cockpit";
+        const coreStatus = !hasThreatLensConsent ? "Đã tắt" : isUpgraded ? "Bảo vệ tối đa" : "Đang bảo vệ";
+        const responseVal = !hasThreatLensConsent ? "--" : "Tức thì (< 0.25s)";
+        const policyLevel = !hasThreatLensConsent ? "Bị tắt" : getThreatLensLevelLabel(threatLensLevelSetting);
+        const devicesVal = !hasThreatLensConsent ? "--" : `${getDeviceName()} (Chính chủ)`;
+        const logsVal = !hasThreatLensConsent ? "--" : `Đã quét ${state.auditEvents.length} lần`;
+        const networkVal = !hasThreatLensConsent ? "--" : "Đường truyền an toàn";
         
         return (
           <div className={cockpitClass}>
@@ -69,7 +69,7 @@ export function KnightTab({
               <strong>HỘ VỆ AI GIÁM SÁT AN TOÀN</strong>
             </div>
             <p className="ai-cockpit-desc">
-              {!hasGuardianConsent 
+              {!hasThreatLensConsent
                 ? "Vui lòng kích hoạt giám sát để Hộ vệ KNIGHT AI bảo vệ bạn."
                 : "KNIGHT AI đang chạy ngầm để quét và bảo vệ tài khoản của bạn."}
             </p>
@@ -118,7 +118,7 @@ export function KnightTab({
               </div>
             </div>
 
-            {hasGuardianConsent && (
+            {hasThreatLensConsent && (
               <button
                 type="button"
                 className="view-twin-btn"
@@ -132,9 +132,9 @@ export function KnightTab({
       })()}
 
       {/* Protection Levels */}
-      <GuardianFlowPanel
-        demoEnabled={guardianDemoEnabled}
-        latestDecision={latestGuardianDecision}
+      <ThreatLensPanel
+        demoEnabled={threatLensDemoEnabled}
+        latestDecision={latestThreatLensDecision}
         onEscalateToKnight={onStartDemo}
       />
 

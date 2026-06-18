@@ -1,4 +1,4 @@
-import type { GuardianRiskDecision, GuardianTransactionEvaluationInput } from "../../../domain/types";
+import type { ThreatLensRiskDecision, ThreatLensTransactionEvaluationInput } from "../../../domain/types";
 
 export type TransferStep =
   | "input_recipient"
@@ -10,7 +10,7 @@ export type TransferStep =
   | "held"
   | "success";
 
-export type GuardianLevelSetting = "max" | "standard" | "min";
+export type ThreatLensLevelSetting = "max" | "standard" | "min";
 
 export interface TransferSignal {
   tone: "neutral" | "success" | "warning" | "danger";
@@ -30,14 +30,14 @@ export function normalizeBankSearchText(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-export function isGuardianConsentOff() {
-  const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_guardianflow_consent") : null;
+export function isThreatLensConsentOff() {
+  const stored = typeof window !== "undefined" ? window.sessionStorage.getItem("knight_threatlens_consent") : null;
   return stored !== null && stored !== "granted";
 }
 
-export function getGuardianLevelSetting(): GuardianLevelSetting {
+export function getThreatLensLevelSetting(): ThreatLensLevelSetting {
   if (typeof window === "undefined") return "standard";
-  return (window.sessionStorage.getItem("knight_guardian_level") as GuardianLevelSetting) || "standard";
+  return (window.sessionStorage.getItem("knight_threatlens_level") as ThreatLensLevelSetting) || "standard";
 }
 
 export function getKnownRecipientName(account: string) {
@@ -135,13 +135,13 @@ export function countTransferIntakeSignals(values: Array<string | boolean>) {
   return values.filter(Boolean).length;
 }
 
-export function buildGuardianTransactionInput(params: {
+export function buildThreatLensTransactionInput(params: {
   amountVal: number;
   contentVal: string;
   recipientAccountVal: string;
   recipientNameVal: string;
   transferBank: string;
-}): GuardianTransactionEvaluationInput {
+}): ThreatLensTransactionEvaluationInput {
   const riskRecipient = isRiskRecipient(params.recipientAccountVal, params.recipientNameVal);
   const criticalShape = riskRecipient && params.amountVal >= 30_000_000;
 
@@ -162,10 +162,10 @@ export function buildGuardianTransactionInput(params: {
 }
 
 export function markDecisionAllowed(
-  decision: GuardianRiskDecision,
+  decision: ThreatLensRiskDecision,
   explanation: string,
   reasonCode: string,
-): GuardianRiskDecision {
+): ThreatLensRiskDecision {
   return {
     ...decision,
     aiLevel: "safe",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildMockExplanation } from "./explain.js";
 
-describe("GuardianFlow mock explanation", () => {
+describe("ThreatLens mock explanation", () => {
   it("keeps explanation short, Vietnamese, and independent from action decisions", () => {
     const result = buildMockExplanation({
       reasonCodes: ["amount_above_baseline", "new_device", "new_recipient"],

@@ -106,44 +106,44 @@
   justify-content: space-between;
   font-size: var(--text-sm);
 }
-.guardian-transfer-review--warning > svg {
+.threatlens-transfer-review--warning > svg {
   color: #b45309;
   background: #fffbeb;
 }
 
-.guardian-transfer-review--verification > svg {
+.threatlens-transfer-review--verification > svg {
   color: #1d4ed8;
   background: #eff6ff;
 }
 
-.guardian-transfer-review--held > svg {
+.threatlens-transfer-review--held > svg {
   color: #b91c1c;
   background: #fef2f2;
 }
 
-.guardian-transfer-review h2 {
+.threatlens-transfer-review h2 {
   margin: 0;
   color: var(--color-ink);
   font-size: var(--text-xl);
   line-height: 1.2;
 }
 
-.guardian-transfer-review p {
+.threatlens-transfer-review p {
   margin: 0;
   color: var(--color-muted);
   font-size: var(--text-sm);
   line-height: 1.55;
 }
 
-.guardian-transfer-score {
+.threatlens-transfer-score {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
 }
 
-.guardian-transfer-score strong,
-.guardian-transfer-score span {
+.threatlens-transfer-score strong,
+.threatlens-transfer-score span {
   min-height: 32px;
   display: inline-flex;
   align-items: center;
@@ -188,7 +188,7 @@
   grid-template-columns: 18px 1fr;
 }
 
-.transfer-companion-checklist .guardian-progress {
+.transfer-companion-checklist .threatlens-progress {
   margin: 2px 0 0;
   font-size: var(--text-xs);
 }

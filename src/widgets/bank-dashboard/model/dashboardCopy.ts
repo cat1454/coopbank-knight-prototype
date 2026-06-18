@@ -1,4 +1,4 @@
-export type GuardianLevelSetting = "max" | "standard" | "min";
+export type ThreatLensLevelSetting = "max" | "standard" | "min";
 
 export const getFriendlyAiLevel = (level: string) => {
   switch (level) {
@@ -18,13 +18,13 @@ export const getFriendlyPolicy = (policy: string) => {
   return policy;
 };
 
-export const getGuardianLevelLabel = (level: GuardianLevelSetting) => {
+export const getThreatLensLevelLabel = (level: ThreatLensLevelSetting) => {
   if (level === "min") return "Tối thiểu";
   if (level === "max") return "Tối đa";
   return "Đồng hành";
 };
 
-export const getGuardianLevelTransferCopy = (level: GuardianLevelSetting) => {
+export const getThreatLensLevelTransferCopy = (level: ThreatLensLevelSetting) => {
   if (level === "min") {
     return "chỉ cảnh báo mềm, bạn phải tự xác nhận trách nhiệm nếu vẫn muốn chuyển.";
   }

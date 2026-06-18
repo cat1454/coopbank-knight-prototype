@@ -8,12 +8,12 @@ import { transferChecklistItems, type BankTransferFlow } from "../useBankTransfe
 import {
   getFriendlyAiLevel,
   getFriendlyPolicy,
-  getGuardianLevelLabel,
-  getGuardianLevelTransferCopy,
-  type GuardianLevelSetting,
+  getThreatLensLevelLabel,
+  getThreatLensLevelTransferCopy,
+  type ThreatLensLevelSetting,
 } from "../model/dashboardCopy";
 import { FaceIdVerificationScreen } from "./FaceIdVerificationScreen";
-import "../../../features/guardianflow-decision/ui/GuardianFlowExtras.css";
+import "../../../features/threatlens-decision/ui/ThreatLensExtras.css";
 import "../BankDashboardModals.css";
 import "./TransferDependentFlow.css";
 import "./TransferTab.css";
@@ -25,7 +25,7 @@ import "./TransferReasonSummary.css";
 
 interface TransferTabProps {
   flow: BankTransferFlow;
-  hasGuardianConsent: boolean;
+  hasThreatLensConsent: boolean;
   liabilityAccepted: boolean;
   setLiabilityAccepted: Dispatch<SetStateAction<boolean>>;
   resetTransferForm: () => void;
@@ -35,7 +35,7 @@ interface TransferTabProps {
 
 export function TransferTab({
   flow,
-  hasGuardianConsent,
+  hasThreatLensConsent,
   liabilityAccepted,
   setLiabilityAccepted,
   resetTransferForm,
@@ -54,7 +54,7 @@ export function TransferTab({
     handleSelectSuggestion,
     hasTransferAmount,
     intakeSignalCount,
-    latestGuardianDecision,
+    latestThreatLensDecision,
     recipientSignal,
     selectedBank,
     setBankPickerOpen,
@@ -75,7 +75,7 @@ export function TransferTab({
     isResolvingName,
     isRecipientVerified,
     isRecipientRisky,
-    cachedGuardianDecision,
+    cachedThreatLensDecision,
     isTransferAiPending,
     isTransferFaceIdOpen,
     cancelTransferVerification,
@@ -85,7 +85,7 @@ export function TransferTab({
     completeHumanReview,
   } = flow;
 
-    const levelSetting = typeof window !== "undefined" ? (window.sessionStorage.getItem("knight_guardian_level") as GuardianLevelSetting) || "standard" : "standard";
+    const levelSetting = typeof window !== "undefined" ? (window.sessionStorage.getItem("knight_threatlens_level") as ThreatLensLevelSetting) || "standard" : "standard";
 
     if (isHumanReviewing) {
       return (
@@ -223,7 +223,7 @@ export function TransferTab({
         <div className="tab-content dashboard-transfer">
           <h2 className="section-title">Chuyển tiền nhanh 24/7</h2>
           
-          {hasGuardianConsent && (
+          {hasThreatLensConsent && (
             <>
               <section className="transfer-ai-banner" aria-label="KNIGHT transfer intake">
                 <div className="transfer-ai-banner__header">
@@ -348,7 +348,7 @@ export function TransferTab({
                     </div>
 
                     {/* Early risk detection banners */}
-                    {hasGuardianConsent && isRecipientRisky && (
+                    {hasThreatLensConsent && isRecipientRisky && (
                       <div className="ai-early-warning danger">
                         <AlertTriangle size={18} />
                         <div>
@@ -357,7 +357,7 @@ export function TransferTab({
                         </div>
                       </div>
                     )}
-                    {hasGuardianConsent && transferRecipient.toLowerCase().includes("nguyễn văn b") && (
+                    {hasThreatLensConsent && transferRecipient.toLowerCase().includes("nguyễn văn b") && (
                       <div className="ai-early-warning success">
                         <ShieldCheck size={18} />
                         <div>
@@ -411,7 +411,7 @@ export function TransferTab({
                     onChange={(e) => setTransferAmount(e.target.value)}
                   />
                 </div>
-                {hasGuardianConsent && hasTransferAmount && (
+                {hasThreatLensConsent && hasTransferAmount && (
                   <div className="transfer-field-signal">
                     <strong>Đánh giá số tiền</strong>
                     <span>{amountSignal.detail}</span>
@@ -445,7 +445,7 @@ export function TransferTab({
                   value={transferContent}
                   onChange={(e) => setTransferContent(e.target.value)}
                 />
-                {hasGuardianConsent && transferContent && (
+                {hasThreatLensConsent && transferContent && (
                   <div className={`transfer-field-signal transfer-field-signal--${contentSignal.tone}`}>
                     <strong>Đánh giá nội dung</strong>
                     <span>{contentSignal.detail}</span>
@@ -471,11 +471,11 @@ export function TransferTab({
                 </div>
               </div>
 
-              {hasGuardianConsent ? (
+              {hasThreatLensConsent ? (
                 <div className="transfer-warning-box">
                   <ShieldCheck size={16} />
                   <span>
-                    <strong>{getGuardianLevelLabel(levelSetting)}:</strong> KNIGHT {getGuardianLevelTransferCopy(levelSetting)}
+                    <strong>{getThreatLensLevelLabel(levelSetting)}:</strong> KNIGHT {getThreatLensLevelTransferCopy(levelSetting)}
                   </span>
                 </div>
               ) : (
@@ -524,27 +524,27 @@ export function TransferTab({
             </div>
             <div>
               <span>Cấp bảo vệ</span>
-              <strong>{getGuardianLevelLabel(levelSetting)}</strong>
+              <strong>{getThreatLensLevelLabel(levelSetting)}</strong>
             </div>
           </div>
 
           {/* AI Reason Summary Box */}
-          {hasGuardianConsent ? (
+          {hasThreatLensConsent ? (
             <div className={`transfer-ai-reason-summary transfer-ai-reason-summary--${
               isTransferAiPending 
                 ? "pending" 
-                : cachedGuardianDecision?.aiLevel === "safe"
+                : cachedThreatLensDecision?.aiLevel === "safe"
                   ? "safe"
-                  : cachedGuardianDecision?.aiLevel === "watch"
+                  : cachedThreatLensDecision?.aiLevel === "watch"
                     ? "watch"
                     : "danger"
             }`}>
               <div className={`transfer-ai-reason-header transfer-ai-reason-header--${
                 isTransferAiPending 
                   ? "pending" 
-                  : cachedGuardianDecision?.aiLevel === "safe"
+                  : cachedThreatLensDecision?.aiLevel === "safe"
                     ? "safe"
-                    : cachedGuardianDecision?.aiLevel === "watch"
+                    : cachedThreatLensDecision?.aiLevel === "watch"
                       ? "watch"
                       : "danger"
               }`}>
@@ -555,8 +555,8 @@ export function TransferTab({
                 <span className="animate-pulse" style={{ color: "var(--color-muted)" }}>
                   Đang quét dấu hiệu bảo mật & thói quen giao dịch...
                 </span>
-              ) : cachedGuardianDecision ? (
-                <span>{cachedGuardianDecision.explanation}</span>
+              ) : cachedThreatLensDecision ? (
+                <span>{cachedThreatLensDecision.explanation}</span>
               ) : (
                 <span style={{ color: "var(--color-muted)" }}>
                   KNIGHT AI đang kiểm tra song song: Các chỉ số an toàn hiện tại nằm trong nhịp thói quen của bạn.
@@ -612,9 +612,9 @@ export function TransferTab({
                 aria-label="Xác thực Face ID chuyển tiền"
               >
                 <FaceIdVerificationScreen
-                  riskScore={latestGuardianDecision?.riskScore ?? 0}
-                  aiLevel={latestGuardianDecision ? getFriendlyAiLevel(latestGuardianDecision.aiLevel) : "Đang kiểm tra"}
-                  explanation={latestGuardianDecision?.explanation ?? "KNIGHT AI đang hoàn tất xác thực giao dịch song song với Face ID."}
+                  riskScore={latestThreatLensDecision?.riskScore ?? 0}
+                  aiLevel={latestThreatLensDecision ? getFriendlyAiLevel(latestThreatLensDecision.aiLevel) : "Đang kiểm tra"}
+                  explanation={latestThreatLensDecision?.explanation ?? "KNIGHT AI đang hoàn tất xác thực giao dịch song song với Face ID."}
                   recipientName={transferRecipient}
                   amount={Number(transferAmount)}
                   onSuccess={handleTransferFaceIdSuccess}
@@ -641,22 +641,22 @@ export function TransferTab({
       );
     }
 
-    if (transferStep === "warning" && latestGuardianDecision) {
+    if (transferStep === "warning" && latestThreatLensDecision) {
       const isMinLevel = levelSetting === "min";
       const isCompanionLevel = levelSetting === "standard";
-      const shouldUseCompanionChecklist = isCompanionLevel && latestGuardianDecision.requiresChecklist;
+      const shouldUseCompanionChecklist = isCompanionLevel && latestThreatLensDecision.requiresChecklist;
       const companionChecklistComplete = transferChecklist.every(Boolean);
       const canProceed = isMinLevel ? liabilityAccepted : shouldUseCompanionChecklist ? companionChecklistComplete : true;
 
       return (
-        <div className="tab-content dashboard-transfer guardian-transfer-review guardian-transfer-review--warning">
+        <div className="tab-content dashboard-transfer threatlens-transfer-review threatlens-transfer-review--warning">
           <AlertTriangle size={36} />
           <h2>KNIGHT cảnh báo giao dịch</h2>
-          <div className="guardian-transfer-score">
-            <strong>Rủi ro: {latestGuardianDecision.riskScore}/100</strong>
-            <span>Hệ thống AI: {getFriendlyAiLevel(latestGuardianDecision.aiLevel)}</span>
+          <div className="threatlens-transfer-score">
+            <strong>Rủi ro: {latestThreatLensDecision.riskScore}/100</strong>
+            <span>Hệ thống AI: {getFriendlyAiLevel(latestThreatLensDecision.aiLevel)}</span>
           </div>
-          <p>{latestGuardianDecision.explanation}</p>
+          <p>{latestThreatLensDecision.explanation}</p>
 
           {isCompanionLevel && (
             <div className="companion-policy-note">
@@ -668,7 +668,7 @@ export function TransferTab({
           )}
 
           {shouldUseCompanionChecklist && (
-            <div className="guardian-checklist transfer-companion-checklist" role="group" aria-label="Checklist Đồng hành">
+            <div className="threatlens-checklist transfer-companion-checklist" role="group" aria-label="Checklist Đồng hành">
               {transferChecklistItems.map((item, index) => (
                 <label key={item}>
                   <input
@@ -683,7 +683,7 @@ export function TransferTab({
                   <span>{item}</span>
                 </label>
               ))}
-              <p className="guardian-progress">
+              <p className="threatlens-progress">
                 Đã xác nhận {transferChecklist.filter(Boolean).length}/{transferChecklistItems.length} mục
               </p>
             </div>
@@ -741,9 +741,9 @@ export function TransferTab({
     if (transferStep === "verification") {
       return (
         <FaceIdVerificationScreen
-          riskScore={latestGuardianDecision?.riskScore ?? 0}
-          aiLevel={latestGuardianDecision ? getFriendlyAiLevel(latestGuardianDecision.aiLevel) : "Đang kiểm tra"}
-          explanation={latestGuardianDecision?.explanation ?? "KNIGHT AI đang hoàn tất xác thực giao dịch song song với Face ID."}
+          riskScore={latestThreatLensDecision?.riskScore ?? 0}
+          aiLevel={latestThreatLensDecision ? getFriendlyAiLevel(latestThreatLensDecision.aiLevel) : "Đang kiểm tra"}
+          explanation={latestThreatLensDecision?.explanation ?? "KNIGHT AI đang hoàn tất xác thực giao dịch song song với Face ID."}
           recipientName={transferRecipient}
           amount={Number(transferAmount)}
           onSuccess={handleTransferFaceIdSuccess}
@@ -755,20 +755,20 @@ export function TransferTab({
       );
     }
 
-    if (transferStep === "held" && latestGuardianDecision) {
+    if (transferStep === "held" && latestThreatLensDecision) {
       return (
-        <div className="tab-content dashboard-transfer guardian-transfer-review guardian-transfer-review--held">
+        <div className="tab-content dashboard-transfer threatlens-transfer-review threatlens-transfer-review--held">
           <LockKeyhole size={36} />
           <h2>Giao dịch tạm thời bị giữ lại</h2>
-          <div className="guardian-transfer-score">
-            <strong>Rủi ro: {latestGuardianDecision.riskScore}/100</strong>
-            <span>Hệ thống AI: {getFriendlyAiLevel(latestGuardianDecision.aiLevel)}</span>
-            <span>Cách xử lý: {getFriendlyPolicy(latestGuardianDecision.policyLevel)}</span>
+          <div className="threatlens-transfer-score">
+            <strong>Rủi ro: {latestThreatLensDecision.riskScore}/100</strong>
+            <span>Hệ thống AI: {getFriendlyAiLevel(latestThreatLensDecision.aiLevel)}</span>
+            <span>Cách xử lý: {getFriendlyPolicy(latestThreatLensDecision.policyLevel)}</span>
           </div>
-          <p>{latestGuardianDecision.explanation}</p>
-          <p className="guardian-reference">Mã tham chiếu: {latestGuardianDecision.transactionId}</p>
+          <p>{latestThreatLensDecision.explanation}</p>
+          <p className="threatlens-reference">Mã tham chiếu: {latestThreatLensDecision.transactionId}</p>
           
-          <div className="guardian-legal-notice" style={{
+          <div className="threatlens-legal-notice" style={{
             background: "rgba(125, 211, 252, 0.05)",
             padding: "10px",
             borderRadius: "8px",

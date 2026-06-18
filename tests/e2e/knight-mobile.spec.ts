@@ -87,8 +87,8 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test("runs GuardianFlow Decision Intelligence demo scenarios", async ({ page }) => {
-    await page.evaluate(() => window.sessionStorage.setItem("knight_guardianflow_consent", "withdrawn"));
+  test("runs ThreatLens Decision Intelligence demo scenarios", async ({ page }) => {
+    await page.evaluate(() => window.sessionStorage.setItem("knight_threatlens_consent", "withdrawn"));
     await page.goto("/?env=test&capture=phone&shot=case&demo=true&controls=0");
 
     await page.getByRole("button", { name: /hộ vệ ai/i }).click();
@@ -110,9 +110,9 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
     await page.getByRole("button", { name: /chạy scenario/i }).click();
 
     await expect(page.getByRole("heading", { name: /giao dịch tạm thời bị giữ lại/i })).toBeVisible();
-    await expect(page.getByText(/GF-CRITICAL_RISK-001/i)).toBeVisible();
+    await expect(page.getByText(/TL-CRITICAL_RISK-001/i)).toBeVisible();
     await page.getByRole("button", { name: /xem chi tiết phân tích/i }).click();
-    await expect(page.getByLabel(/GuardianFlow agent console/i)).toBeVisible();
+    await expect(page.getByLabel(/ThreatLens agent console/i)).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 

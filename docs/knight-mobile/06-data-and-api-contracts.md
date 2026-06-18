@@ -52,17 +52,17 @@ interface RiskAssessment {
 }
 ```
 
-## GuardianFlow Decision Intelligence
+## ThreatLens Decision Intelligence
 
 ```ts
-type GuardianAiLevel = "safe" | "watch" | "verify" | "hold" | "critical";
-type GuardianDecisionSource = "scenario" | "transaction";
+type ThreatLensAiLevel = "safe" | "watch" | "verify" | "hold" | "critical";
+type ThreatLensDecisionSource = "scenario" | "transaction";
 
-interface GuardianRiskDecision {
+interface ThreatLensRiskDecision {
   transactionId: string;
-  source: GuardianDecisionSource;
-  scenarioId?: GuardianScenarioId;
-  aiLevel: GuardianAiLevel;
+  source: ThreatLensDecisionSource;
+  scenarioId?: ThreatLensScenarioId;
+  aiLevel: ThreatLensAiLevel;
   policyLevel: PolicyLevel;
   riskScore: number;
   knightScore: number;
@@ -74,7 +74,7 @@ interface GuardianRiskDecision {
   requiresReview: boolean;
 }
 
-interface GuardianTransactionEvaluationInput {
+interface ThreatLensTransactionEvaluationInput {
   amountVnd: number;
   recipientName: string;
   recipientAccount: string;

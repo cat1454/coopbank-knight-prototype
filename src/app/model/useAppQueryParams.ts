@@ -17,11 +17,11 @@ export function useAppQueryParams() {
   }, [queryParams]);
 
   const requestedShot = queryParams.get("shot");
-  const guardianDemoEnabled = queryParams.get("demo") === "true";
+  const threatLensDemoEnabled = queryParams.get("demo") === "true";
 
   return {
     captureMode,
-    guardianDemoEnabled,
+    threatLensDemoEnabled,
     isTestMode,
     queryParams,
     requestedShot,

@@ -10,9 +10,9 @@ import { HomeTab } from "./ui/HomeTab";
 import { KnightTab } from "./ui/KnightTab";
 import { SettingsTab } from "./ui/SettingsTab";
 import { TransferTab } from "./ui/TransferTab";
-import type { GuardianLevelSetting } from "./model/dashboardCopy";
+import type { ThreatLensLevelSetting } from "./model/dashboardCopy";
 import { fetchTwinExplain, type TwinExplainResponse } from "../../shared/api/twin";
-import { TwinProfileModal } from "../../features/guardianflow-decision/ui/TwinProfileModal";
+import { TwinProfileModal } from "../../features/threatlens-decision/ui/TwinProfileModal";
 import { transferBanks } from "../../entities/bank/model/transferBanks";
 import "./BankDashboard.css";
 
@@ -25,7 +25,7 @@ interface BankDashboardProps {
   setBalance: Dispatch<SetStateAction<number>>;
   transactions: BankTransaction[];
   setTransactions: Dispatch<SetStateAction<BankTransaction[]>>;
-  guardianDemoEnabled?: boolean;
+  threatLensDemoEnabled?: boolean;
 }
 
 export function BankDashboard({
@@ -37,7 +37,7 @@ export function BankDashboard({
   setBalance,
   transactions,
   setTransactions,
-  guardianDemoEnabled = false,
+  threatLensDemoEnabled = false,
 }: BankDashboardProps) {
   const [activeTab, setActiveTab] = useState<BankDashboardTab>("home");
   const [balanceVisible, setBalanceVisible] = useState(false);
@@ -46,7 +46,7 @@ export function BankDashboard({
     bankPickerOpen,
     bankSearch,
     filteredTransferBanks,
-    latestGuardianDecision,
+    latestThreatLensDecision,
     resetTransferFields,
     selectTransferBank,
     setBankPickerOpen,
@@ -65,22 +65,22 @@ export function BankDashboard({
   const [pushMessage, setPushMessage] = useState("Thêm vào Màn hình chính, mở từ biểu tượng KNIGHT, rồi bật thông báo.");
 
   // Sync consent state to gray out visual/cockpit panel when deactivated
-  const [hasGuardianConsent, setHasGuardianConsent] = useState(() => {
+  const [hasThreatLensConsent, setHasThreatLensConsent] = useState(() => {
     if (typeof window === "undefined") return true;
-    const stored = window.sessionStorage.getItem("knight_guardianflow_consent");
+    const stored = window.sessionStorage.getItem("knight_threatlens_consent");
     return stored === null ? true : stored === "granted";
   });
 
-  const [guardianLevelSetting, setGuardianLevelSetting] = useState<GuardianLevelSetting>(() => {
+  const [threatLensLevelSetting, setThreatLensLevelSetting] = useState<ThreatLensLevelSetting>(() => {
     if (typeof window === "undefined") return "standard";
-    return (window.sessionStorage.getItem("knight_guardian_level") as GuardianLevelSetting) || "standard";
+    return (window.sessionStorage.getItem("knight_threatlens_level") as ThreatLensLevelSetting) || "standard";
   });
 
   const [twinExplain, setTwinExplain] = useState<TwinExplainResponse | null>(null);
   const [isTwinOpen, setIsTwinOpen] = useState(false);
 
   useEffect(() => {
-    if (!hasGuardianConsent) return;
+    if (!hasThreatLensConsent) return;
 
     let isMounted = true;
     void fetchTwinExplain("CID-001").then((res) => {
@@ -90,15 +90,15 @@ export function BankDashboard({
     return () => {
       isMounted = false;
     };
-  }, [hasGuardianConsent, state.currentState, isTwinOpen]);
+  }, [hasThreatLensConsent, state.currentState, isTwinOpen]);
 
   useEffect(() => {
     const handleStorage = () => {
-      const stored = window.sessionStorage.getItem("knight_guardianflow_consent");
-      setHasGuardianConsent(stored === null ? true : stored === "granted");
+      const stored = window.sessionStorage.getItem("knight_threatlens_consent");
+      setHasThreatLensConsent(stored === null ? true : stored === "granted");
 
-      const level = window.sessionStorage.getItem("knight_guardian_level");
-      setGuardianLevelSetting((level as GuardianLevelSetting) || "standard");
+      const level = window.sessionStorage.getItem("knight_threatlens_level");
+      setThreatLensLevelSetting((level as ThreatLensLevelSetting) || "standard");
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
@@ -145,7 +145,7 @@ export function BankDashboard({
             balance={balance}
             balanceVisible={balanceVisible}
             setBalanceVisible={setBalanceVisible}
-            hasGuardianConsent={hasGuardianConsent}
+            hasThreatLensConsent={hasThreatLensConsent}
             onLogout={onLogout}
             setActiveTab={setActiveTab}
           />
@@ -154,7 +154,7 @@ export function BankDashboard({
         {activeTab === "transfer" && (
           <TransferTab
             flow={transferFlow}
-            hasGuardianConsent={hasGuardianConsent}
+            hasThreatLensConsent={hasThreatLensConsent}
             liabilityAccepted={liabilityAccepted}
             setLiabilityAccepted={setLiabilityAccepted}
             resetTransferForm={resetTransferForm}
@@ -165,11 +165,11 @@ export function BankDashboard({
         {activeTab === "knight" && (
           <KnightTab
             state={state}
-            hasGuardianConsent={hasGuardianConsent}
-            guardianLevelSetting={guardianLevelSetting}
-            latestGuardianDecision={latestGuardianDecision}
+            hasThreatLensConsent={hasThreatLensConsent}
+            threatLensLevelSetting={threatLensLevelSetting}
+            latestThreatLensDecision={latestThreatLensDecision}
             onStartDemo={onStartDemo}
-            guardianDemoEnabled={guardianDemoEnabled}
+            threatLensDemoEnabled={threatLensDemoEnabled}
             pushAlerts={pushAlerts}
             pushStatus={pushStatus}
             handlePushAlertsChange={handlePushAlertsChange}
@@ -208,7 +208,7 @@ export function BankDashboard({
       <TwinProfileModal
         isOpen={isTwinOpen}
         onClose={() => setIsTwinOpen(false)}
-        twinExplain={hasGuardianConsent ? twinExplain : null}
+        twinExplain={hasThreatLensConsent ? twinExplain : null}
         onRefreshTwin={() => {
           void fetchTwinExplain("CID-001").then((res) => {
             if (res) setTwinExplain(res);

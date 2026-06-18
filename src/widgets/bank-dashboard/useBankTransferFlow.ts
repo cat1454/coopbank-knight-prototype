@@ -1,17 +1,17 @@
 import { useState, useRef, type Dispatch, type SetStateAction } from "react";
-import type { GuardianRiskDecision } from "../../domain/types";
-import { evaluateGuardianTransaction } from "../../domain/guardianFlow";
+import type { ThreatLensRiskDecision } from "../../domain/types";
+import { evaluateThreatLensTransaction } from "../../domain/threatLens";
 import type { BankTransaction } from "../../entities/bank-account/model/bankingDemo";
 import { defaultTransferBank, transferBanks, type TransferBank } from "../../entities/bank/model/transferBanks";
 import {
-  buildGuardianTransactionInput,
+  buildThreatLensTransactionInput,
   countTransferIntakeSignals,
-  getGuardianLevelSetting,
+  getThreatLensLevelSetting,
   getKnownRecipientName,
   getRecipientSignal,
   getTransferAmountSignal,
   getTransferContentSignal,
-  isGuardianConsentOff,
+  isThreatLensConsentOff,
   isRiskRecipient,
   markDecisionAllowed,
   normalizeBankSearchText,
@@ -35,11 +35,11 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [transferContent, setTransferContent] = useState("");
-  const [latestGuardianDecision, setLatestGuardianDecision] = useState<GuardianRiskDecision | null>(null);
+  const [latestThreatLensDecision, setLatestThreatLensDecision] = useState<ThreatLensRiskDecision | null>(null);
   const [transferChecklist, setTransferChecklist] = useState<boolean[]>(() => transferChecklistItems.map(() => false));
   const [isResolvingName, setIsResolvingName] = useState(false);
   const [isRecipientVerified, setIsRecipientVerified] = useState(false);
-  const [cachedGuardianDecision, setCachedGuardianDecision] = useState<GuardianRiskDecision | null>(null);
+  const [cachedThreatLensDecision, setCachedThreatLensDecision] = useState<ThreatLensRiskDecision | null>(null);
   const [isTransferAiPending, setIsTransferAiPending] = useState(false);
   const [isTransferFaceIdOpen, setIsTransferFaceIdOpen] = useState(false);
 
@@ -49,26 +49,26 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
 
 
   const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cachedGuardianDecisionRef = useRef<GuardianRiskDecision | null>(null);
-  const pendingGuardianDecisionRef = useRef<Promise<GuardianRiskDecision | null> | null>(null);
-  const guardianDecisionRequestRef = useRef(0);
+  const cachedThreatLensDecisionRef = useRef<ThreatLensRiskDecision | null>(null);
+  const pendingThreatLensDecisionRef = useRef<Promise<ThreatLensRiskDecision | null> | null>(null);
+  const threatLensDecisionRequestRef = useRef(0);
 
-  const updateCachedGuardianDecision = (decision: GuardianRiskDecision | null) => {
-    cachedGuardianDecisionRef.current = decision;
-    setCachedGuardianDecision(decision);
+  const updateCachedThreatLensDecision = (decision: ThreatLensRiskDecision | null) => {
+    cachedThreatLensDecisionRef.current = decision;
+    setCachedThreatLensDecision(decision);
   };
 
-  const clearGuardianDecision = () => {
-    guardianDecisionRequestRef.current += 1;
-    pendingGuardianDecisionRef.current = null;
+  const clearThreatLensDecision = () => {
+    threatLensDecisionRequestRef.current += 1;
+    pendingThreatLensDecisionRef.current = null;
     setIsTransferAiPending(false);
-    updateCachedGuardianDecision(null);
+    updateCachedThreatLensDecision(null);
   };
 
   const handleAccountChange = (val: string) => {
     setTransferAccount(val);
-    setLatestGuardianDecision(null);
-    clearGuardianDecision();
+    setLatestThreatLensDecision(null);
+    clearThreatLensDecision();
 
     if (resolveTimerRef.current) {
       clearTimeout(resolveTimerRef.current);
@@ -123,16 +123,16 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     setTransferBank(bank.displayName);
     setBankSearch("");
     setBankPickerOpen(false);
-    setLatestGuardianDecision(null);
-    clearGuardianDecision();
+    setLatestThreatLensDecision(null);
+    clearThreatLensDecision();
     if (transferAccount.trim().length >= 6) {
       handleAccountChange(transferAccount);
     }
   };
 
   const handleSelectSuggestion = (type: "safe" | "fraud") => {
-    setLatestGuardianDecision(null);
-    clearGuardianDecision();
+    setLatestThreatLensDecision(null);
+    clearThreatLensDecision();
     if (type === "safe") {
       selectTransferBank(defaultTransferBank);
       setTransferAccount("19038472910");
@@ -157,11 +157,11 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     recipientAccountVal: string,
     amountVal: number,
     contentVal: string,
-    requestId = guardianDecisionRequestRef.current,
+    requestId = threatLensDecisionRequestRef.current,
   ) => {
     try {
-      const { decision } = await evaluateGuardianTransaction(
-        buildGuardianTransactionInput({
+      const { decision } = await evaluateThreatLensTransaction(
+        buildThreatLensTransactionInput({
           amountVal,
           contentVal,
           recipientAccountVal,
@@ -169,8 +169,8 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
           transferBank,
         }),
       );
-      if (requestId === guardianDecisionRequestRef.current) {
-        updateCachedGuardianDecision(decision);
+      if (requestId === threatLensDecisionRequestRef.current) {
+        updateCachedThreatLensDecision(decision);
       }
       return decision;
     } catch (e) {
@@ -179,15 +179,15 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     }
   };
 
-  const beginGuardianDecisionRequest = (
+  const beginThreatLensDecisionRequest = (
     recipientNameVal: string,
     recipientAccountVal: string,
     amountVal: number,
     contentVal: string,
   ) => {
-    const requestId = guardianDecisionRequestRef.current + 1;
-    guardianDecisionRequestRef.current = requestId;
-    updateCachedGuardianDecision(null);
+    const requestId = threatLensDecisionRequestRef.current + 1;
+    threatLensDecisionRequestRef.current = requestId;
+    updateCachedThreatLensDecision(null);
     setIsTransferAiPending(true);
 
     const decisionPromise = triggerBackgroundAiScoring(
@@ -197,33 +197,33 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
       contentVal,
       requestId,
     ).finally(() => {
-      if (requestId === guardianDecisionRequestRef.current) {
+      if (requestId === threatLensDecisionRequestRef.current) {
         setIsTransferAiPending(false);
       }
     });
 
-    pendingGuardianDecisionRef.current = decisionPromise;
+    pendingThreatLensDecisionRef.current = decisionPromise;
     return decisionPromise;
   };
 
-  const resolveGuardianDecisionForConfirmation = async () => {
-    if (cachedGuardianDecisionRef.current) {
-      return cachedGuardianDecisionRef.current;
+  const resolveThreatLensDecisionForConfirmation = async () => {
+    if (cachedThreatLensDecisionRef.current) {
+      return cachedThreatLensDecisionRef.current;
     }
 
-    if (pendingGuardianDecisionRef.current) {
-      return pendingGuardianDecisionRef.current;
+    if (pendingThreatLensDecisionRef.current) {
+      return pendingThreatLensDecisionRef.current;
     }
 
-    return beginGuardianDecisionRequest(transferRecipient, transferAccount, Number(transferAmount), transferContent);
+    return beginThreatLensDecisionRequest(transferRecipient, transferAccount, Number(transferAmount), transferContent);
   };
 
   const handleNextToDetails = () => {
     if (transferBank && transferAccount && transferRecipient && isRecipientVerified) {
       setTransferStep("input_details");
-      if (!isGuardianConsentOff()) {
+      if (!isThreatLensConsentOff()) {
         // Kích hoạt AI chạy ngầm với số tiền 0 để phân tích rủi ro người nhận trước
-        void beginGuardianDecisionRequest(transferRecipient, transferAccount, 0, transferContent);
+        void beginThreatLensDecisionRequest(transferRecipient, transferAccount, 0, transferContent);
       }
     }
   };
@@ -231,9 +231,9 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   const handleNextStep = () => {
     if (transferBank && transferAccount && transferRecipient && transferAmount && transferContent) {
       setTransferStep("confirm");
-      if (!isGuardianConsentOff()) {
+      if (!isThreatLensConsentOff()) {
         // Cập nhật lại kết quả AI chạy ngầm với số tiền và nội dung thực tế
-        void beginGuardianDecisionRequest(transferRecipient, transferAccount, Number(transferAmount), transferContent);
+        void beginThreatLensDecisionRequest(transferRecipient, transferAccount, Number(transferAmount), transferContent);
       }
     }
   };
@@ -258,10 +258,10 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
   };
 
   const completeCompanionReviewedTransfer = () => {
-    if (latestGuardianDecision?.requiresChecklist) {
-      setLatestGuardianDecision(
+    if (latestThreatLensDecision?.requiresChecklist) {
+      setLatestThreatLensDecision(
         markDecisionAllowed(
-          latestGuardianDecision,
+          latestThreatLensDecision,
           "Đã xác thực Face ID, giao dịch đã được cho phép sau checklist Đồng hành.",
           "companion_checklist_confirmed",
         ),
@@ -271,12 +271,12 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     completeTransfer();
   };
 
-  const markDecisionAllowedAfterFaceId = (decision: GuardianRiskDecision) =>
+  const markDecisionAllowedAfterFaceId = (decision: ThreatLensRiskDecision) =>
     markDecisionAllowed(decision, "Đã xác thực Face ID, giao dịch đã được cho phép.", "face_id_verified");
 
-  const finalizeDecision = (decision: GuardianRiskDecision, identityVerified = false) => {
+  const finalizeDecision = (decision: ThreatLensRiskDecision, identityVerified = false) => {
     const amountNum = Number(transferAmount);
-    const levelSetting = getGuardianLevelSetting();
+    const levelSetting = getThreatLensLevelSetting();
 
     // Minimal protection (min)
     if (levelSetting === "min") {
@@ -288,9 +288,9 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
           action: "step_up" as const,
           explanation: "Hệ thống phát hiện rủi ro. Vì giao dịch từ 10 triệu đồng trở lên, quy định Quyết định 2345/QĐ-NHNN bắt buộc thực hiện xác thực sinh trắc học khuôn mặt.",
         };
-        setLatestGuardianDecision(adjustedDecision);
+        setLatestThreatLensDecision(adjustedDecision);
         if (identityVerified) {
-          setLatestGuardianDecision(markDecisionAllowedAfterFaceId(adjustedDecision));
+          setLatestThreatLensDecision(markDecisionAllowedAfterFaceId(adjustedDecision));
           completeTransfer();
         } else {
           setTransferStep("confirm");
@@ -307,7 +307,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
           action: "warn" as const,
           explanation: "Hộ vệ AI phát hiện điểm rủi ro cao (" + decision.riskScore + "/100). Do bạn cài đặt cấu hình bảo vệ Giám sát tối thiểu, bạn có thể tự xác nhận để chuyển tiền ngay mà không cần xác minh.",
         };
-        setLatestGuardianDecision(adjustedDecision);
+        setLatestThreatLensDecision(adjustedDecision);
         setTransferStep("warning");
       } else {
         completeTransfer();
@@ -324,9 +324,9 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
           action: "step_up" as const,
           explanation: "[Chế độ bảo vệ Tối đa] Phát hiện giao dịch lệch thói quen chi tiêu thông thường. Yêu cầu xác thực checklist và Face ID bổ sung để đảm bảo an toàn.",
         };
-        setLatestGuardianDecision(adjustedDecision);
+        setLatestThreatLensDecision(adjustedDecision);
         if (identityVerified) {
-          setLatestGuardianDecision(markDecisionAllowedAfterFaceId(adjustedDecision));
+          setLatestThreatLensDecision(markDecisionAllowedAfterFaceId(adjustedDecision));
           completeTransfer();
         } else {
           setTransferStep("confirm");
@@ -341,14 +341,14 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
             action: "block" as const,
             explanation: "[Chế độ bảo vệ Tối đa] Phát hiện rủi ro cao lệch baseline. Giao dịch bị tạm giữ ngay lập tức để bảo vệ tài sản của bạn.",
           };
-          setLatestGuardianDecision(adjustedDecision);
+          setLatestThreatLensDecision(adjustedDecision);
           setTransferStep("held");
           return;
         }
     }
 
     if (decision.aiLevel === "safe") {
-      setLatestGuardianDecision(decision);
+      setLatestThreatLensDecision(decision);
       completeTransfer();
       return;
     }
@@ -357,7 +357,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     // a guided checklist or operator support before money leaves the account.
     if (decision.aiLevel === "watch" || decision.aiLevel === "verify") {
       if (decision.aiLevel === "verify" && !identityVerified) {
-        setLatestGuardianDecision(decision);
+        setLatestThreatLensDecision(decision);
         setTransferStep("confirm");
         setIsTransferFaceIdOpen(true);
         return;
@@ -365,7 +365,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
 
       const adjustedDecision = {
         ...decision,
-        action: (decision.aiLevel === "verify" ? "step_up" : "warn") as GuardianRiskDecision["action"],
+        action: (decision.aiLevel === "verify" ? "step_up" : "warn") as ThreatLensRiskDecision["action"],
         requiresStepUp: decision.aiLevel === "verify" || decision.requiresStepUp,
         requiresChecklist: true,
         explanation:
@@ -373,12 +373,12 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
             ? `Chế độ Đồng hành: Face ID đã xác thực, nhưng KNIGHT vẫn cần bạn hoàn tất checklist trước khi tiền rời tài khoản. ${decision.explanation}`
             : `Chế độ Đồng hành: KNIGHT không tự khóa giao dịch này, nhưng yêu cầu bạn rà lại checklist an toàn hoặc gọi Tổng đài nếu còn nghi ngờ. ${decision.explanation}`,
       };
-      setLatestGuardianDecision(adjustedDecision);
+      setLatestThreatLensDecision(adjustedDecision);
       setTransferStep("warning");
       return;
     }
 
-    setLatestGuardianDecision(decision);
+    setLatestThreatLensDecision(decision);
     setTransferStep("held");
   };
 
@@ -388,24 +388,24 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     setHumanReviewStep("idle");
     setIsHumanReviewing(false);
 
-    if (isGuardianConsentOff()) {
-      pendingGuardianDecisionRef.current = null;
+    if (isThreatLensConsentOff()) {
+      pendingThreatLensDecisionRef.current = null;
       setIsTransferAiPending(false);
-      updateCachedGuardianDecision(null);
+      updateCachedThreatLensDecision(null);
       return;
     }
 
-    void resolveGuardianDecisionForConfirmation();
+    void resolveThreatLensDecisionForConfirmation();
   };
 
   const handleTransferFaceIdSuccess = async () => {
-    if (isGuardianConsentOff()) {
+    if (isThreatLensConsentOff()) {
       completeTransfer();
       return;
     }
 
     setIsTransferAiPending(true);
-    const decision = await resolveGuardianDecisionForConfirmation();
+    const decision = await resolveThreatLensDecisionForConfirmation();
     setIsTransferAiPending(false);
     setIsTransferFaceIdOpen(false);
 
@@ -460,8 +460,8 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     setIsRecipientVerified(false);
     setIsResolvingName(false);
     setIsTransferFaceIdOpen(false);
-    clearGuardianDecision();
-    setLatestGuardianDecision(null);
+    clearThreatLensDecision();
+    setLatestThreatLensDecision(null);
   };
 
   return {
@@ -479,7 +479,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     handleSelectSuggestion,
     hasTransferAmount,
     intakeSignalCount,
-    latestGuardianDecision,
+    latestThreatLensDecision,
     recipientSignal,
     resetTransferFields,
     selectTransferBank,
@@ -503,7 +503,7 @@ export function useBankTransferFlow({ setBalance, setTransactions }: UseBankTran
     isResolvingName,
     isRecipientVerified,
     isRecipientRisky: isRiskRecipient(transferAccount, transferRecipient),
-    cachedGuardianDecision,
+    cachedThreatLensDecision,
     isTransferAiPending,
     isTransferFaceIdOpen,
     cancelTransferVerification,

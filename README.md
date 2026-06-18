@@ -1,37 +1,38 @@
-# Co-opBank KNIGHT - Hiệp Sĩ Số
+# Co-opBank KNIGHT
 
-Co-opBank KNIGHT là prototype mobile/PWA cho lớp bảo vệ giao dịch ngân hàng số. App mô phỏng một AI agent theo ReAct (Observe -> Reason -> Act), có thể phát hiện giao dịch bất thường, tạm khóa thẻ số, yêu cầu khách xác minh, và ghi audit trail cho từng hành động nhạy cảm.
+Co-opBank KNIGHT là prototype mobile/PWA mô phỏng một lớp bảo vệ giao dịch ngân hàng số. Ứng dụng cho thấy cách một AI agent có thể quan sát tín hiệu rủi ro, suy luận mức đe dọa, yêu cầu xác minh bổ sung, khóa/tạm giữ giao dịch nhạy cảm và ghi lại audit trail cho từng quyết định.
 
-Prototype này phục vụ demo kỹ thuật và nghiên cứu sản phẩm. Core banking, Face ID, phát hành thẻ, Fraud Ops, Claude/LLM và Web Push production đều được mô phỏng hoặc chạy ở mức demo.
+ThreatLens là decision intelligence engine bên trong KNIGHT. ThreatLens chấm điểm rủi ro giao dịch theo thang `0-100`, sau đó adapter chuyển sang policy score của KNIGHT để giữ các ngưỡng xử lý hiện có.
 
-## Điểm mới trên nhánh này
+Prototype này chỉ phục vụ demo kỹ thuật và nghiên cứu sản phẩm. Core banking, Face ID, phát hành thẻ, Fraud Ops, LLM và Web Push production đều đang được mock hoặc chạy ở mức demo.
 
-- Tích hợp **GuardianFlow Decision Intelligence** vào KNIGHT, giữ Co-opBank KNIGHT là brand/app chính.
-- Thêm mock scoring engine 5 agents: transaction, device/session, behavioral, beneficiary, scam.
-- Hỗ trợ 6 scenario demo: `low_risk`, `medium_risk`, `high_risk`, `critical_risk`, `false_positive`, `feedback_attack`.
-- Tích hợp Decision Intelligence vào flow **Chuyển tiền**: user nhập giao dịch bình thường, KNIGHT tự phân mức AI `safe/watch/verify/hold/critical` và chỉ yêu cầu thêm bước khi cần.
-- Giữ scenario selector, fake latency, RiskMeter, AgentConsole, ScamChecklist và ActionCenter trong chế độ demo/test qua `?demo=true`, không hiện như thao tác bắt buộc cho khách hàng.
-- Chuẩn hóa risk score: GuardianFlow tính `0-100`, adapter sang KNIGHT `0-1000` để giữ policy threshold `800`.
-- Thêm mock `POST /api/explain`, không gọi Claude thật.
+## Điểm Chính
 
-## Luồng demo chính
+- KNIGHT vẫn là app/brand chính; ThreatLens là lớp AI đánh giá rủi ro giao dịch.
+- ThreatLens dùng 5 nhóm agent mô phỏng: transaction, device/session, behavioral, beneficiary và scam.
+- Flow chuyển tiền tự phân mức AI: `safe`, `watch`, `verify`, `hold`, `critical`.
+- Các bước nhạy cảm như xác minh Face ID, checklist chống lừa đảo, tạm giữ giao dịch và fraud review đều có audit event.
+- Demo panel cho tester/presenter được bật bằng `?demo=true`; luồng khách hàng bình thường không cần thao tác với scenario selector.
+- Backend demo có native HTTP server, SSE, Web Push mock và endpoint `POST /api/explain`.
 
-KNIGHT có 3 nhánh xử lý sau khi phát hiện risk cao:
+## Luồng Demo
+
+KNIGHT có 3 hướng xử lý chính sau khi phát hiện rủi ro cao:
 
 | Nhánh | Khách hàng làm gì | Kết quả |
-|---|---|---|
-| Gian lận | Xác nhận "Không phải tôi" + Face ID | Khóa thẻ cũ, phát hành thẻ số mới, tạo fraud case, mở recovery journey |
-| Hợp lệ | Xác nhận "Đây là giao dịch của tôi" + Face ID | Mở lại thẻ, whitelist session, tăng giám sát 30 phút |
-| Không phản hồi | Khách không trả lời cảnh báo | Giữ thẻ tạm khóa, escalate Fraud Ops |
+| --- | --- | --- |
+| Gian lận | Chọn "Không phải tôi" và xác minh Face ID | Khóa thẻ cũ, phát hành thẻ số mới, tạo fraud case và mở recovery journey |
+| Hợp lệ | Chọn "Đây là giao dịch của tôi" và xác minh Face ID | Mở lại thẻ, whitelist session và tăng giám sát tạm thời |
+| Không phản hồi | Không trả lời cảnh báo | Giữ trạng thái tạm khóa và escalate Fraud Ops |
 
-Policy bắt buộc:
+Guardrails:
 
-- Không có Face ID thì không có hành động L3.
-- Timeout không được tự động terminate card.
-- Không hiển thị full PAN, CVV, token thật.
+- Không có Face ID thì không thực hiện hành động L3.
+- Timeout không tự động terminate card.
+- Không hiển thị full PAN, CVV hoặc token thật.
 - Mọi hành động nhạy cảm phải có audit event.
 
-## Chạy local
+## Chạy Local
 
 Yêu cầu: Node.js 18+ và npm.
 
@@ -39,47 +40,46 @@ Yêu cầu: Node.js 18+ và npm.
 npm install
 ```
 
-Terminal 1 - backend demo:
+Chạy backend demo:
 
 ```bash
 npm run server
 ```
 
-Backend mặc định chạy ở `http://localhost:5000`.
+Backend mặc định chạy tại `http://localhost:5000`.
 
-Terminal 2 - frontend:
+Chạy frontend:
 
 ```bash
 npm run dev
 ```
 
-Vite sẽ in URL local, thường là `http://localhost:5173` hoặc port kế tiếp nếu port bận.
+Vite sẽ in URL local, thường là `http://localhost:5173` hoặc port kế tiếp nếu port đang bận.
 
-## URL demo nhanh
+## URL Demo Nhanh
 
-Chạy app không cần backend:
-
-```text
-http://localhost:5173/?env=test
-```
-
-Mở app và thử GuardianFlow tự phân mức trong flow chuyển tiền:
+Mở app ở chế độ test:
 
 ```text
 http://localhost:5173/?env=test
 ```
 
-Sau đó vào **Chuyển tiền**, chọn người nhận gợi ý hoặc nhập giao dịch. KNIGHT sẽ tự đánh giá và đưa giao dịch vào mức an toàn, cảnh báo, xác thực bổ sung hoặc tạm giữ.
+Thử ThreatLens trong flow chuyển tiền:
 
-Mở demo panel dành cho tester/presenter:
+1. Mở URL test.
+2. Vào tab **Chuyển tiền**.
+3. Chọn người nhận gợi ý hoặc nhập giao dịch mới.
+4. KNIGHT sẽ tự đánh giá và đưa giao dịch vào mức an toàn, cảnh báo, xác thực bổ sung hoặc tạm giữ.
+
+Mở demo panel cho presenter/tester:
 
 ```text
 http://localhost:5173/?env=test&capture=phone&shot=case&demo=true
 ```
 
-Sau đó vào tab **Hộ vệ AI**, tick consent, chọn scenario và bấm **Chạy scenario**.
+Sau đó vào tab **Hộ vệ AI**, bật consent, chọn scenario và bấm **Chạy scenario**.
 
-Một vài shot dùng để quay video:
+Một số shot dùng để quay demo:
 
 ```text
 ?env=test&capture=phone&shot=reason
@@ -94,9 +94,7 @@ Một vài shot dùng để quay video:
 
 ## Backend API
 
-Backend hiện dùng Node.js native `http`, SSE và Web Push VAPID.
-
-Kiểm tra health:
+Health check:
 
 ```bash
 curl http://localhost:5000/health
@@ -108,7 +106,7 @@ Lấy VAPID public key:
 curl http://localhost:5000/api/push/public-key
 ```
 
-Mock explain GuardianFlow:
+Mock explain cho ThreatLens:
 
 ```bash
 curl -X POST http://localhost:5000/api/explain \
@@ -116,7 +114,7 @@ curl -X POST http://localhost:5000/api/explain \
   -d "{\"reasonCodes\":[\"new_device\",\"new_recipient\"],\"riskScore\":72,\"action\":\"delay\"}"
 ```
 
-Kích hoạt high-risk incident qua backend:
+Kích hoạt high-risk incident:
 
 ```bash
 curl -X POST http://localhost:5000/api/incidents/high-risk \
@@ -129,7 +127,7 @@ Phím tắt trong terminal backend:
 - `R`: reset scenario.
 - `Q`: thoát server.
 
-## Cấu hình môi trường
+## Cấu Hình
 
 Copy `.env.example` thành `.env` nếu cần backend/push:
 
@@ -144,87 +142,81 @@ VAPID_SUBJECT=mailto:you@example.com
 PUSH_SUBSCRIPTIONS_FILE=server/push-subscriptions.json
 ```
 
-## Kiểm thử
+## Kiểm Thử
+
+Chạy bộ kiểm tra chính:
 
 ```bash
-npm test
 npm run lint
+npm test
 npm run build
 npm run test:e2e
 ```
 
-Lệnh hữu ích khi chỉ muốn kiểm tra phần GuardianFlow:
+Chỉ kiểm tra phần ThreatLens:
 
 ```bash
-npx vitest run src/domain/guardianFlow.test.ts src/components/BankDashboard.guardianFlow.test.tsx server/explain.test.js
-npx playwright test tests/e2e/knight-mobile.spec.ts -g "GuardianFlow"
+npx vitest run src/domain/threat-lens/scoring/threatLens.test.ts src/widgets/bank-dashboard/BankDashboard.threatLens.test.tsx server/explain/explain.test.js
+npx playwright test tests/e2e/knight-mobile.spec.ts -g "ThreatLens"
 ```
 
-Ghi chú hiện tại: `npm run test:coverage` có thể fail ngưỡng coverage global 80% vì nhiều component demo cũ chưa được cover đầy đủ. Test logic vẫn pass.
+Ghi chú: `npm run test:coverage` có thể fail ngưỡng global 80% vì một số component demo chưa có coverage đầy đủ. Test logic chính vẫn được cover bằng Vitest và Playwright.
 
-## Cấu trúc repo
+## Cấu Trúc Repo
 
 ```text
 src/
-  app/
-    App.tsx
-    demoEventSequences.ts
-  components/
-    BankDashboard.tsx
-    GuardianFlowPanel.tsx
-    CriticalAlertSurface.tsx
-    FraudReviewScreen.tsx
-    BiometricStepUp.tsx
-    VirtualCardScreen.tsx
-    FraudCaseSubmittedScreen.tsx
-    AuditTimeline.tsx
-    KnightAgentVisual.tsx
-  data/
-    demoScenario.ts
-    bankingDemo.ts
+  app/                         App shell, query params, demo launch state
   domain/
-    guardianFlow.ts
-    knightStateMachine.ts
-    policy.ts
-    audit.ts
-    trustRecovery.ts
-    types.ts
-  services/
-    backend.ts
-    pushNotifications.ts
-  styles/
-    app.css
-    knight-agent.css
+    threatLens.ts              Public export cho ThreatLens
+    threat-lens/               Scoring engine, scenarios, adapters
+    knight/                    KNIGHT state machine, policy, audit, digital twin
+  features/
+    threatlens-decision/       ThreatLens panel, console, checklist, consent UI
+    biometric-step-up/         Face ID step-up mock
+    card-protection/           Card lock/reissue flows
+    fraud-review/              Fraud review surface
+    recovery-support/          Post-incident recovery screens
+    risk-alert/                Critical alert surfaces
+  widgets/
+    bank-dashboard/            Mobile banking dashboard and transfer flow
+    knight-agent-visual/       KNIGHT visual agent surface
+    audit-timeline/            Audit trail UI
+  shared/                      API clients, UI primitives, styles
 
 server/
-  index.js
-  explain.js
-  demoFlows.js
+  app.js                       Native HTTP app
+  routes/                      API routes
+  explain/                     Mock explain endpoint
+  services/                    Incident, push, SSE services
+  twin/                        Digital twin demo store/routes
 
 tests/e2e/
-  knight-mobile.spec.ts
+  knight-mobile.spec.ts        Mobile/PWA journey coverage
 ```
 
-## Tài liệu
+## Tài Liệu Liên Quan
 
-- `guardianflow-vibecode-guide.md` - blueprint gốc cho GuardianFlow mock demo.
+- `threatlens-vibecode-guide.md` - blueprint gốc cho ThreatLens mock demo.
+- `threatlens-knight-refactor-plan.md` - refactor plan cho việc tách ThreatLens khỏi KNIGHT.
 - `docs/knight-mobile/01-product-capability.md` - capability và scope.
 - `docs/knight-mobile/02-business-rules-and-guardrails.md` - policy và invariants.
 - `docs/knight-mobile/05-state-machine.md` - state machine.
+- `docs/knight-mobile/06-data-and-api-contracts.md` - data/API contracts.
 - `docs/knight-mobile/08-test-and-verification-plan.md` - verification plan.
 - `docs/deploy-frontend-local-backend.md` - deploy frontend với backend local.
 
-## Tech stack
+## Tech Stack
 
 | Layer | Công nghệ |
-|---|---|
+| --- | --- |
 | Frontend | React 19, TypeScript, Vite |
 | Styling | Vanilla CSS, CSS custom properties |
 | Icons | Lucide React |
-| Backend demo | Node.js native http, SSE, web-push |
+| Backend demo | Node.js native HTTP, SSE, web-push |
 | Tests | Vitest, Testing Library, Playwright |
 | PWA | Web manifest, service worker, Web Push |
 
 ## Disclaimer
 
-Prototype này không xử lý giao dịch thật, không lưu sinh trắc học, không kết nối core banking, và không thay thế Fraud Ops/Compliance. Mọi dữ liệu trong demo là mock data để trình bày hướng sản phẩm và kiểm chứng UX.
+Prototype này không xử lý giao dịch thật, không lưu sinh trắc học, không kết nối core banking và không thay thế Fraud Ops/Compliance. Mọi dữ liệu trong demo là mock data để trình bày hướng sản phẩm và kiểm chứng UX.

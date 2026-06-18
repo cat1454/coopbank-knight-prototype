@@ -1,2 +1,2 @@
-export * from "./guardian-flow/types";
+export * from "./threat-lens/types";
 export * from "./knight/types";

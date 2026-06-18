@@ -39,13 +39,13 @@ export function KnightAgentVisual({ state, variant = "desktop" }: KnightAgentVis
   // Sync consent state to show sleeping mood when deactivated
   const [hasConsent, setHasConsent] = useState(() => {
     if (typeof window === "undefined") return true;
-    const stored = window.sessionStorage.getItem("knight_guardianflow_consent");
+    const stored = window.sessionStorage.getItem("knight_threatlens_consent");
     return stored === null ? true : stored === "granted";
   });
 
   useEffect(() => {
     const handleStorageChange = () => {
-      const stored = window.sessionStorage.getItem("knight_guardianflow_consent");
+      const stored = window.sessionStorage.getItem("knight_threatlens_consent");
       setHasConsent(stored === null ? true : stored === "granted");
     };
     window.addEventListener("storage", handleStorageChange);

@@ -83,12 +83,12 @@ Then:
 - App allows retry or fallback.
 - Audit logs failed biometric attempt.
 
-### TC-005 - GuardianFlow Automatic AI Levels
+### TC-005 - ThreatLens Automatic AI Levels
 
 Given:
 
 - Customer opens the normal transfer flow.
-- GuardianFlow demo mode is not enabled.
+- ThreatLens demo mode is not enabled.
 
 When:
 

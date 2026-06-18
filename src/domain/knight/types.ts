@@ -1,4 +1,4 @@
-import type { GuardianRiskDecision } from "../guardian-flow/types";
+import type { ThreatLensRiskDecision } from "../threat-lens/types";
 
 export type PolicyLevel = "L0" | "L1" | "L2" | "L3" | "L4";
 export type ReActPhase = "OBSERVE" | "REASON" | "ACT";
@@ -113,7 +113,7 @@ export interface RiskAssessment {
   signals: RiskSignal[];
   recommendedAction: "monitor" | "notify" | "verify" | "suspend";
   assessedAt: string;
-  intelligence?: GuardianRiskDecision;
+  intelligence?: ThreatLensRiskDecision;
 }
 
 export interface VirtualCard {

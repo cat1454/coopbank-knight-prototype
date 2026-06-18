@@ -17,7 +17,7 @@ interface HomeTabProps {
   balance: number;
   balanceVisible: boolean;
   setBalanceVisible: (value: boolean) => void;
-  hasGuardianConsent: boolean;
+  hasThreatLensConsent: boolean;
   onLogout: () => void;
   setActiveTab: (tab: BankDashboardTab) => void;
 }
@@ -28,7 +28,7 @@ export function HomeTab({
   balance,
   balanceVisible,
   setBalanceVisible,
-  hasGuardianConsent,
+  hasThreatLensConsent,
   onLogout,
   setActiveTab,
 }: HomeTabProps) {
@@ -101,14 +101,14 @@ export function HomeTab({
         </div>
 
         {/* AI Background Protection Status */}
-        <div className={`ai-status-bar ${!hasGuardianConsent ? "deactivated" : state.currentState === "audit_complete" ? "upgraded" : ""}`}>
+        <div className={`ai-status-bar ${!hasThreatLensConsent ? "deactivated" : state.currentState === "audit_complete" ? "upgraded" : ""}`}>
           <div className="ai-pulse-dot"></div>
-          {!hasGuardianConsent ? (
+          {!hasThreatLensConsent ? (
             <ShieldAlert size={16} className="ai-shield" />
           ) : (
             <ShieldCheck size={16} className="ai-shield" />
           )}
-          {!hasGuardianConsent ? (
+          {!hasThreatLensConsent ? (
             <span>Hộ vệ AI <strong>KNIGHT ngoại tuyến</strong> (Chưa bật bảo vệ)</span>
           ) : state.currentState === "audit_complete" ? (
             <span>Hộ vệ <strong>KNIGHT AI v2.0 (Enhanced)</strong> đã kích hoạt tối đa</span>

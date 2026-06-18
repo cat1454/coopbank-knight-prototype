@@ -48,7 +48,7 @@ import { useBackendSse } from "./model/useBackendSse";
 import { useReportState } from "./model/useReportState";
 
 export function App() {
-  const { captureMode, guardianDemoEnabled, isTestMode, queryParams, requestedShot } = useAppQueryParams();
+  const { captureMode, threatLensDemoEnabled, isTestMode, queryParams, requestedShot } = useAppQueryParams();
 
   // Pre-create and unlock alarm audio during normal usage so it auto-plays on iOS
   const alarmAudio = useAlarmAudio({ disabled: isTestMode });
@@ -265,7 +265,7 @@ export function App() {
         setBalance={setBankBalance}
         transactions={normalTransactions}
         setTransactions={setNormalTransactions}
-        guardianDemoEnabled={guardianDemoEnabled}
+        threatLensDemoEnabled={threatLensDemoEnabled}
       />
     );
 
@@ -378,7 +378,7 @@ export function App() {
     isProcessing,
     isTestMode,
     completeScenarioFlow,
-    guardianDemoEnabled,
+    threatLensDemoEnabled,
   ]);
 
   const renderPhoneFrame = () => {

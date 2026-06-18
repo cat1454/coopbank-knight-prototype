@@ -1,0 +1,206 @@
+/* ThreatLens Decision Intelligence panel */
+.threatlens-panel {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+  box-shadow: var(--shadow-soft);
+}
+
+.threatlens-consent {
+  text-align: left;
+}
+
+.threatlens-consent h2,
+.threatlens-panel h2,
+.threatlens-result h3 {
+  margin: 0;
+  color: var(--color-ink);
+  letter-spacing: 0;
+}
+
+.threatlens-consent p,
+.threatlens-panel p {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.threatlens-consent-check,
+.threatlens-inline-toggle,
+.threatlens-checklist label {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+}
+
+.threatlens-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.threatlens-kicker {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-trust);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.threatlens-demo-button,
+.threatlens-icon-button,
+.threatlens-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-weight: 800;
+}
+
+.threatlens-demo-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.threatlens-field {
+  display: grid;
+  gap: 6px;
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.threatlens-field select,
+.threatlens-field input[type="range"] {
+  width: 100%;
+}
+
+.threatlens-field select {
+  min-height: 42px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  color: var(--color-ink);
+  padding: 0 10px;
+}
+
+.threatlens-scenario-summary {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.threatlens-scenario-summary strong,
+.threatlens-scenario-summary span {
+  color: var(--color-ink);
+}
+
+.threatlens-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.threatlens-result {
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+
+.threatlens-result--safe {
+  border-color: rgba(7, 148, 85, 0.24);
+  background: rgba(7, 148, 85, 0.04);
+}
+
+.threatlens-result--warn {
+  border-color: rgba(220, 104, 3, 0.24);
+  background: rgba(220, 104, 3, 0.04);
+}
+
+.threatlens-result--delay {
+  border-color: rgba(23, 92, 211, 0.24);
+  background: rgba(23, 92, 211, 0.04);
+}
+
+.threatlens-result--critical {
+  border-color: rgba(217, 45, 32, 0.24);
+  background: rgba(217, 45, 32, 0.04);
+  box-shadow: 0 0 0 1px rgba(217, 45, 32, 0.1);
+}
+
+.threatlens-risk-meter {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.threatlens-risk-meter__track {
+  height: 8px;
+  background: var(--color-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.threatlens-risk-meter__track span,
+.threatlens-agent-card__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-trust);
+}
+
+.threatlens-risk-meter--safe .threatlens-risk-meter__track span {
+  background: var(--color-success);
+}
+
+.threatlens-risk-meter--warn .threatlens-risk-meter__track span {
+  background: var(--color-amber);
+}
+
+.threatlens-risk-meter--danger .threatlens-risk-meter__track span {
+  background: var(--color-fraud);
+}
+
+.threatlens-risk-meter--critical .threatlens-risk-meter__track span {
+  background: var(--color-fraud);
+}
+
+.threatlens-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.threatlens-reason {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
