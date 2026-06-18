@@ -1,0 +1,172 @@
+/* Body Armor & Chest Control Panel */
+.knight-body {
+  width: 170px;
+  height: 188px;
+  position: relative;
+}
+
+.armor {
+  width: 112px;
+  height: 112px;
+  margin: -5px auto 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 28%),
+    linear-gradient(170deg, #1d2947 0%, #101b34 52%, #091225 100%);
+  border: 2px solid color-mix(in srgb, var(--mood-color) 42%, #2a4a8a);
+  border-radius: 8px 8px 20px 20px;
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.34),
+    0 0 32px color-mix(in srgb, var(--mood-color) 19%, transparent);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.armor::before,
+.armor::after {
+  content: "";
+  position: absolute;
+  top: 22px;
+  width: 24px;
+  height: 2px;
+  background: color-mix(in srgb, var(--mood-color) 54%, transparent);
+  box-shadow: 0 0 8px var(--mood-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.armor::before {
+  left: 9px;
+  transform: rotate(24deg);
+}
+
+.armor::after {
+  right: 9px;
+  transform: rotate(-24deg);
+}
+
+.chest-panel {
+  width: 82px;
+  height: 58px;
+  position: relative;
+  overflow: hidden;
+  background: #030915;
+  border: 1px solid color-mix(in srgb, var(--phase-color) 62%, #1a4aaa);
+  border-radius: 16px;
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.3s ease;
+}
+
+.panel-line {
+  position: absolute;
+  inset-inline: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--phase-color), transparent);
+  animation: scan-line 1.8s linear infinite;
+}
+
+@keyframes scan-line {
+  0% { top: -2px; opacity: 1; }
+  100% { top: 56px; opacity: 0; }
+}
+
+.panel-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.badge-icon {
+  position: relative;
+  width: 19px;
+  height: 19px;
+  border: 2px solid var(--phase-color);
+  border-radius: 50%;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--phase-color) 58%, transparent);
+  animation: badge-pulse 1.6s ease-in-out infinite;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.badge-icon::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 5px;
+  border: 2px solid var(--phase-color);
+  border-top: 0;
+  border-radius: 1px;
+  transform: translate(-50%, -25%);
+  transition: border-color 0.3s ease;
+}
+
+.badge-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  width: 8px;
+  height: 7px;
+  border: 2px solid var(--phase-color);
+  border-bottom: 0;
+  border-radius: 7px 7px 0 0;
+  transform: translateX(-50%);
+  transition: border-color 0.3s ease;
+}
+
+.badge-title {
+  color: #f8fafc;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--phase-color) 46%, transparent);
+  white-space: nowrap;
+  transition: text-shadow 0.3s ease;
+}
+
+.badge-sub {
+  color: #cbd5e1;
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { opacity: 0.78; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.shoulder-row {
+  display: flex;
+  gap: 5px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--phase-color);
+  box-shadow: 0 0 7px var(--phase-color);
+  animation: dot-seq 1.8s ease-in-out infinite;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dot:nth-child(2) { animation-delay: 0.25s; }
+.dot:nth-child(3) { animation-delay: 0.5s; }
+
+@keyframes dot-seq {
+  0%, 100% { opacity: 0.32; transform: scale(0.78); }
+  50% { opacity: 1; transform: scale(1.16); }
+}
+

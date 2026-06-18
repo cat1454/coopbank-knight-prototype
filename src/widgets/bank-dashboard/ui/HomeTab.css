@@ -1,0 +1,104 @@
+/* ==========================================================================
+   5. Modern Inspire UI 2026 Redesign Styles
+   ========================================================================== */
+
+.dashboard-home {
+  margin: -18px -18px 0 -18px;
+  padding: 18px 18px 80px 18px;
+  min-height: 100%;
+  background: linear-gradient(180deg, #f0FAF6 0%, #e6F3ED 40%, #f6FCFA 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Vector landscape backdrop styles */
+.inspire-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 385px;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.landscape-svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Floating U-Point Stamp badge */
+.floating-upoint-badge {
+  position: absolute;
+  top: 215px;
+  left: 14px;
+  z-index: 2;
+  animation: float-slow 4s ease-in-out infinite;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(1deg); }
+}
+
+.upoint-stamp {
+  background: linear-gradient(135deg, #ffefe6 0%, #ffe4d6 100%);
+  border: 1px solid rgba(253, 176, 34, 0.4);
+  padding: 6px 10px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(253, 176, 34, 0.15);
+  position: relative;
+}
+
+.stamp-title {
+  font-size: 8px;
+  font-weight: 800;
+  color: #e31837;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stamp-desc {
+  font-size: 7px;
+  font-weight: 700;
+  color: #1b4d3e;
+  margin-top: 1px;
+}
+
+.stamp-circle {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 14px;
+  height: 14px;
+  background: #e31837;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 5px rgba(227, 24, 55, 0.4);
+}
+
+/* Make sure items on the homepage render above backdrop */
+.dashboard-header,
+.balance-card-inspire,
+.ai-status-bar,
+.quick-services-container,
+.dashboard-section,
+.dashboard-section-inspire {
+  position: relative;
+  z-index: 2;
+}
+

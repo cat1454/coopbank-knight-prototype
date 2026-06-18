@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+process.env.PLAYWRIGHT_FORCE_TTY ??= "0";
+
 const PORT = 4173;
 const baseURL = `http://127.0.0.1:${PORT}`;
 

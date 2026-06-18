@@ -1,0 +1,70 @@
+/* â”€â”€ Popup AI Agent container â”€â”€ */
+.popup-agent-wrap {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(240, 68, 56, 0.15);
+}
+
+/* Fit the full visualizer into the compact container */
+.popup-agent-wrap .knight-agent-visualizer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Scale scene to show only the knight character, centered */
+.popup-agent-wrap .knight-agent-visualizer .scene {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.58);
+  transform-origin: center center;
+  width: 100%;
+  height: 290px;
+  min-height: 290px;
+}
+
+/* â”€â”€ Hide all text panels, keep only the animated character & bg â”€â”€ */
+.popup-agent-wrap .name-tag,
+.popup-agent-wrap .thought-bubble,
+.popup-agent-wrap .assistant-layer,
+.popup-agent-wrap .status-panel,
+.popup-agent-wrap .alert-popup,
+.popup-agent-wrap .alarm-control,
+.popup-agent-wrap .particles,
+.popup-agent-wrap .badge-title,
+.popup-agent-wrap .badge-sub {
+  display: none !important;
+}
+
+/* â”€â”€ Popup bell overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.popup-bell-overlay {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(240, 68, 56, 0.15);
+  border: 1px solid rgba(240, 68, 56, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f97066;
+  animation: ca-bell-shake 0.5s ease-in-out infinite alternate,
+             ca-glow-pulse 1.6s ease-in-out infinite alternate;
+  box-shadow: 0 0 12px rgba(240, 68, 56, 0.4);
+  pointer-events: none;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   FULL-SCREEN FLASH OVERLAY â€” triggers on danger alert
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Fixed overlay that sits above everything including phone frame */

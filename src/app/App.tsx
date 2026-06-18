@@ -1,26 +1,31 @@
-import { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import { useCallback, useMemo, useState, useRef } from "react";
 import { ShieldCheck } from "lucide-react";
-import { AuditTimeline } from "../components/AuditTimeline";
-import { BiometricStepUp } from "../components/BiometricStepUp";
-import { CriticalAlertSurface } from "../components/CriticalAlertSurface";
-import { FraudCaseSubmittedScreen } from "../components/FraudCaseSubmittedScreen";
-import { FraudReviewScreen } from "../components/FraudReviewScreen";
-import { GuardScreen } from "../components/GuardScreen";
-import { LegitimateResolutionScreen } from "../components/LegitimateResolutionScreen";
-import { NextMorningRecoveryScreen } from "../components/NextMorningRecoveryScreen";
-import { PostIncidentBehaviorScreen } from "../components/PostIncidentBehaviorScreen";
-import { ReassurancePackageScreen } from "../components/ReassurancePackageScreen";
-import { TrustRecoveryAssessmentScreen } from "../components/TrustRecoveryAssessmentScreen";
-import { TimeoutEscalationScreen } from "../components/TimeoutEscalationScreen";
-import { UnlockedCriticalAlertPopup } from "../components/UnlockedCriticalAlertPopup";
-import { VirtualCardScreen } from "../components/VirtualCardScreen";
-import { BankLoginScreen } from "../components/BankLoginScreen";
-import { BankDashboard } from "../components/BankDashboard";
-import { KnightAgentVisual } from "../components/KnightAgentVisual";
-import { KnightLogoMini } from "../components/KnightLogoMini";
-import { useAlarmAudio } from "../hooks/useAlarmAudio";
-import { CyberAttackDashboard } from "../components/CyberAttackDashboard";
-import { buildBackendUrl } from "../services/backend";
+import { AuditTimeline } from "../widgets/audit-timeline/AuditTimeline";
+import { BiometricStepUp } from "../features/biometric-step-up/ui/BiometricStepUp";
+import { CriticalAlertSurface } from "../features/risk-alert/ui/CriticalAlertSurface";
+import { FraudCaseSubmittedScreen } from "../features/recovery-support/ui/FraudCaseSubmittedScreen";
+import { FraudReviewScreen } from "../features/fraud-review/ui/FraudReviewScreen";
+import { GuardScreen } from "../pages/demo-guard/GuardScreen";
+import { LegitimateResolutionScreen } from "../features/card-protection/ui/LegitimateResolutionScreen";
+import { NextMorningRecoveryScreen } from "../features/recovery-support/ui/NextMorningRecoveryScreen";
+import { PostIncidentBehaviorScreen } from "../features/recovery-support/ui/PostIncidentBehaviorScreen";
+import { ReassurancePackageScreen } from "../features/recovery-support/ui/ReassurancePackageScreen";
+import { TrustRecoveryAssessmentScreen } from "../features/recovery-support/ui/TrustRecoveryAssessmentScreen";
+import { TimeoutEscalationScreen } from "../features/card-protection/ui/TimeoutEscalationScreen";
+import { UnlockedCriticalAlertPopup } from "../features/risk-alert/ui/UnlockedCriticalAlertPopup";
+import { VirtualCardScreen } from "../features/card-protection/ui/VirtualCardScreen";
+import { BankLoginScreen } from "../pages/bank-login/BankLoginScreen";
+import { BankDashboard } from "../widgets/bank-dashboard/BankDashboard";
+import { KnightAgentVisual } from "../widgets/knight-agent-visual/KnightAgentVisual";
+import { KnightLogoMini } from "../shared/ui";
+import { useAlarmAudio } from "../shared/lib/audio/useAlarmAudio";
+import { CyberAttackDashboard } from "../widgets/cyber-attack-dashboard/CyberAttackDashboard";
+import { buildBackendUrl } from "../shared/api/backend";
+import "../shared/styles/screen-primitives.css";
+import "../shared/styles/card-effects.css";
+import "./AppTransitions.css";
+import "./AppPlatform.css";
+import "../widgets/bank-dashboard/ConnectionModal.css";
 import {
   createInitialKnightState,
   getVisibleScreen,
@@ -35,27 +40,18 @@ import {
   legitimateResolutionEvents,
   reviewEvents,
 } from "./demoEventSequences";
-import { createInitialBankTransactions, initialBankBalance } from "../data/bankingDemo";
+import { createInitialBankTransactions, initialBankBalance } from "../entities/bank-account/model/bankingDemo";
+import { useAlarmController } from "./model/useAlarmController";
+import { useAlertLaunch } from "./model/useAlertLaunch";
+import { useAppQueryParams } from "./model/useAppQueryParams";
+import { useBackendSse } from "./model/useBackendSse";
+import { useReportState } from "./model/useReportState";
 
 export function App() {
-  const isTestMode = useMemo(() => {
-    return import.meta.env.MODE === "test" || 
-           (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("env") === "test");
-  }, []);
-
-  const queryParams = useMemo(() => {
-    return typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
-  }, []);
-
-  const captureMode = useMemo<"split" | "phone" | "agent">(() => {
-    const requestedMode = queryParams.get("capture");
-    return requestedMode === "phone" || requestedMode === "agent" ? requestedMode : "split";
-  }, [queryParams]);
-
-  const requestedShot = queryParams.get("shot");
+  const { captureMode, threatLensDemoEnabled, isTestMode, queryParams, requestedShot } = useAppQueryParams();
 
   // Pre-create and unlock alarm audio during normal usage so it auto-plays on iOS
-  const alarmAudio = useAlarmAudio();
+  const alarmAudio = useAlarmAudio({ disabled: isTestMode });
 
   const initialScenarioState = useMemo(() => {
     const shotEvents = getShotEvents(requestedShot);
@@ -235,147 +231,24 @@ export function App() {
     ], 900);
   }, [applyEventsSequentially]);
 
-  // Connect to backend server SSE stream
-  useEffect(() => {
-    const isTestMode = import.meta.env.MODE === "test" || 
-                       new URLSearchParams(window.location.search).get("env") === "test";
-
-    if (isTestMode) {
-      console.log("Test mode: bypassing backend SSE server connection");
-      return;
-    }
-
-    const eventsUrl = buildBackendUrl("/events");
-
-    if (!eventsUrl) {
-      console.log("Backend URL is not configured for this HTTPS origin.");
-      return;
-    }
-
-    const eventSource = new EventSource(eventsUrl);
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "demo-flow" && data.events) {
-          const events = data.events as KnightEventType[];
-          cancelActiveSequence();
-          setShowCriticalAlert(Boolean(data.showCriticalAlert));
-          setShowUnlockedAlert(false);
-          setState(runScenarioEvents(createInitialKnightState(), events));
-        } else if (data.type === "trigger" && data.events) {
-          const events = data.events as KnightEventType[];
-
-          if (events.includes("RESET_SCENARIO")) {
-            reset();
-          } else if (events.includes("RISK_EVENT_RECEIVED")) {
-            cancelActiveSequence();
-            setShowCriticalAlert(true);
-            setShowUnlockedAlert(false);
-            setState((currentState) => {
-              const baseState = currentState.currentState === "idle_monitoring" ? currentState : createInitialKnightState();
-              return runScenarioEvents(baseState, events);
-            });
-          } else {
-            setShowCriticalAlert(false);
-            setShowUnlockedAlert(false);
-            applyEvents(events);
-          }
-        }
-      } catch (err) {
-        console.error("Error parsing backend event:", err);
-      }
-    };
-
-    eventSource.onerror = () => {
-      console.log("Disconnected from backend. Reconnecting...");
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [applyEvents, cancelActiveSequence, isTestMode, reset]);
-
-
-  useEffect(() => {
-    if (isTestMode) {
-      return;
-    }
-
-    const url = new URL(window.location.href);
-
-    if (url.searchParams.get("alert") !== "1") {
-      return;
-    }
-
-    url.searchParams.delete("alert");
-    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-    const timeoutId = window.setTimeout(() => {
-      startScenario();
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [isTestMode, startScenario]);
-
-
-  // Centralized siren alarm playback and gesture unlocking control
-  useEffect(() => {
-    if (isTestMode) return;
-
-    const alarmStates = [
-      "risk_detected",
-      "card_suspended_l2",
-      "awaiting_customer_response",
-      "customer_confirms_fraud",
-      "customer_confirms_legit",
-      "biometric_required",
-    ];
-    const shouldPlay =
-      (showCriticalAlert || showUnlockedAlert || alarmStates.includes(state.currentState)) &&
-      state.currentState !== "idle_monitoring";
-
-    if (shouldPlay) {
-      // Attempt to play immediately (works if context is already unlocked)
-      alarmAudio.startAlarm();
-
-      // Register window gesture listeners to start the alarm on first user interaction
-      const triggerAlarm = () => {
-        alarmAudio.startAlarm();
-      };
-
-      window.addEventListener("pointerdown", triggerAlarm, { passive: true, capture: true });
-      window.addEventListener("touchstart", triggerAlarm, { passive: true, capture: true });
-      window.addEventListener("click", triggerAlarm, { capture: true });
-
-      return () => {
-        window.removeEventListener("pointerdown", triggerAlarm, { capture: true });
-        window.removeEventListener("touchstart", triggerAlarm, { capture: true });
-        window.removeEventListener("click", triggerAlarm, { capture: true });
-      };
-    } else {
-      alarmAudio.stopAlarm();
-    }
-  }, [showCriticalAlert, showUnlockedAlert, state.currentState, alarmAudio, isTestMode]);
-
-  // Synchronize state updates to backend for real-time terminal logs
-  useEffect(() => {
-    const reportStateUrl = buildBackendUrl("/api/report-state");
-
-    if (!reportStateUrl) {
-      return;
-    }
-
-    fetch(reportStateUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        currentState: state.currentState,
-        auditEvents: state.auditEvents,
-      }),
-    }).catch(() => {
-      // Ignore errors when server is not running
-    });
-  }, [state.currentState, state.auditEvents]);
+  useBackendSse({
+    applyEvents,
+    cancelActiveSequence,
+    isTestMode,
+    reset,
+    setShowCriticalAlert,
+    setShowUnlockedAlert,
+    setState,
+  });
+  useAlertLaunch({ isTestMode, startScenario });
+  useAlarmController({
+    alarmAudio,
+    currentState: state.currentState,
+    isTestMode,
+    showCriticalAlert,
+    showUnlockedAlert,
+  });
+  useReportState(state);
 
   const screen = useMemo(() => {
     if (showCriticalAlert && state.currentState !== "idle_monitoring") {
@@ -392,6 +265,7 @@ export function App() {
         setBalance={setBankBalance}
         transactions={normalTransactions}
         setTransactions={setNormalTransactions}
+        threatLensDemoEnabled={threatLensDemoEnabled}
       />
     );
 
@@ -504,6 +378,7 @@ export function App() {
     isProcessing,
     isTestMode,
     completeScenarioFlow,
+    threatLensDemoEnabled,
   ]);
 
   const renderPhoneFrame = () => {
@@ -579,7 +454,7 @@ export function App() {
       <div className="platform-content">
         <div className="workspace-layout">{renderDemoContent()}</div>
       </div>
-      {!isTestMode && queryParams.get("capture") !== "cyber-attack" && queryParams.get("shot") !== "cyber-attack" && (
+      {!isTestMode && queryParams.get("capture") !== "cyber-attack" && queryParams.get("shot") !== "cyber-attack" && queryParams.get("controls") !== "0" && captureMode !== "phone" && (
         <button
           className="cyber-toggle-btn"
           onClick={() => setShowCyberSimulation((prev) => !prev)}

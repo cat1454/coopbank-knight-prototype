@@ -1,0 +1,70 @@
+/* AI Reasoning Summary styling */
+.transfer-ai-reason-summary {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transfer-ai-reason-summary--pending {
+  background: rgba(100, 116, 139, 0.05);
+  border: 1px solid var(--color-line);
+}
+
+.transfer-ai-reason-summary--safe {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.transfer-ai-reason-summary--watch {
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.transfer-ai-reason-summary--danger {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.transfer-ai-reason-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.transfer-ai-reason-header--pending {
+  color: var(--color-muted);
+}
+
+.transfer-ai-reason-header--safe {
+  color: #10b981;
+}
+
+.transfer-ai-reason-header--watch {
+  color: #f59e0b;
+}
+
+.transfer-ai-reason-header--danger {
+  color: #ef4444;
+}
+
+.animate-pulse {
+  animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}

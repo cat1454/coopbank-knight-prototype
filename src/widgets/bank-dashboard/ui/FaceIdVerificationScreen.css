@@ -1,0 +1,178 @@
+/* â”€â”€ Face ID Verification Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.faceid-verify-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px 28px;
+  align-items: stretch;
+}
+
+.transfer-faceid-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: ios-fade-in 0.22s ease-out both;
+}
+
+.transfer-faceid-dialog {
+  width: min(328px, calc(100vw - 44px));
+  max-height: min(720px, calc(100vh - 56px));
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+  color: var(--color-ink);
+  animation: ios-scale-up 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.faceid-verify-screen--popup {
+  gap: 13px;
+  padding: 18px;
+}
+
+.faceid-verify-screen--popup .faceid-verify__precheck-header {
+  justify-content: center;
+  text-align: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.faceid-verify-screen--popup .faceid-verify__precheck-icon {
+  display: none;
+}
+
+.faceid-verify-screen--popup .faceid-verify__precheck-title {
+  font-size: 18px;
+}
+
+.faceid-verify-screen--popup .faceid-verify__txn-summary,
+.faceid-verify-screen--popup .faceid-verify__steps {
+  display: none;
+}
+
+.faceid-verify-screen--popup .faceid-verify__scanner {
+  width: 168px;
+  height: 168px;
+}
+
+.faceid-verify-screen--popup .action-stack {
+  gap: 10px;
+}
+
+/* Pre-check header (standard flow â€” no risk info) */
+.faceid-verify__precheck-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+}
+
+.faceid-verify__precheck-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(23, 92, 211, 0.12), rgba(23, 92, 211, 0.06));
+  border: 1px solid rgba(23, 92, 211, 0.2);
+  display: grid;
+  place-items: center;
+  color: #1d4ed8;
+}
+
+.faceid-verify__precheck-title {
+  margin: 0 0 3px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+/* Risk header (AI-triggered flow) */
+.faceid-verify__header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faceid-verify__risk-badge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.faceid-verify__risk-badge span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.faceid-verify__ai-level {
+  color: #1d4ed8 !important;
+  border-color: rgba(29, 78, 216, 0.25) !important;
+  background: rgba(29, 78, 216, 0.06) !important;
+}
+
+.faceid-verify__explanation {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+/* Transaction summary card */
+.faceid-verify__txn-summary {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.25);
+}
+
+.faceid-verify__txn-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.faceid-verify__txn-row span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.faceid-verify__txn-row strong {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 700;
+  text-align: right;
+}
+
+.faceid-verify__txn-amount .faceid-verify__amount-value {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.3px;
+}
+

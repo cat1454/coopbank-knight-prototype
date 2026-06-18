@@ -1,0 +1,191 @@
+/* Welcome header redesign */
+.dashboard-header {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inspire-avatar-container {
+  position: relative;
+  margin-right: 12px;
+}
+
+.inspire-avatar {
+  width: 42px;
+  height: 42px;
+  background: #e31837;
+  color: #ffffff;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
+.inspire-badge {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #d6001c 0%, #e31837 100%);
+  color: #ffffff;
+  font-size: 6px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(227, 24, 55, 0.2);
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notification-bell {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  color: #1b4d3e;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: relative;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease;
+}
+
+.notification-bell:hover {
+  transform: scale(1.05);
+}
+
+.bell-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #e31837;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 800;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #ffffff;
+}
+
+.logout-btn-minimal {
+  background: none;
+  border: none;
+  font-size: 10px;
+  font-weight: 600;
+  color: #e31837;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+/* Available balance Widget Redesign */
+.balance-card-inspire {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 16px 20px;
+  box-shadow: 0 10px 30px rgba(0, 77, 44, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  margin-bottom: var(--space-4);
+}
+
+.balance-card-inspire .balance-card__info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.balance-card-inspire .balance-label {
+  font-size: var(--text-xs);
+  color: var(--color-subtle);
+  font-weight: 600;
+}
+
+.balance-card-inspire .balance-toggle {
+  background: none;
+  border: none;
+  color: var(--color-subtle);
+  cursor: pointer;
+  padding: 2px;
+}
+
+.balance-amount-inspire {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.5px;
+  display: block;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.balance-card-promo {
+  border-top: 1px dashed rgba(16, 24, 40, 0.08);
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.promo-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  max-width: 68%;
+}
+
+.promo-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.promo-desc {
+  font-size: 9px;
+  color: var(--color-muted);
+  line-height: 1.3;
+}
+
+.promo-btn {
+  background: #111827;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.promo-btn:hover {
+  background: #1f2937;
+}
+
+.balance-card__branch-inspire {
+  margin-top: 8px;
+  font-size: var(--text-xxs);
+  color: var(--color-muted);
+  text-align: left;
+}
+

@@ -87,6 +87,70 @@ test.describe("KNIGHT mobile/PWA prototype", () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test("runs ThreatLens Decision Intelligence demo scenarios", async ({ page }) => {
+    await page.evaluate(() => window.sessionStorage.setItem("knight_threatlens_consent", "withdrawn"));
+    await page.goto("/?env=test&capture=phone&shot=case&demo=true&controls=0");
+
+    await page.getByRole("button", { name: /hộ vệ ai/i }).click();
+    await expect(page.getByRole("heading", { name: /KNIGHT Decision Intelligence/i })).toBeVisible();
+    await page.evaluate(() => {
+      const toggle = document.querySelector('input[aria-label="Kích hoạt Hộ vệ AI KNIGHT"]') as HTMLInputElement;
+      if (toggle) toggle.click();
+    });
+
+    await page.evaluate(() => {
+      const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]')) as HTMLInputElement[];
+      const consentCheckbox = checkboxes.find(c => c.parentElement?.textContent?.includes("đồng ý"));
+      if (consentCheckbox) consentCheckbox.click();
+    });
+
+    await page.getByRole("button", { name: /đồng ý và kích hoạt/i }).click();
+
+    await page.getByLabel(/scenario/i).selectOption("critical_risk");
+    await page.getByRole("button", { name: /chạy scenario/i }).click();
+
+    await expect(page.getByRole("heading", { name: /giao dịch tạm thời bị giữ lại/i })).toBeVisible();
+    await expect(page.getByText(/TL-CRITICAL_RISK-001/i)).toBeVisible();
+    await page.getByRole("button", { name: /xem chi tiết phân tích/i }).click();
+    await expect(page.getByLabel(/ThreatLens agent console/i)).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("keeps bank logos legible in the compact transfer picker", async ({ page }) => {
+    await page.goto("/?env=test&capture=phone&shot=case&controls=0");
+
+    await page
+      .getByRole("navigation", { name: /thanh điều hướng chính/i })
+      .getByRole("button", { name: /chuyển tiền/i })
+      .click();
+    await page.getByRole("button", { name: /ngân hàng thụ hưởng/i }).click();
+    await page.getByRole("combobox", { name: /tìm ngân hàng/i }).fill("viet");
+
+    await expect(
+      page.getByRole("option", { name: /vietcombank ngân hàng tmcp ngoại thương việt nam/i }),
+    ).toBeVisible();
+
+    const logoImageBox = await page.locator(".bank-sheet__option .bank-sheet__logo img").first().boundingBox();
+    const logoShellBox = await page.locator(".bank-sheet__option .bank-sheet__logo").first().boundingBox();
+
+    expect(logoImageBox?.width ?? 0).toBeGreaterThanOrEqual(34);
+    expect(logoShellBox?.width ?? 0).toBeLessThanOrEqual(46);
+
+    await page.getByRole("option", { name: /vietcombank ngân hàng tmcp ngoại thương việt nam/i }).click();
+    await expect(
+      page.getByRole("button", { name: /ngân hàng thụ hưởng vietcombank ngân hàng tmcp ngoại thương việt nam/i }),
+    ).toBeVisible();
+
+    const triggerLogoImageBox = await page.locator(".bank-picker__trigger .bank-picker__logo img").boundingBox();
+    const triggerLogoBox = await page.locator(".bank-picker__trigger .bank-picker__logo").boundingBox();
+    const triggerBox = await page.locator(".bank-picker__trigger").boundingBox();
+
+    expect(triggerLogoImageBox?.width ?? 0).toBeGreaterThanOrEqual(58);
+    expect(triggerLogoBox?.width ?? 0).toBeLessThanOrEqual(78);
+    expect(triggerBox?.height ?? 0).toBeLessThanOrEqual(72);
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("renders required video shots across iPhone viewports", async ({ page }, testInfo) => {
     const shots = [
       { name: "alert", url: "/?env=test&capture=phone&shot=reason&controls=0", text: /giao dịch bất thường vừa bị chặn/i },

@@ -1,0 +1,128 @@
+/* === Interactive Transfer Extra Styles === */
+
+.dashboard-transfer {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.transfer-ai-banner {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid rgba(23, 92, 211, 0.18);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(239, 248, 255, 0.96), rgba(240, 253, 244, 0.86)),
+    var(--color-card);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.05);
+}
+
+.transfer-ai-banner__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.transfer-ai-banner__header > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.transfer-ai-kicker {
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.transfer-ai-banner strong {
+  color: var(--color-ink);
+  font-size: var(--text-md);
+  line-height: 1.2;
+}
+
+.transfer-ai-banner p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+.transfer-ai-progress {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-height: 28px;
+  align-items: center;
+  border: 1px solid rgba(23, 92, 211, 0.16);
+  border-radius: 999px;
+  padding: 0 9px;
+  background: #ffffff;
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.transfer-ai-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.transfer-ai-signal {
+  display: grid;
+  min-width: 0;
+  min-height: 112px;
+  align-content: start;
+  gap: 5px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  background: var(--color-card);
+}
+
+.transfer-ai-signal span {
+  color: var(--color-muted);
+  font-size: 10px;
+  font-weight: 780;
+  text-transform: uppercase;
+}
+
+.transfer-ai-signal strong {
+  min-height: 34px;
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.transfer-ai-signal small {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.transfer-ai-signal--success {
+  border-color: #abefc6;
+  background: #f0fdf4;
+}
+
+.transfer-ai-signal--warning {
+  border-color: #fedf89;
+  background: #fffbeb;
+}
+
+.transfer-ai-signal--danger {
+  border-color: #fecdca;
+  background: #fff5f4;
+}
+
+.transfer-form {
+  display: grid;
+  gap: var(--space-3);
+}
+

@@ -1,0 +1,277 @@
+/* Custom Floating Toggle Button for previewing */
+.cyber-toggle-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(10, 15, 26, 0.8);
+  border: 1px solid var(--cyber-neon-cyan);
+  color: var(--cyber-neon-cyan);
+  padding: 10px 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .cyber-toggle-btn {
+    display: none !important;
+  }
+}
+
+.cyber-toggle-btn:hover {
+  background: var(--cyber-neon-cyan);
+  color: #000;
+  box-shadow: var(--cyber-glow-cyan);
+}
+
+.cyber-toggle-btn svg {
+  animation: rotateGear 4s linear infinite;
+}
+
+@keyframes rotateGear {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Hacking Heist Progress Graphics */
+.cyber-progress-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--cyber-neon-cyan);
+  padding: 12px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cyber-progress-bar-bg {
+  width: 100%;
+  height: 24px;
+  background: #081018;
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cyber-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #009944 0%, var(--cyber-neon-cyan) 100%);
+  box-shadow: 0 0 10px var(--cyber-neon-cyan);
+  transition: width 0.1s linear;
+}
+
+.cyber-progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 3px #000;
+}
+
+/* Trigger Button Container */
+.cyber-trigger-panel {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.cyber-btn {
+  background: rgba(10, 15, 26, 0.9);
+  border: 1.5px solid var(--cyber-neon-cyan);
+  color: var(--cyber-neon-cyan);
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
+}
+
+.cyber-btn:hover:not(:disabled) {
+  background: var(--cyber-neon-cyan);
+  color: #000;
+  box-shadow: var(--cyber-glow-cyan);
+}
+
+.cyber-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cyber-btn--red {
+  border-color: #ff3344;
+  color: #ff3344;
+  box-shadow: 0 0 8px rgba(255, 51, 68, 0.2);
+}
+
+.cyber-btn--red:hover:not(:disabled) {
+  background: #ff3344;
+  color: #fff;
+  box-shadow: var(--cyber-glow-red);
+}
+
+/* Futuristic Diagnostic Modal Overlay */
+.cyber-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(3, 5, 8, 0.88);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.cyber-modal-content {
+  background: var(--cyber-panel-bg);
+  border: 2px solid var(--cyber-neon-red);
+  box-shadow: 0 0 35px rgba(255, 51, 68, 0.4), inset 0 0 20px rgba(255, 51, 68, 0.1);
+  border-radius: 8px;
+  width: 700px;
+  max-width: 90%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Modal corner brackets */
+.cyber-modal-content::before, .cyber-modal-content::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-style: solid;
+  border-color: var(--cyber-neon-red);
+  pointer-events: none;
+}
+.cyber-modal-content::before {
+  top: 0; left: 0;
+  border-width: 3px 0 0 3px;
+}
+.cyber-modal-content::after {
+  bottom: 0; right: 0;
+  border-width: 0 3px 3px 0;
+}
+
+.cyber-modal-header {
+  border-bottom: 1px solid rgba(255, 51, 68, 0.3);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+  font-size: 16px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cyber-neon-red);
+  text-shadow: var(--cyber-glow-red);
+}
+
+.cyber-modal-body {
+  padding: 24px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.cyber-modal-agent-wrapper {
+  width: 200px;
+  height: 200px;
+  flex: 0 0 200px;
+  border: 1px solid rgba(255, 51, 68, 0.3);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 0 15px rgba(255, 51, 68, 0.2);
+}
+
+.cyber-modal-agent-wrapper .knight-agent-visualizer {
+  transform: scale(0.65);
+  transform-origin: center;
+  width: 308px;
+  height: 308px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.65);
+}
+
+.cyber-modal-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cyber-modal-info h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cyber-modal-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #ffa8b0;
+  line-height: 1.5;
+}
+
+.cyber-modal-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 3px solid var(--cyber-neon-red);
+  font-size: 11px;
+}
+
+.cyber-modal-details div strong {
+  color: #ffa8b0;
+}
+
+.cyber-modal-footer {
+  border-top: 1px solid rgba(255, 51, 68, 0.2);
+  padding: 14px 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

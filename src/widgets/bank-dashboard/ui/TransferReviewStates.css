@@ -1,0 +1,140 @@
+/* Processing state view */
+.processing-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px var(--space-4);
+  min-height: 350px;
+  gap: var(--space-4);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--color-line);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.processing-view h2 {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-ink);
+}
+
+.processing-view p {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.threatlens-transfer-review {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  text-align: left;
+}
+
+.threatlens-transfer-review > svg {
+  width: 56px;
+  height: 56px;
+  padding: 12px;
+  border-radius: 16px;
+}
+
+.threatlens-transfer-review--warning > svg {
+  color: #b45309;
+  background: #fffbeb;
+}
+
+.threatlens-transfer-review--verification > svg {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.threatlens-transfer-review--held > svg {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.threatlens-transfer-review h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: var(--text-xl);
+  line-height: 1.2;
+}
+
+.threatlens-transfer-review p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.threatlens-transfer-score {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.threatlens-transfer-score strong,
+.threatlens-transfer-score span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.companion-policy-note {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  background: #eff6ff;
+}
+
+.companion-policy-note strong {
+  color: #1d4ed8;
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.companion-policy-note span {
+  color: #334155;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+.transfer-companion-checklist {
+  padding: 10px 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+}
+
+.transfer-companion-checklist label {
+  grid-template-columns: 18px 1fr;
+}
+
+.transfer-companion-checklist .threatlens-progress {
+  margin: 2px 0 0;
+  font-size: var(--text-xs);
+}
+

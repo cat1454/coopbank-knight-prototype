@@ -1,0 +1,272 @@
+/* === Real Banking App UI Framework styles === */
+
+.phone-frame--login .app-header {
+  display: none;
+}
+
+.phone-frame--login .screen-host {
+  padding: 0;
+  overflow: hidden;
+}
+
+.screen--login {
+  position: relative;
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0;
+  overflow: hidden;
+  padding: 0 18px calc(env(safe-area-inset-bottom) + 12px);
+  background:
+    radial-gradient(circle at 84% 72%, rgba(36, 222, 190, 0.2) 0 11%, transparent 29%),
+    linear-gradient(180deg, #f0fce7 0%, #eef9e5 48%, #c2f3df 100%);
+  color: #07121d;
+}
+
+.login-art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.login-art::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% 26%;
+  background:
+    linear-gradient(rgba(6, 68, 86, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 68, 86, 0.045) 1px, transparent 1px);
+  background-size: 36px 36px;
+  opacity: 0.66;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 22%, transparent 100%);
+  animation: login-grid-drift 9s linear infinite;
+}
+
+.login-art__scan {
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  border: 1px solid rgba(20, 184, 166, 0.14);
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.12);
+  animation: login-scan-pulse 4.4s ease-in-out infinite;
+}
+
+.login-art__scan--one {
+  top: 136px;
+  right: -84px;
+}
+
+.login-art__scan--two {
+  bottom: 224px;
+  left: -92px;
+  animation-delay: 1.2s;
+}
+
+.login-art__cliff {
+  position: absolute;
+  left: -52px;
+  bottom: 252px;
+  width: 238px;
+  height: 286px;
+  clip-path: polygon(0 42%, 88% 28%, 64% 100%, 0 100%);
+  background:
+    linear-gradient(130deg, rgba(226, 255, 219, 0.9) 0 34%, rgba(110, 160, 121, 0.9) 35% 53%, rgba(17, 72, 68, 0.92) 54% 100%);
+  opacity: 0.86;
+  filter: drop-shadow(18px 24px 34px rgba(9, 74, 68, 0.16));
+}
+
+.login-art__cliff::after {
+  content: "";
+  position: absolute;
+  left: 30px;
+  top: 90px;
+  width: 190px;
+  height: 54px;
+  border-radius: 70% 30% 12% 88%;
+  background: rgba(251, 255, 238, 0.72);
+  transform: rotate(-9deg);
+}
+
+.login-art__runner {
+  position: absolute;
+  top: 72px;
+  right: 24px;
+  width: 19px;
+  height: 46px;
+  border-radius: 12px 12px 8px 8px;
+  background: linear-gradient(180deg, #154847 0%, #0a252c 100%);
+  box-shadow: 8px 7px 0 -4px #87bd72, -7px 34px 0 -7px #0a252c;
+  transform: rotate(12deg);
+  z-index: 1;
+  animation: login-runner-bob 2.8s ease-in-out infinite;
+}
+
+.login-art__runner::before {
+  content: "";
+  position: absolute;
+  top: -13px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #c7e896;
+}
+
+.login-art__runner::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: -8px;
+  width: 18px;
+  height: 24px;
+  border-radius: 8px;
+  background: #416e61;
+  box-shadow: inset 0 0 0 2px rgba(230, 255, 235, 0.36);
+}
+
+.login-art__cloud {
+  position: absolute;
+  height: 82px;
+  border-radius: 999px;
+  background: rgba(251, 255, 244, 0.74);
+  filter: blur(0.2px);
+}
+
+.login-art__cloud--left {
+  left: -72px;
+  bottom: 314px;
+  width: 242px;
+}
+
+.login-art__cloud--right {
+  right: -48px;
+  bottom: 306px;
+  width: 330px;
+}
+
+.login-art__island {
+  position: absolute;
+  right: -14px;
+  bottom: 316px;
+  width: 190px;
+  height: 54px;
+  border-radius: 80% 20% 45% 55%;
+  background: linear-gradient(170deg, rgba(150, 211, 184, 0.9), rgba(42, 103, 91, 0.82));
+  transform: skewX(-14deg);
+}
+
+.login-art__island span {
+  position: absolute;
+  right: 24px;
+  bottom: 34px;
+  width: 86px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(251, 255, 244, 0.86);
+}
+
+.login-hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 22px;
+  padding: calc(env(safe-area-inset-top) + 34px) 14px 0;
+}
+
+.login-hero__logo {
+  width: 56px;
+  height: 56px;
+  padding: 4px;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 14px 28px rgba(10, 74, 87, 0.16);
+}
+
+.login-hero__copy {
+  display: grid;
+  gap: 7px;
+}
+
+.login-hero__copy p {
+  color: #050b12;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.16;
+}
+
+.login-hero__copy h1 {
+  max-width: 13ch;
+  color: #020617;
+  font-size: 32px;
+  font-weight: 820;
+  line-height: 1.04;
+  text-transform: uppercase;
+}
+
+.login-branch-chip {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 30px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.58);
+  color: #0f3d47;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 690;
+  backdrop-filter: blur(12px);
+}
+
+.login-branch-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-inspiration {
+  position: relative;
+  z-index: 1;
+  align-self: flex-end;
+  display: grid;
+  gap: 2px;
+  margin: auto 8px 308px 0;
+  color: rgba(31, 59, 58, 0.48) !important;
+  text-align: right;
+}
+
+.login-inspiration span {
+  font-size: 12px;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+}
+
+.login-inspiration strong {
+  font-family: "Brush Script MT", "Segoe Script", cursive;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 0.9;
+}
+
+.login-panel {
+  position: absolute;
+  z-index: 2;
+  right: 18px;
+  bottom: 112px;
+  left: 18px;
+  display: grid;
+  gap: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  border-radius: 28px;
+  padding: 20px 16px 14px;
+  background: rgba(247, 255, 251, 0.6);
+  box-shadow: 0 22px 48px rgba(8, 73, 62, 0.13);
+  backdrop-filter: blur(20px);
+}
+

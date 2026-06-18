@@ -41,7 +41,7 @@ describe("KNIGHT mobile app", () => {
 
     await confirmFraudAndVerifyFaceId(user);
 
-    expect(screen.getByRole("heading", { name: /thẻ số mới đã sẵn sàng/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /thẻ số mới đã sẵn sàng/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Demo virtual card/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/One-time emergency virtual card/i)).toBeInTheDocument();
     expect(screen.getByText(/4221 0982 7361 8839/i)).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe("KNIGHT mobile app", () => {
     await user.click(screen.getByRole("button", { name: /đây là giao dịch của tôi/i }));
     await user.click(screen.getByRole("button", { name: /xác thực/i }));
 
-    expect(screen.getByText(/Thẻ đã được mở lại/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Thẻ đã được mở lại/i)).toBeInTheDocument();
     expect(screen.getAllByText(/giám sát tăng cường trong 30 phút/i)[0]).toBeInTheDocument();
     expect(screen.queryByText(/FR-20250601-001/i)).not.toBeInTheDocument();
   });
@@ -77,12 +77,12 @@ describe("KNIGHT mobile app", () => {
     await user.click(screen.getByRole("button", { name: /không phải tôi/i }));
     await user.click(screen.getByRole("button", { name: /mô phỏng thất bại/i }));
 
-    expect(screen.getByText(/chưa có hành động L3 nào/i)).toBeInTheDocument();
+    expect(await screen.findByText(/chưa có hành động L3 nào/i)).toBeInTheDocument();
     expect(screen.queryByText(/FR-20250601-001/i)).not.toBeInTheDocument();
 
     expect(screen.getByText(/Face ID failed/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /xác thực face id/i }));
-    expect(screen.getByLabelText(/One-time emergency virtual card/i)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/One-time emergency virtual card/i)).toBeInTheDocument();
   });
 
   it("supports direct capture of the secured bank home after fraud case creation", () => {

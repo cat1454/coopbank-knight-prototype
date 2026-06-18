@@ -1,0 +1,275 @@
+/* === Critical Emergency Alert Popup â€” Premium Redesign === */
+
+/* Overlay backdrop */
+.critical-alert-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 6, 14, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: ca-fade-in 0.28s ease-out both;
+}
+
+.unlocked-alert-overlay {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(240, 68, 56, 0.22), transparent 34%),
+    rgba(4, 6, 14, 0.72);
+  align-items: flex-start;
+  padding-top: 18px;
+}
+
+/* Modal card */
+.critical-alert-modal {
+  width: 100%;
+  max-width: 320px;
+  background: linear-gradient(160deg, #1a0808 0%, #0e0404 60%, #120606 100%);
+  border: 1.5px solid rgba(240, 68, 56, 0.55);
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px rgba(240, 68, 56, 0.12),
+    0 8px 40px rgba(217, 45, 32, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 18px 18px 20px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  animation: ca-popup-in 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+             ca-border-pulse 2.8s ease-in-out infinite alternate;
+}
+
+.unlocked-alert-modal {
+  max-width: 300px;
+  gap: 10px;
+  padding: 14px 14px 16px;
+  box-shadow:
+    0 0 0 1px rgba(240, 68, 56, 0.18),
+    0 14px 46px rgba(217, 45, 32, 0.42),
+    0 8px 24px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.unlocked-alert-agent {
+  height: 150px;
+  margin: 0;
+  border: 1px solid rgba(240, 68, 56, 0.28);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* â”€â”€ Header row: live badge + mute btn â”€â”€ */
+.ca-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ca-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(240, 68, 56, 0.12);
+  border: 1px solid rgba(240, 68, 56, 0.25);
+  border-radius: 99px;
+  padding: 3px 10px 3px 7px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #f97066;
+  text-transform: uppercase;
+}
+
+.ca-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f04438;
+  box-shadow: 0 0 8px #f04438;
+  animation: ca-dot-pulse 1s ease-in-out infinite alternate;
+  flex-shrink: 0;
+}
+
+.ca-mute-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #98a2b3;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.ca-mute-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.ca-mute-btn.is-muted {
+  color: #f04438;
+  border-color: rgba(240, 68, 56, 0.35);
+  background: rgba(240, 68, 56, 0.08);
+}
+.ca-mute-btn.is-pulsing {
+  animation: ca-btn-pulse 1.2s ease-in-out infinite alternate;
+  border-color: #f04438;
+  color: #f97066;
+}
+
+/* â”€â”€ Animated bell icon â”€â”€ */
+.ca-bell-ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 4px auto 0;
+  width: 64px;
+  height: 64px;
+  color: #f04438;
+  animation: ca-bell-shake 0.55s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 12px rgba(240, 68, 56, 0.7));
+}
+
+.ca-bell-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 68, 56, 0.22) 0%, transparent 70%);
+  animation: ca-glow-pulse 1.4s ease-in-out infinite alternate;
+}
+
+/* â”€â”€ Title â”€â”€ */
+.ca-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.28;
+  text-align: center;
+  letter-spacing: -0.3px;
+}
+
+/* â”€â”€ Risk badge â”€â”€ */
+.ca-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  align-self: center;
+  background: rgba(240, 68, 56, 0.13);
+  border: 1px solid rgba(240, 68, 56, 0.28);
+  border-radius: 99px;
+  padding: 4px 12px;
+  color: #f97066;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* â”€â”€ Transaction info card â”€â”€ */
+.ca-txn-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ca-txn-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ca-txn-label {
+  font-size: 10px;
+  color: #667085;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.ca-txn-value {
+  font-size: 12px;
+  color: #d0d5dd;
+  font-weight: 500;
+  text-align: right;
+}
+
+.ca-txn-amount {
+  color: #fda29b;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* â”€â”€ Protection notice â”€â”€ */
+.ca-protection {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  background: rgba(253, 162, 155, 0.07);
+  border: 1px dashed rgba(253, 162, 155, 0.22);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 11px;
+  color: #fda29b;
+  line-height: 1.45;
+}
+.ca-protection svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* â”€â”€ Sound hint â”€â”€ */
+.ca-sound-hint {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  color: #667085;
+  animation: ca-flash 1.2s ease-in-out infinite alternate;
+}
+.ca-sound-hint--active {
+  color: #fda29b;
+  animation: none;
+}
+
+/* â”€â”€ CTA button â”€â”€ */
+.critical-cta-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #c4251a 0%, #e83c2e 50%, #f04438 100%);
+  border: none;
+  border-radius: 13px;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 14px 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(217, 45, 32, 0.45), inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  letter-spacing: 0.2px;
+}
+.critical-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(217, 45, 32, 0.65);
+}
+.critical-cta-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(217, 45, 32, 0.35);
+}
+
