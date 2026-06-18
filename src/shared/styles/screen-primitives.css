@@ -83,6 +83,13 @@
   font-size: var(--text-sm);
 }
 
+@media (max-width: 370px) {
+  .risk-score {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .signal-list {
   display: grid;
   gap: var(--space-2);

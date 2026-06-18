@@ -13,7 +13,11 @@ export interface AlarmAudioController {
   isUnlocked: () => boolean;
 }
 
-export function useAlarmAudio(): AlarmAudioController {
+interface UseAlarmAudioOptions {
+  disabled?: boolean;
+}
+
+export function useAlarmAudio({ disabled = false }: UseAlarmAudioOptions = {}): AlarmAudioController {
   const contextRef = useRef<AudioContext | null>(null);
   const oscillatorRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
@@ -21,7 +25,7 @@ export function useAlarmAudio(): AlarmAudioController {
   const unlockedRef = useRef(false);
 
   const getContext = useCallback(() => {
-    if (import.meta.env.MODE === "test") return null;
+    if (disabled || import.meta.env.MODE === "test") return null;
 
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return null;
@@ -31,7 +35,7 @@ export function useAlarmAudio(): AlarmAudioController {
     }
 
     return contextRef.current;
-  }, []);
+  }, [disabled]);
 
   const unlock = useCallback(() => {
     const context = getContext();
@@ -143,6 +147,13 @@ export function useAlarmAudio(): AlarmAudioController {
   }, [getContext, unlock, startWithRunningContext]);
 
   useEffect(() => {
+    if (disabled) {
+      stopAlarm();
+      void contextRef.current?.close();
+      contextRef.current = null;
+      return;
+    }
+
     window.addEventListener("pointerdown", unlock, { passive: true, capture: true });
     window.addEventListener("touchstart", unlock, { passive: true, capture: true });
     window.addEventListener("click", unlock, { capture: true });
@@ -155,7 +166,7 @@ export function useAlarmAudio(): AlarmAudioController {
       void contextRef.current?.close();
       contextRef.current = null;
     };
-  }, [stopAlarm, unlock]);
+  }, [disabled, stopAlarm, unlock]);
 
   return useMemo(() => ({
     startAlarm,

@@ -51,7 +51,7 @@ export function App() {
   const { captureMode, guardianDemoEnabled, isTestMode, queryParams, requestedShot } = useAppQueryParams();
 
   // Pre-create and unlock alarm audio during normal usage so it auto-plays on iOS
-  const alarmAudio = useAlarmAudio();
+  const alarmAudio = useAlarmAudio({ disabled: isTestMode });
 
   const initialScenarioState = useMemo(() => {
     const shotEvents = getShotEvents(requestedShot);

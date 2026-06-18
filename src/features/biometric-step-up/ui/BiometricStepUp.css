@@ -156,6 +156,11 @@
   box-shadow: 0 0 14px rgba(249, 112, 102, 0.8);
 }
 
+@keyframes face-scan-line {
+  from { transform: translateY(0); }
+  to { transform: translateY(126px); }
+}
+
 .liveness-steps {
   display: grid;
   width: 100%;

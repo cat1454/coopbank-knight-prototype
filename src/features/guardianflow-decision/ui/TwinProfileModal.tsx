@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ShieldCheck, ShieldAlert, Award, Activity, Heart, Eye, Smartphone, AlertTriangle, Home, Laptop, Plane, Utensils } from "lucide-react";
+import { X, ShieldCheck, ShieldAlert, Activity, Eye, AlertTriangle, Home, Laptop, Plane, Utensils } from "lucide-react";
 import { updateTwinPersonality, type TwinExplainResponse } from "../../../shared/api/twin";
 import "./TwinProfileModal.css";
 import "./TwinProfileModalContent.css";

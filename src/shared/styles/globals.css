@@ -255,26 +255,6 @@
   .screen h1 {
     font-size: 22px;
   }
-
-  .risk-score {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .timeline-item {
-    grid-template-columns: 58px 1fr;
-  }
-
-  .timeline-item .status-pill {
-    grid-column: 2;
-    width: fit-content;
-  }
-
-}
-
-@keyframes face-scan-line {
-  from { transform: translateY(0); }
-  to { transform: translateY(126px); }
 }
 
 .form-group {

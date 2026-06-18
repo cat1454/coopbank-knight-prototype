@@ -39,3 +39,14 @@
 .timeline-item p {
   font-size: var(--text-xs);
 }
+
+@media (max-width: 370px) {
+  .timeline-item {
+    grid-template-columns: 58px 1fr;
+  }
+
+  .timeline-item .status-pill {
+    grid-column: 2;
+    width: fit-content;
+  }
+}
